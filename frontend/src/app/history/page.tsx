@@ -18,6 +18,7 @@ interface ScanRecord {
   rawCompaniesFound: number;
   validatedCompanies: number;
   newCompaniesAdded: number;
+  durationMs?: number;
 }
 
 export default function HistoryPage() {
