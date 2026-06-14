@@ -54,11 +54,11 @@ export default function HistoryPage() {
 
   const getStatusIcon = (status: string, errorMessage?: string) => {
     switch (status) {
-      case 'COMPLETED': return <CheckCircle2 className="w-5 h-5 text-green-500" title="Completed" />;
-      case 'FAILED': return <XCircle className="w-5 h-5 text-red-500" title={`Failed: ${errorMessage}`} />;
-      case 'RUNNING': return <Activity className="w-5 h-5 text-blue-500 animate-pulse" title="Running" />;
-      case 'QUEUED': return <Clock className="w-5 h-5 text-amber-500" title="Queued" />;
-      default: return <Clock className="w-5 h-5 text-slate-400" title={status} />;
+      case 'COMPLETED': return <span title="Completed"><CheckCircle2 className="w-5 h-5 text-green-500" /></span>;
+      case 'FAILED': return <span title={`Failed: ${errorMessage}`}><XCircle className="w-5 h-5 text-red-500" /></span>;
+      case 'RUNNING': return <span title="Running"><Activity className="w-5 h-5 text-blue-500 animate-pulse" /></span>;
+      case 'QUEUED': return <span title="Queued"><Clock className="w-5 h-5 text-amber-500" /></span>;
+      default: return <span title={status}><Clock className="w-5 h-5 text-slate-400" /></span>;
     }
   };
 
