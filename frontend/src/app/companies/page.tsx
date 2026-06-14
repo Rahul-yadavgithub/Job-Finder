@@ -19,7 +19,6 @@ interface Company {
   placementPriority?: string;
   placementScore: number;
   confidenceScore: number;
-  confidenceScore: number;
   status: string;
   discoveryDate: string;
   teamSize?: string;
