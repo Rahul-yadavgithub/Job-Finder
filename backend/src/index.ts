@@ -12,8 +12,12 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(express.json());
+const frontendUrl = process.env.FRONTEND_URL 
+  ? (process.env.FRONTEND_URL.startsWith('http') ? process.env.FRONTEND_URL : `https://${process.env.FRONTEND_URL}`)
+  : '*';
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: frontendUrl,
   credentials: true
 }));
 app.use(helmet());
