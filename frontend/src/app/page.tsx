@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import Link from 'next/link';
+import CompanyGroupCard from '@/components/ui/CompanyGroupCard';
 
 interface DashboardStats {
   companiesFound: number;
@@ -20,13 +21,31 @@ interface DashboardStats {
 }
 
 export default function Dashboard() {
-  const { data: stats, isLoading } = useQuery<DashboardStats>({
+  const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ['dashboardStats'],
     queryFn: async () => {
       const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/stats`);
       return res.data;
     },
   });
+
+  const { data: targetCompanies, isLoading: targetLoading } = useQuery({
+    queryKey: ['dashboard-target-companies'],
+    queryFn: async () => {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/target-companies`);
+      return res.data;
+    },
+  });
+
+  const { data: confirmedCompanies, isLoading: confirmedLoading } = useQuery({
+    queryKey: ['dashboard-confirmed-last-year'],
+    queryFn: async () => {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/confirmed-last-year`);
+      return res.data;
+    },
+  });
+
+  const isLoading = statsLoading || targetLoading || confirmedLoading;
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
@@ -38,49 +57,12 @@ export default function Dashboard() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-            <div key={i} className="p-6 bg-card rounded-xl border shadow-sm animate-pulse h-32"></div>
-          ))}
+        <div className="flex justify-center items-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="p-6 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="font-semibold text-sm text-slate-500">Total Found</h3>
-              <p className="text-4xl font-bold mt-2">{stats?.companiesFound || 0}</p>
-            </div>
-            <div className="p-6 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="font-semibold text-sm text-slate-500">Pending Review</h3>
-              <p className="text-4xl font-bold mt-2 text-amber-500">{stats?.pendingReview || 0}</p>
-            </div>
-            <div className="p-6 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="font-semibold text-sm text-slate-500">Approved</h3>
-              <p className="text-4xl font-bold mt-2 text-green-500">{stats?.approvedCompanies || 0}</p>
-            </div>
-            <div className="p-6 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="font-semibold text-sm text-slate-500">Campus Potential</h3>
-              <p className="text-4xl font-bold mt-2 text-purple-500">{stats?.campusHiring || 0}</p>
-            </div>
-            <div className="p-6 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="font-semibold text-sm text-slate-500">Freshers Hiring</h3>
-              <p className="text-4xl font-bold mt-2 text-blue-500">{stats?.freshersHiring || 0}</p>
-            </div>
-            <div className="p-6 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="font-semibold text-sm text-slate-500">Internships</h3>
-              <p className="text-4xl font-bold mt-2 text-pink-500">{stats?.internships || 0}</p>
-            </div>
-            <div className="p-6 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="font-semibold text-sm text-slate-500">Startups</h3>
-              <p className="text-4xl font-bold mt-2 text-orange-500">{stats?.startups || 0}</p>
-            </div>
-            <div className="p-6 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="font-semibold text-sm text-slate-500">High Confidence</h3>
-              <p className="text-4xl font-bold mt-2 text-emerald-500">{stats?.highConfidence || 0}</p>
-            </div>
-          </div>
-          
-          <div className="mt-12 bg-white rounded-xl border shadow-sm p-6 flex flex-col md:flex-row items-center justify-between">
+          <div className="bg-white rounded-xl border shadow-sm p-6 flex flex-col md:flex-row items-center justify-between">
             <div>
               <h2 className="text-xl font-bold">Manual Approval Queue</h2>
               <p className="text-slate-500 mt-1">
@@ -93,6 +75,28 @@ export default function Dashboard() {
             >
               Review Queue
             </Link>
+          </div>
+
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <CompanyGroupCard
+              title="Target Companies Coming This Year"
+              description="Companies expected to visit for placement drives in the current academic year based on master records."
+              academicYear={targetCompanies?.academic_year || 'Loading...'}
+              total={targetCompanies?.total || 0}
+              drive_types={targetCompanies?.drive_types || {}}
+              roles={targetCompanies?.roles || {}}
+              companies={targetCompanies?.companies || []}
+            />
+
+            <CompanyGroupCard
+              title="Confirmed Placements (Past Year)"
+              description="Actual synced companies that were confirmed to have hired students in the previous academic year."
+              academicYear={confirmedCompanies?.academic_year || 'Loading...'}
+              total={confirmedCompanies?.total || 0}
+              drive_types={confirmedCompanies?.drive_types || {}}
+              roles={confirmedCompanies?.roles || {}}
+              companies={confirmedCompanies?.companies || []}
+            />
           </div>
         </>
       )}

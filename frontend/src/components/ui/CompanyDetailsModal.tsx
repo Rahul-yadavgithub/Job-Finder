@@ -1,6 +1,8 @@
-import React from 'react';
-import { X, Building2, Globe, Users, Coins, MapPin, Search, Calendar, FileText, CheckCircle2, Target } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Building2, Globe, Users, Coins, MapPin, Search, Calendar, FileText, CheckCircle2, Target, Loader2, BarChart3 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
 
 interface Company {
   _id: string;
@@ -15,6 +17,7 @@ interface Company {
   placementScore: number;
   confidenceScore: number;
   status: string;
+  review_status?: string;
   discoveryDate: string;
   teamSize?: string;
   fundingStage?: string;
@@ -27,15 +30,54 @@ interface Company {
     discoveryMethod?: string;
     discoveredAt?: string;
   };
+  assignedBranch?: string;
+  syncStatus?: string;
 }
 
 interface CompanyDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   company: Company | null;
+  onUpdate?: (company: Company) => void;
 }
 
-export function CompanyDetailsModal({ isOpen, onClose, company }: CompanyDetailsModalProps) {
+export function CompanyDetailsModal({ isOpen, onClose, company, onUpdate }: CompanyDetailsModalProps) {
+  const queryClient = useQueryClient();
+  const [selectedBranch, setSelectedBranch] = useState('');
+
+  const { data: branches, isLoading: branchesLoading } = useQuery({
+    queryKey: ['branches'],
+    queryFn: async () => {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/branches`);
+      return res.data;
+    },
+    enabled: isOpen && company?.status === 'APPROVED',
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedBranch || !company) return;
+      const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/companies/${company._id}/assignment`, {
+        branch_id: selectedBranch,
+        assigned_by: 'Admin'
+      });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      if (onUpdate && data) {
+        onUpdate(data);
+      }
+    }
+  });
+
+  // Reset state when modal closes
+  React.useEffect(() => {
+    if (!isOpen) {
+      setSelectedBranch('');
+    }
+  }, [isOpen]);
+
   if (!isOpen || !company) return null;
 
   return (
@@ -81,160 +123,188 @@ export function CompanyDetailsModal({ isOpen, onClose, company }: CompanyDetails
         </div>
 
         {/* Body (Scrollable) */}
-        <div className="p-6 overflow-y-auto flex-1">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="p-6 overflow-y-auto flex-1 bg-white">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
-            {/* Main Content Column */}
-            <div className="md:col-span-2 space-y-8">
+            {/* Left Column */}
+            <div className="lg:col-span-2 space-y-8">
               
-              {/* Description */}
-              <section>
-                <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-slate-400" />
-                  About Company
+              {/* About Company */}
+              <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-slate-500" /> About Company
                 </h3>
-                <p className="text-slate-600 leading-relaxed text-sm whitespace-pre-wrap">
+                <p className="text-slate-600 leading-relaxed">
                   {company.description || 'No description available for this company.'}
                 </p>
               </section>
 
-              {/* Hiring Signals */}
-              <section>
-                <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-                  <Search className="w-4 h-4 text-slate-400" />
-                  Hiring & Opportunities
+              {/* Hiring & Opportunities */}
+              <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <Target className="w-5 h-5 text-blue-500" /> Hiring & Opportunities
                 </h3>
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
+                  <div className="grid grid-cols-2 gap-6 mb-4 pb-4 border-b border-slate-200">
                     <div>
-                      <span className="block text-xs font-semibold text-slate-500 uppercase mb-1">Roles Detected</span>
-                      <p className="text-slate-900 text-sm font-medium">{company.hiringType || 'General Hiring'}</p>
+                      <span className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Roles Detected</span>
+                      <span className="text-slate-900 font-bold">{company.hiringType || (company.internshipAvailable ? 'Internship' : 'Full-Time / Mixed')}</span>
                     </div>
                     <div>
-                      <span className="block text-xs font-semibold text-slate-500 uppercase mb-1">Placement Priority</span>
-                      <p className="text-slate-900 text-sm font-medium flex items-center gap-2">
-                        {company.placementPriority || 'Standard'}
-                        {company.placementPriority === 'HIGH' && <span className="w-2 h-2 rounded-full bg-purple-500" />}
-                      </p>
+                      <span className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Placement Priority</span>
+                      <span className="text-slate-900 font-bold">{company.placementPriority || 'LOW'}</span>
                     </div>
                   </div>
-                  
-                  <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-200/60">
-                    {company.fresherHiring ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 bg-blue-100 px-2.5 py-1 rounded-md">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Fresher Friendly
-                      </span>
-                    ) : null}
-                    {company.internshipAvailable ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-pink-700 bg-pink-100 px-2.5 py-1 rounded-md">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Internships Available
-                      </span>
-                    ) : null}
-                    {!company.fresherHiring && !company.internshipAvailable && (
-                      <span className="text-sm text-slate-500">No specific fresher/intern signals detected.</span>
-                    )}
-                  </div>
+                  <p className="text-sm text-slate-600">
+                    {!company.fresherHiring && !company.internshipAvailable ? 'No specific fresher/intern signals detected.' : 'Opportunities detected.'}
+                  </p>
                 </div>
               </section>
-              
-            </div>
 
-            {/* Sidebar Column */}
-            <div className="space-y-6">
-              
-              {/* Key Metrics */}
-              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Company Profile</h3>
-                
+              {/* Discovery Source */}
+              <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-slate-500" /> Discovery Source
+                </h3>
                 <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-slate-50 text-slate-500 rounded-lg">
-                      <Users className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500 mb-0.5">Team Size</p>
-                      <p className="text-sm font-semibold text-slate-900">{company.teamSize || 'Unknown'}</p>
-                    </div>
+                  <div>
+                    <span className="block text-sm font-semibold text-slate-500 mb-1">Platform</span>
+                    <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md text-sm font-bold inline-block">{company.source?.platform || 'Unknown'}</span>
                   </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-slate-50 text-slate-500 rounded-lg">
-                      <Coins className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500 mb-0.5">Funding Stage</p>
-                      <p className="text-sm font-semibold text-slate-900">{company.fundingStage || 'Unknown'}</p>
-                    </div>
+                  <div>
+                    <span className="block text-sm font-semibold text-slate-500 mb-1">Discovered On</span>
+                    <span className="text-slate-900 font-bold text-sm">
+                      {company.source?.discoveredAt ? format(new Date(company.source.discoveredAt), 'MMM d, yyyy') : 'Unknown'}
+                    </span>
                   </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-slate-50 text-slate-500 rounded-lg">
-                      <Calendar className="w-4 h-4" />
-                    </div>
+                  {company.source?.sourceUrl && (
                     <div>
-                      <p className="text-xs text-slate-500 mb-0.5">Founded</p>
-                      <p className="text-sm font-semibold text-slate-900">{company.foundedYear || 'Unknown'}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Discovery Info */}
-              {company.source && (
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm">
-                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Discovery Source</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-xs text-slate-500 mb-0.5">Platform</p>
-                      <span className="inline-block px-2 py-1 bg-slate-200 text-slate-700 text-xs font-semibold rounded">
-                        {company.source.platform}
-                      </span>
-                    </div>
-                    {company.source.discoveredAt && (
-                      <div>
-                        <p className="text-xs text-slate-500 mb-0.5">Discovered On</p>
-                        <p className="text-sm font-medium text-slate-900">
-                          {format(new Date(company.source.discoveredAt), 'MMM d, yyyy')}
-                        </p>
-                      </div>
-                    )}
-                    <div>
-                      <p className="text-xs text-slate-500 mb-0.5">Source Link</p>
-                      <a href={company.source.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all line-clamp-2">
+                      <span className="block text-sm font-semibold text-slate-500 mb-1">Source Link</span>
+                      <a href={company.source.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 text-sm font-medium break-all">
                         {company.source.sourceUrl}
                       </a>
                     </div>
-                    {company.source.careersUrl && (
-                      <div>
-                        <p className="text-xs text-slate-500 mb-0.5">Careers Page</p>
-                        <a href={company.source.careersUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all line-clamp-1">
-                          {company.source.careersUrl}
-                        </a>
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
+              </section>
+
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-6">
+
+              {/* Branch Assignment */}
+              {company.status === 'APPROVED' && (
+                <section className="bg-slate-50 border border-slate-200 rounded-2xl p-6 shadow-sm">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Branch Assignment</h3>
+                  
+                  {branchesLoading ? (
+                    <div className="flex justify-center p-4">
+                      <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+                    </div>
+                  ) : company.assignedBranch ? (
+                    <div className="space-y-4">
+                      <div className="flex gap-2">
+                        <div className="flex-1 rounded-lg border border-slate-300 shadow-sm sm:text-sm p-2.5 bg-white text-slate-900 font-medium">
+                          {company.assignedBranch}
+                        </div>
+                      </div>
+                      <div className="pt-4 mt-2 border-t border-slate-200">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-semibold text-slate-600">Sync Status</span>
+                          <span className={`text-sm font-bold ${company.syncStatus === 'synced' ? 'text-green-600' : 'text-yellow-600'}`}>
+                            {company.syncStatus === 'synced' ? 'Synced' : 'Pending'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex gap-2">
+                        <select
+                          value={selectedBranch}
+                          onChange={(e) => setSelectedBranch(e.target.value)}
+                          className="flex-1 rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2.5 bg-white"
+                        >
+                          <option value="">Select a branch...</option>
+                          {branches?.map((b: any) => (
+                            <option key={b._id} value={b._id}>{b.name} ({b.category})</option>
+                          ))}
+                        </select>
+                      </div>
+                      <button
+                        onClick={() => assignMutation.mutate()}
+                        disabled={assignMutation.isPending || !selectedBranch}
+                        className="w-full mt-3 bg-slate-200 hover:bg-slate-300 text-slate-700 disabled:opacity-50 font-bold px-4 py-2 rounded-lg transition-colors text-sm"
+                      >
+                        {assignMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Assign Branch'}
+                      </button>
+                    </div>
+                  )}
+                </section>
               )}
 
-              {/* AI Scores */}
-              <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
-                 <h3 className="text-xs font-bold text-indigo-800 uppercase tracking-wider mb-3">AI Intelligence</h3>
-                 <div className="flex justify-between items-center mb-2">
-                   <span className="text-sm text-indigo-900 font-medium">Placement Score</span>
-                   <span className="text-sm font-bold text-indigo-700">{company.placementScore}/100</span>
-                 </div>
-                 <div className="w-full bg-indigo-200/50 rounded-full h-1.5 mb-4">
-                    <div className="bg-indigo-600 h-1.5 rounded-full" style={{ width: `${company.placementScore}%` }}></div>
-                 </div>
+              {/* Company Profile */}
+              <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Company Profile</h3>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                      <Users className="w-4 h-4 text-slate-500" />
+                    </div>
+                    <div>
+                      <span className="block text-xs font-semibold text-slate-500">Team Size</span>
+                      <span className="text-slate-900 font-bold text-sm">{company.teamSize || 'Unknown'}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                      <Globe className="w-4 h-4 text-slate-500" />
+                    </div>
+                    <div>
+                      <span className="block text-xs font-semibold text-slate-500">Funding Stage</span>
+                      <span className="text-slate-900 font-bold text-sm">{company.fundingStage || 'Not Applicable'}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                      <Calendar className="w-4 h-4 text-slate-500" />
+                    </div>
+                    <div>
+                      <span className="block text-xs font-semibold text-slate-500">Founded</span>
+                      <span className="text-slate-900 font-bold text-sm">{company.foundedYear || 'Unknown'}</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
 
-                 <div className="flex justify-between items-center mb-2">
-                   <span className="text-sm text-indigo-900 font-medium">Data Confidence</span>
-                   <span className="text-sm font-bold text-indigo-700">{company.confidenceScore}%</span>
-                 </div>
-                 <div className="w-full bg-indigo-200/50 rounded-full h-1.5">
-                    <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${company.confidenceScore}%` }}></div>
-                 </div>
-              </div>
+              {/* AI Intelligence */}
+              <section className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 shadow-sm">
+                <h3 className="text-xs font-bold text-indigo-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4" /> AI Intelligence
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs font-semibold text-indigo-900">Placement Score</span>
+                      <span className="text-xs font-bold text-indigo-900">{company.placementScore || 'Not Scored'}/100</span>
+                    </div>
+                    <div className="w-full bg-indigo-200/50 rounded-full h-1.5">
+                      <div className="bg-indigo-600 h-1.5 rounded-full" style={{ width: `${company.placementScore || 0}%` }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs font-semibold text-indigo-900">Data Confidence</span>
+                      <span className="text-xs font-bold text-indigo-900">{company.confidenceScore || 0}%</span>
+                    </div>
+                    <div className="w-full bg-indigo-200/50 rounded-full h-1.5">
+                      <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${company.confidenceScore || 0}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+              </section>
 
             </div>
           </div>

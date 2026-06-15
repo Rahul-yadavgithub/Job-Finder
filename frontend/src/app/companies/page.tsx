@@ -32,6 +32,8 @@ interface Company {
     discoveryMethod?: string;
     discoveredAt?: string;
   };
+  assignedBranch?: string;
+  syncStatus?: string;
 }
 
 export default function CompaniesPage() {
@@ -51,16 +53,12 @@ export default function CompaniesPage() {
     },
   });
 
-  const approveMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/companies/${id}/approve`);
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['companies'] }),
-  });
-
-  const rejectMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/companies/${id}/reject`);
+  const reviewMutation = useMutation({
+    mutationFn: async ({ id, action }: { id: string; action: 'approve' | 'reject' }) => {
+      await axios.patch(`${process.env.NEXT_PUBLIC_API_URL}/companies/${id}/review`, {
+        action,
+        reviewed_by: 'Admin' // Hardcoded for now, will come from auth later
+      });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['companies'] }),
   });
@@ -87,7 +85,6 @@ export default function CompaniesPage() {
             <option value="">All Statuses</option>
             <option value="PENDING_REVIEW">Pending Review</option>
             <option value="APPROVED">Approved</option>
-            <option value="REJECTED">Rejected</option>
             <option value="DISCOVERED">Discovered</option>
           </select>
 
@@ -186,14 +183,14 @@ export default function CompaniesPage() {
                         {company.status === 'PENDING_REVIEW' && (
                           <>
                             <button 
-                              onClick={() => approveMutation.mutate(company._id)}
+                              onClick={() => reviewMutation.mutate({ id: company._id, action: 'approve' })}
                               className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors"
                               title="Approve"
                             >
                               <CheckCircle className="w-5 h-5" />
                             </button>
                             <button 
-                              onClick={() => rejectMutation.mutate(company._id)}
+                              onClick={() => reviewMutation.mutate({ id: company._id, action: 'reject' })}
                               className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors"
                               title="Reject"
                             >
@@ -247,6 +244,7 @@ export default function CompaniesPage() {
         isOpen={!!selectedCompany}
         onClose={() => setSelectedCompany(null)}
         company={selectedCompany}
+        onUpdate={(updatedCompany) => setSelectedCompany(updatedCompany)}
       />
     </div>
   );

@@ -1,4 +1,5 @@
 import Company, { ICompany } from '../../models/Company';
+import crypto from 'crypto';
 
 export class DuplicateDetectionAgent {
   public static normalizeName(rawName: string): string {
@@ -10,16 +11,18 @@ export class DuplicateDetectionAgent {
       .replace(/\s+/g, '-');
   }
 
+  public static generateHash(normalizedName: string): string {
+    return crypto.createHash('sha256').update(normalizedName).digest('hex');
+  }
+
   public async isDuplicate(normalizedName: string, website?: string): Promise<boolean> {
-    const query: any = { normalizedName };
-    if (website) {
-      // Or check if website exists, but normalized name is safer
-    }
-    const existing = await Company.findOne(query);
+    const companyHash = DuplicateDetectionAgent.generateHash(normalizedName);
+    const existing = await Company.findOne({ companyHash });
     return !!existing;
   }
 
   public async getDuplicate(normalizedName: string): Promise<ICompany | null> {
-    return Company.findOne({ normalizedName });
+    const companyHash = DuplicateDetectionAgent.generateHash(normalizedName);
+    return Company.findOne({ companyHash });
   }
 }

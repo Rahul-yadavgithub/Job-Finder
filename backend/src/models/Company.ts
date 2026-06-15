@@ -15,6 +15,7 @@ export interface ICompany extends Document {
   // Core Identity
   companyName: string;
   normalizedName: string;
+  companyHash?: string;
   website?: string;
   description?: string;
   category?: string;
@@ -69,6 +70,31 @@ export interface ICompany extends Document {
 
   createdAt: Date;
   updatedAt: Date;
+
+  // Review & Confirmation
+  review_status?: 'scanned' | 'approved';
+  confirmation_status?: 'pending' | 'confirmed' | 'not_confirmed';
+  contact_status?: 'not_contacted' | 'contacted';
+  contact_outcome?: 'call_again' | 'rejected' | 'accepted' | null;
+  data_source?: 'scanned' | 'excel_import';
+
+  // Placement Specifics
+  drive_type?: string;
+  role?: string;
+  package?: string;
+  expected_month?: string;
+  expected_year?: string;
+  academic_year?: string;
+  
+  // Auditing
+  reviewed_at?: Date;
+  reviewed_by?: string;
+  pending_delete?: boolean;
+
+  // Branch Assignment & Sync
+  assignedBranch?: string;
+  syncStatus: 'pending' | 'synced' | 'failed';
+  lastSynced?: Date;
 }
 
 const CompanySchema: Schema = new Schema(
@@ -76,6 +102,7 @@ const CompanySchema: Schema = new Schema(
     // Core Identity
     companyName: { type: String, required: true },
     normalizedName: { type: String, required: true },
+    companyHash: { type: String, unique: true, sparse: true },
     website: { type: String },
     description: { type: String },
     category: { type: String },
@@ -133,13 +160,39 @@ const CompanySchema: Schema = new Schema(
     founderEmail: { type: String },
     linkedinCompanyUrl: { type: String },
     linkedinRecruiterUrl: { type: String },
-    careersUrl: { type: String }
+    careersUrl: { type: String },
+
+    // Review & Confirmation
+    review_status: { type: String, enum: ['scanned', 'approved'] },
+    confirmation_status: { type: String, enum: ['pending', 'confirmed', 'not_confirmed'] },
+    contact_status: { type: String, enum: ['not_contacted', 'contacted'] },
+    contact_outcome: { type: String, enum: ['call_again', 'rejected', 'accepted', null] },
+    data_source: { type: String, enum: ['scanned', 'excel_import'] },
+
+    // Placement Specifics
+    drive_type: { type: String },
+    role: { type: String },
+    package: { type: String },
+    expected_month: { type: String },
+    expected_year: { type: String },
+    academic_year: { type: String },
+
+    // Auditing
+    reviewed_at: { type: Date },
+    reviewed_by: { type: String },
+    pending_delete: { type: Boolean, default: false },
+
+    // Branch Assignment & Sync
+    assignedBranch: { type: String },
+    syncStatus: { type: String, enum: ['pending', 'synced', 'failed'], default: 'pending' },
+    lastSynced: { type: Date }
   },
   { timestamps: true }
 );
 
 // Indexes
-CompanySchema.index({ normalizedName: 1 }, { unique: true });
+
 CompanySchema.index({ placementScore: -1 });
+CompanySchema.index({ review_status: 1, confirmation_status: 1, academic_year: 1, drive_type: 1, role: 1 });
 
 export default mongoose.model<ICompany>('Company', CompanySchema);

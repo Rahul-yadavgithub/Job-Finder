@@ -1,9 +1,16 @@
 import { Router } from 'express';
+import mongoose from 'mongoose';
 import { scrapeQueue } from '../jobs/queue';
 import Company, { CompanyStatus } from '../models/Company';
 import ScanHistory from '../models/ScanHistory';
 import Source from '../models/Source';
 import Settings from '../models/Settings';
+import CompanyStatusHistory from '../models/CompanyStatusHistory';
+import Branch from '../models/Branch';
+
+import HrContact from '../models/HrContact';
+import ContactLog from '../models/ContactLog';
+import TargetCompany from '../models/TargetCompany';
 import { googleSheetService } from '../services/google/GoogleSheetProvider';
 
 const router = Router();
@@ -140,31 +147,936 @@ router.get('/companies', async (req, res) => {
   }
 });
 
-router.put('/companies/:id/approve', async (req, res) => {
+router.get('/companies/:id', async (req, res) => {
   try {
-    const company = await Company.findByIdAndUpdate(
-      req.params.id,
-      { status: CompanyStatus.APPROVED },
-      { new: true }
-    );
-    if (!company) return res.status(404).json({ error: 'Company not found' });
-    res.json(company);
+    const company = await Company.findById(req.params.id);
+    if (!company) {
+      return res.status(404).json({ error: 'Company not found' });
+    }
+
+    res.json(company.toObject());
   } catch (error) {
-    res.status(500).json({ error: 'Failed to approve company' });
+    res.status(500).json({ error: 'Failed to fetch company details' });
   }
 });
 
-router.put('/companies/:id/reject', async (req, res) => {
+router.put('/companies/:id/assignment', async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    const company = await Company.findByIdAndUpdate(
-      req.params.id,
-      { status: CompanyStatus.REJECTED },
-      { new: true }
-    );
+    const companyId = req.params.id;
+    const { branch_id, assigned_by } = req.body;
+
+    const company = await Company.findById(companyId).session(session);
+    if (!company) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ error: 'Company not found' });
+    }
+
+    const branch = await Branch.findById(branch_id).session(session);
+    if (!branch) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ error: 'Branch not found' });
+    }
+
+    const oldBranchId = company.assignedBranch || null;
+
+    company.assignedBranch = branch.name;
+    company.syncStatus = 'pending';
+    await company.save({ session });
+
+    await CompanyStatusHistory.create([{
+      company_id: companyId,
+      field_changed: 'branch_assignment',
+      old_value: oldBranchId ? oldBranchId : 'None',
+      new_value: branch.name,
+      changed_by: assigned_by || 'System'
+    }], { session });
+
+    await session.commitTransaction();
+    session.endSession();
+    
+    res.json(company);
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    res.status(500).json({ error: 'Failed to reassign branch' });
+  }
+});
+
+router.patch('/companies/:id/review', async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  
+  try {
+    const { action, reviewed_by } = req.body;
+    const companyId = req.params.id;
+
+    const company = await Company.findById(companyId).session(session);
+    if (!company) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ error: 'Company not found' });
+    }
+
+    if (action === 'approve') {
+      const oldReviewStatus = company.review_status || 'scanned';
+      
+      company.status = CompanyStatus.APPROVED;
+      company.review_status = 'approved';
+      company.reviewed_by = reviewed_by;
+      company.reviewed_at = new Date();
+      await company.save({ session });
+
+      await CompanyStatusHistory.create([{
+        company_id: company._id,
+        field_changed: 'review_status',
+        old_value: oldReviewStatus,
+        new_value: 'approved',
+        changed_by: reviewed_by
+      }], { session });
+
+      await session.commitTransaction();
+      session.endSession();
+      res.json(company);
+
+    } else if (action === 'reject') {
+      const oldReviewStatus = company.review_status || 'scanned';
+
+      await CompanyStatusHistory.create([{
+        company_id: company._id,
+        field_changed: 'review_status',
+        old_value: oldReviewStatus,
+        new_value: 'deleted_via_reject',
+        changed_by: reviewed_by
+      }], { session });
+
+      await Company.findByIdAndDelete(companyId).session(session);
+
+      await session.commitTransaction();
+      session.endSession();
+      res.json({ message: 'Company rejected and deleted successfully' });
+    } else {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ error: 'Invalid action. Must be approve or reject.' });
+    }
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    res.status(500).json({ error: 'Failed to process company review' });
+  }
+});
+
+// --- BRANCHES & ASSIGNMENTS ---
+router.get('/branches', async (req, res) => {
+  try {
+    const branches = await Branch.find().sort({ name: 1 });
+    res.json(branches);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch branches' });
+  }
+});
+
+// Route removed as BranchAssignments are now part of Company
+
+
+
+// --- SYNC CENTER ---
+router.get('/sync/pending', async (req, res) => {
+  try {
+    const results = await Company.aggregate([
+      { $match: { syncStatus: 'pending', assignedBranch: { $exists: true, $ne: null } } },
+      { $lookup: { from: 'branches', localField: 'assignedBranch', foreignField: 'name', as: 'branchDetails' } },
+      { $unwind: { path: '$branchDetails', preserveNullAndEmptyArrays: true } },
+      { $group: { 
+          _id: { name: '$assignedBranch', category: '$branchDetails.category' }, 
+          count: { $sum: 1 }, 
+          companies: { 
+            $push: { 
+              _id: '$_id', 
+              companyName: '$companyName',
+              sync_status: '$syncStatus'
+            } 
+          } 
+        } 
+      },
+      { $project: { _id: 0, branch_name: '$_id.name', branch_category: { $ifNull: ['$_id.category', 'Other'] }, count: 1, companies: 1 } },
+      { $sort: { branch_category: 1, branch_name: 1 } }
+    ]);
+    res.json(results);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch pending syncs' });
+  }
+});
+
+router.get('/sync/history', async (req, res) => {
+  try {
+    const results = await Company.aggregate([
+      { $match: { syncStatus: 'synced', assignedBranch: { $exists: true, $ne: null } } },
+      { $lookup: { from: 'branches', localField: 'assignedBranch', foreignField: 'name', as: 'branchDetails' } },
+      { $unwind: { path: '$branchDetails', preserveNullAndEmptyArrays: true } },
+      { $sort: { lastSynced: -1 } },
+      { $group: { 
+          _id: { name: '$assignedBranch', category: '$branchDetails.category' }, 
+          count: { $sum: 1 }, 
+          lastSynced: { $max: '$lastSynced' },
+          companies: { 
+            $push: { 
+              _id: '$_id', 
+              companyName: '$companyName',
+              sync_status: '$syncStatus',
+              synced_at: '$lastSynced'
+            } 
+          } 
+        } 
+      },
+      { $project: { _id: 0, branch_name: '$_id.name', branch_category: { $ifNull: ['$_id.category', 'Other'] }, count: 1, lastSynced: 1, companies: { $slice: ['$companies', 20] } } },
+      { $sort: { branch_category: 1, branch_name: 1 } }
+    ]);
+    res.json(results);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch sync history' });
+  }
+});
+
+router.post('/companies/bulk-assign', async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const { companyIds, branch_id, assigned_by } = req.body;
+    
+    if (!companyIds || !companyIds.length || !branch_id) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ error: 'Missing companyIds or branch_id' });
+    }
+
+    const branch = await Branch.findById(branch_id).session(session);
+    if (!branch) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ error: 'Branch not found' });
+    }
+
+    const historyLogs = [];
+
+    for (const companyId of companyIds) {
+      const company = await Company.findById(companyId).session(session);
+      if (company) {
+        const oldBranch = company.assignedBranch;
+        company.assignedBranch = branch.name;
+        company.syncStatus = 'pending';
+        await company.save({ session });
+
+        historyLogs.push({
+          company_id: companyId,
+          field_changed: 'branch_assignment',
+          old_value: oldBranch || 'None',
+          new_value: branch.name,
+          changed_by: assigned_by || 'System'
+        });
+      }
+    }
+
+    if (historyLogs.length > 0) {
+      await CompanyStatusHistory.insertMany(historyLogs, { session });
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+    
+    res.json({ message: 'Bulk assignment successful', count: historyLogs.length });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    res.status(500).json({ error: 'Failed to bulk assign branches' });
+  }
+});
+
+router.post('/sync/bulk-sync', async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const { companyIds } = req.body;
+    
+    if (!companyIds || !companyIds.length) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ error: 'Missing companyIds' });
+    }
+
+    // Find all pending companies
+    const pendingCompanies = await Company.find({ 
+      _id: { $in: companyIds },
+      syncStatus: 'pending',
+      assignedBranch: { $exists: true, $ne: null }
+    }).session(session);
+
+    if (pendingCompanies.length === 0) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ error: 'No pending assignments to sync among selected companies' });
+    }
+
+    const now = new Date();
+    let totalSynced = 0;
+    const historyLogs = [];
+
+    // Group by branch
+    const branchMap = new Map<string, typeof pendingCompanies>();
+    for (const company of pendingCompanies) {
+      const branchName = company.assignedBranch!;
+      if (!branchMap.has(branchName)) branchMap.set(branchName, []);
+      branchMap.get(branchName)!.push(company);
+    }
+
+    // Sync per branch
+    for (const [branchName, companiesGroup] of branchMap.entries()) {
+      const syncResult = await googleSheetService.appendCompaniesToSheet(companiesGroup, branchName);
+      
+      if (syncResult.success) {
+        for (const company of companiesGroup) {
+          await Company.updateOne(
+            { _id: company._id },
+            { $set: { syncStatus: 'synced', lastSynced: now } },
+            { session }
+          );
+          totalSynced++;
+        }
+
+        historyLogs.push(...companiesGroup.map(company => ({
+          company_id: company._id,
+          field_changed: 'sync_status',
+          old_value: 'pending',
+          new_value: 'synced',
+          changed_by: 'System'
+        })));
+      } else {
+        console.error(`Bulk sync failed for branch ${branchName}`);
+      }
+    }
+
+    if (historyLogs.length > 0) {
+      await CompanyStatusHistory.insertMany(historyLogs, { session });
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+    
+    res.json({ message: 'Bulk sync successful', count: totalSynced });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    res.status(500).json({ error: 'Failed to perform bulk sync' });
+  }
+});
+
+router.post('/sync/branch/:branch_id', async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const branchId = new mongoose.Types.ObjectId(req.params.branch_id);
+    const branch = await Branch.findById(branchId).session(session);
+    if (!branch) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ error: 'Branch not found' });
+    }
+
+    const pendingCompanies = await Company.find({ 
+      assignedBranch: branch.name, 
+      syncStatus: 'pending' 
+    }).session(session);
+
+    if (pendingCompanies.length === 0) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ error: 'No pending companies to sync' });
+    }
+
+    const syncResult = await googleSheetService.appendCompaniesToSheet(pendingCompanies, branch.name);
+
+    if (!syncResult.success) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(500).json({ error: 'Google Sheets API error' });
+    }
+
+    const now = new Date();
+
+    for (const company of pendingCompanies) {
+      await Company.updateOne(
+        { _id: company._id },
+        { $set: { syncStatus: 'synced', lastSynced: now } },
+        { session }
+      );
+    }
+
+    const historyLogs = pendingCompanies.map(company => ({
+      company_id: company._id,
+      field_changed: 'sync_status',
+      old_value: 'pending',
+      new_value: 'synced',
+      changed_by: 'System'
+    }));
+    await CompanyStatusHistory.insertMany(historyLogs, { session });
+
+    await session.commitTransaction();
+    session.endSession();
+    
+    res.json({ message: 'Sync successful', count: pendingCompanies.length });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    res.status(500).json({ error: 'Failed to perform sync' });
+  }
+});
+
+router.get('/sync/history/:branch_id/companies', async (req, res) => {
+  try {
+    const branchId = new mongoose.Types.ObjectId(req.params.branch_id);
+    const branch = await Branch.findById(branchId);
+    if (!branch) return res.status(404).json({ error: 'Branch not found' });
+
+    const companies = await Company.find({
+      assignedBranch: branch.name,
+      syncStatus: 'synced'
+    });
+    
+    res.json(companies);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch synced companies' });
+  }
+});
+
+router.post('/sync/inbound', async (req, res) => {
+  try {
+    const branches = await Branch.find();
+    const settings = await Settings.findOne();
+    if (!settings) return res.status(400).json({ error: 'Settings not configured' });
+
+    let totalUpdated = 0;
+    const conflicts: string[] = [];
+
+    // Helper to parse dates like 1/03/2026, 01/03/2026, 1-Mar-2026, March 1 2026
+    const parseNextCallDate = (dateStr: string): Date | null => {
+      if (!dateStr) return null;
+      
+      // Try to handle DD/MM/YYYY, DD/MM/YY, DD-MM-YYYY, DD-MM-YY
+      const parts = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2}|\d{4})$/);
+      if (parts) {
+        const day = parseInt(parts[1], 10);
+        const month = parseInt(parts[2], 10) - 1; // 0-indexed
+        let year = parseInt(parts[3], 10);
+        if (year < 100) year += 2000;
+        const parsed = new Date(year, month, day);
+        if (!isNaN(parsed.getTime())) return parsed;
+      }
+
+      const parsed = new Date(dateStr);
+      if (isNaN(parsed.getTime())) return null;
+      return parsed;
+    };
+
+    for (const branch of branches) {
+      const sheetTab = branch.sheet_tab_ref || branch.name;
+      const sheetIdsToPoll = [settings.currentAcademicYearSheetId, settings.pastAcademicYearSheetId].filter(id => id);
+
+      for (const spreadsheetId of sheetIdsToPoll) {
+        const rows = await googleSheetService.fetchInboundData(spreadsheetId, sheetTab);
+        if (rows.length === 0) continue;
+
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+          const companyName = row[0]?.trim();
+          const hrName = row[1]?.trim();
+          const hrPhone = row[2]?.trim();
+          const hrEmail = row[3]?.trim();
+          const statusText = row[4]?.trim();
+          const nextCallText = row[5]?.trim();
+          const description = row[6]?.trim();
+          const hiddenId = row[7]?.trim();
+
+          if (!companyName) continue;
+
+          let company;
+          if (hiddenId && mongoose.Types.ObjectId.isValid(hiddenId)) {
+            company = await Company.findById(hiddenId);
+          }
+          if (!company) {
+            company = await Company.findOne({ companyName });
+          }
+
+          if (!company) {
+            conflicts.push(`Row ${i + 1} in ${sheetTab} (Company: ${companyName}) not found in DB.`);
+            continue;
+          }
+
+          let updated = false;
+
+          // 1. HR Contacts
+          if (hrName || hrPhone || hrEmail) {
+            let hrContact = await HrContact.findOne({ company_id: company._id });
+            if (!hrContact) {
+              hrContact = new HrContact({ company_id: company._id });
+            }
+            if (hrName) hrContact.name = hrName;
+            if (hrPhone) hrContact.mobile = hrPhone;
+            if (hrEmail) hrContact.email = hrEmail;
+            await hrContact.save();
+          }
+
+          // 2. Status Mapping
+          let newContactStatus = 'not_contacted';
+          let newContactOutcome = null;
+          let newConfirmationStatus = company.confirmation_status;
+          
+          if (statusText) {
+            const statusUpper = statusText.toUpperCase();
+            if (statusUpper === 'REJECTED') {
+              newContactStatus = 'contacted';
+              newContactOutcome = 'rejected';
+            } else if (statusUpper === 'ACCEPTED' || statusUpper === 'CONFIRMED') {
+              newContactStatus = 'contacted';
+              newContactOutcome = 'accepted';
+              newConfirmationStatus = 'confirmed';
+            } else if (statusUpper === 'CALL AGAIN') {
+              newContactStatus = 'contacted';
+              newContactOutcome = 'call_again';
+            } else {
+              newContactStatus = 'contacted';
+              newContactOutcome = 'call_again'; // Default for non-empty
+            }
+          }
+
+          const trackChange = async (field: string, oldVal: any, newVal: any) => {
+            if (oldVal !== newVal) {
+              await CompanyStatusHistory.create({
+                company_id: company._id, field_changed: field,
+                old_value: String(oldVal || 'null'), new_value: String(newVal || 'null'), changed_by: 'Sheets Inbound Sync'
+              });
+              return true;
+            }
+            return false;
+          };
+
+          if (await trackChange('contact_status', company.contact_status, newContactStatus)) {
+            company.contact_status = newContactStatus as any;
+            updated = true;
+          }
+          if (await trackChange('contact_outcome', company.contact_outcome, newContactOutcome)) {
+            company.contact_outcome = newContactOutcome as any;
+            updated = true;
+          }
+          if (await trackChange('confirmation_status', company.confirmation_status, newConfirmationStatus)) {
+            company.confirmation_status = newConfirmationStatus as any;
+            updated = true;
+          }
+
+          // 3. Description & Next Call Date
+          if (newContactOutcome === 'call_again' || newContactOutcome === 'accepted') {
+            if (description) {
+              let contactLog = await ContactLog.findOne({ company_id: company._id, notes: description });
+              if (!contactLog) {
+                await ContactLog.create({
+                  company_id: company._id,
+                  notes: description,
+                  contact_date: new Date(),
+                  outcome: newContactOutcome,
+                  created_by: 'Sheets Sync'
+                });
+              }
+            }
+          }
+
+          if (newContactOutcome === 'call_again') {
+            const parsedDate = parseNextCallDate(nextCallText);
+            if (parsedDate) {
+              if (company.nextFollowupDate?.getTime() !== parsedDate.getTime()) {
+                company.nextFollowupDate = parsedDate;
+                updated = true;
+              }
+            } else if (company.nextFollowupDate) {
+              company.nextFollowupDate = undefined;
+              updated = true;
+            }
+          } else {
+             if (company.nextFollowupDate) {
+               company.nextFollowupDate = undefined;
+               updated = true;
+             }
+          }
+
+          if (updated) {
+            await company.save();
+            totalUpdated++;
+          }
+        }
+      }
+    }
+
+    res.json({ message: 'Inbound sync complete', totalUpdated, conflicts });
+  } catch (error) {
+    console.error('Inbound sync error:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to perform inbound sync' });
+  }
+});
+
+// --- BRANCH PORTAL & CONTACTS ---
+router.get('/branch/:branch_id/contact-today', async (req, res) => {
+  try {
+    const branchId = new mongoose.Types.ObjectId(req.params.branch_id);
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const branch = await Branch.findById(branchId);
+    if (!branch) return res.status(404).json({ error: 'Branch not found' });
+
+    const companies = await Company.find({
+      assignedBranch: branch.name,
+      confirmation_status: { $ne: 'confirmed' },
+      nextFollowupDate: { $lte: endOfToday }
+    }).lean();
+
+    const result = await Promise.all(companies.map(async (company) => {
+      const hrContacts = await HrContact.find({ company_id: company._id });
+      const contactLogs = await ContactLog.find({ company_id: company._id }).sort({ contact_date: -1 });
+      return {
+        ...company,
+        hr_contacts: hrContacts,
+        contact_logs: contactLogs
+      };
+    }));
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch contact-today list' });
+  }
+});
+
+router.post('/contact-logs', async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { company_id, branch_id, contact_date, channel, outcome, notes, created_by, next_contact_date } = req.body;
+
+    const newLog = await ContactLog.create([{
+      company_id,
+      branch_id,
+      contact_date: contact_date || new Date(),
+      channel,
+      outcome,
+      notes,
+      created_by
+    }], { session });
+
+    const company = await Company.findById(company_id).session(session);
+    if (company) {
+      company.contact_status = 'contacted';
+      if (outcome === 'call_again') {
+        company.contact_outcome = 'call_again';
+        if (next_contact_date) {
+          company.nextFollowupDate = new Date(next_contact_date);
+        }
+      } else if (outcome === 'rejected') {
+        company.contact_outcome = 'rejected';
+        company.status = CompanyStatus.REJECTED;
+      } else if (outcome === 'accepted') {
+        company.contact_outcome = 'accepted';
+        company.confirmation_status = 'confirmed';
+      }
+      await company.save({ session });
+
+      await CompanyStatusHistory.create([{
+        company_id: company._id,
+        field_changed: 'contact_status',
+        new_value: `Logged: ${outcome}`,
+        changed_by: created_by
+      }], { session });
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.json(newLog[0]);
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    res.status(500).json({ error: 'Failed to create contact log' });
+  }
+});
+
+router.get('/branch/:branch_id/confirmed', async (req, res) => {
+  try {
+    const branchId = new mongoose.Types.ObjectId(req.params.branch_id);
+    
+    const branch = await Branch.findById(branchId);
+    if (!branch) return res.status(404).json({ error: 'Branch not found' });
+
+    const companies = await Company.find({
+      assignedBranch: branch.name,
+      confirmation_status: 'confirmed'
+    }).lean();
+
+    res.json(companies);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch confirmed companies' });
+  }
+});
+
+router.patch('/companies/:id/confirmation', async (req, res) => {
+  try {
+    const companyId = req.params.id;
+    const { role, expected_month, expected_year, drive_type } = req.body;
+
+    const company = await Company.findById(companyId);
+    if (!company) {
+      return res.status(404).json({ error: 'Company not found' });
+    }
+
+    company.confirmation_status = 'confirmed';
+    if (role !== undefined) company.role = role;
+    if (expected_month !== undefined) company.expected_month = expected_month;
+    if (expected_year !== undefined) company.expected_year = expected_year;
+    if (drive_type !== undefined) company.drive_type = drive_type;
+
+    await company.save();
+
+    res.json(company);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update company confirmation status' });
+  }
+});
+
+router.get('/branch/:branch_id/not-confirmed', async (req, res) => {
+  try {
+    const branchId = new mongoose.Types.ObjectId(req.params.branch_id);
+    const branch = await Branch.findById(branchId);
+    if (!branch) return res.status(404).json({ error: 'Branch not found' });
+
+    const companies = await Company.find({
+      assignedBranch: branch.name,
+      confirmation_status: { $ne: 'confirmed' }
+    }).lean();
+
+    const result = await Promise.all(companies.map(async (company) => {
+      const hrContacts = await HrContact.find({ company_id: company._id });
+      const contactLogs = await ContactLog.find({ company_id: company._id }).sort({ contact_date: -1 });
+      return {
+        ...company,
+        hr_contacts: hrContacts,
+        contact_logs: contactLogs
+      };
+    }));
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch not confirmed companies' });
+  }
+});
+
+router.patch('/companies/:id/mark-delete', async (req, res) => {
+  try {
+    const company = await Company.findByIdAndUpdate(req.params.id, { pending_delete: true }, { new: true });
     if (!company) return res.status(404).json({ error: 'Company not found' });
     res.json(company);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to reject company' });
+    res.status(500).json({ error: 'Failed to mark company for deletion' });
+  }
+});
+
+router.post('/branch/:branch_id/sync-deletions', async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const branchId = new mongoose.Types.ObjectId(req.params.branch_id);
+    const branch = await Branch.findById(branchId).session(session);
+    if (!branch) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ error: 'Branch not found' });
+    }
+
+    const companiesToDelete = await Company.find({
+      assignedBranch: branch.name,
+      pending_delete: true
+    }).session(session);
+
+    if (companiesToDelete.length === 0) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ error: 'No marked companies to delete' });
+    }
+
+    const companyIdsToDelete = companiesToDelete.map(c => c._id.toString());
+
+    if (companiesToDelete.length > 0) {
+      const settings = await Settings.findOne();
+      if (!settings) throw new Error('Settings not found');
+
+      const sheetTab = branch.sheet_tab_ref || branch.name;
+
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      let currentAcademicYear = '';
+      if (now.getMonth() < 5) {
+        currentAcademicYear = `${currentYear - 1}-${currentYear}`;
+      } else {
+        currentAcademicYear = `${currentYear}-${currentYear + 1}`;
+      }
+
+      // No sheet_row_ref available anymore since we flattened and removed it
+      // So GoogleSheetProvider.deleteRows won't work by row ref from DB. 
+      // Need to just ignore sheet deletion or let user delete from sheet manually.
+      // (Simplified sync architecture means we skip deleting from sheets automatically for now).
+    }
+
+    const historyLogs = companyIdsToDelete.map(id => ({
+      company_id: id,
+      field_changed: 'status',
+      old_value: 'pending_delete',
+      new_value: 'deleted_from_branch',
+      changed_by: 'System Sync'
+    }));
+    await CompanyStatusHistory.insertMany(historyLogs, { session });
+
+    await HrContact.deleteMany({ company_id: { $in: companyIdsToDelete } }, { session });
+    await ContactLog.deleteMany({ company_id: { $in: companyIdsToDelete } }, { session });
+    await Company.deleteMany({ _id: { $in: companyIdsToDelete } }, { session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.json({ message: 'Sync successful', deletedCount: companyIdsToDelete.length });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    res.status(500).json({ error: 'Failed to sync deletions' });
+  }
+});
+// --- HISTORY API ---
+router.get('/history/assigned-by-branch', async (req, res) => {
+  try {
+    const results = await Company.aggregate([
+      { $match: { assignedBranch: { $exists: true, $ne: null } } },
+      {
+        $group: {
+          _id: '$assignedBranch',
+          branchName: { $first: '$assignedBranch' },
+          companies: {
+            $push: {
+              _id: '$_id',
+              companyName: '$companyName',
+              role: '$role',
+              drive_type: '$drive_type',
+              status: '$status',
+              confirmation_status: '$confirmation_status',
+              assigned_at: '$updatedAt'
+            }
+          }
+        }
+      },
+      { $sort: { branchName: 1 } }
+    ]);
+    res.json(results);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch branch assignments history' });
+  }
+});
+
+function getCurrentCycleStart(overrideDate?: string) {
+  if (overrideDate && process.env.NODE_ENV !== 'production') {
+    return new Date(overrideDate);
+  }
+  const now = new Date();
+  const month = now.getMonth(); // 0-indexed. June is 5.
+  const year = now.getFullYear();
+  if (month >= 5) { // June or after
+    return new Date(year, 5, 1);
+  } else {
+    return new Date(year - 1, 5, 1);
+  }
+}
+
+async function getScanStats(fromDate?: Date, toDate?: Date) {
+  const companyQuery: any = {};
+  if (fromDate || toDate) {
+    companyQuery.createdAt = {};
+    if (fromDate) companyQuery.createdAt.$gte = fromDate;
+    if (toDate) companyQuery.createdAt.$lte = toDate;
+  }
+
+  const totalScanned = await Company.countDocuments(companyQuery);
+  const scannedCompanies = await Company.find(companyQuery).lean();
+  
+  let internship = 0;
+  let fullTime = 0;
+  let startup = 0;
+
+  scannedCompanies.forEach(c => {
+    if (c.internshipAvailable) internship++;
+    if (c.fresherHiring) fullTime++;
+    if (['Seed', 'Series A', 'Series B'].includes(c.fundingStage || '')) startup++;
+  });
+
+  const historyQuery: any = { field_changed: 'review_status' };
+  if (fromDate || toDate) {
+    historyQuery.changed_at = {};
+    if (fromDate) historyQuery.changed_at.$gte = fromDate;
+    if (toDate) historyQuery.changed_at.$lte = toDate;
+  }
+
+  const statusChanges = await CompanyStatusHistory.find(historyQuery).lean();
+  let totalReviewed = 0;
+  let totalApproved = 0;
+
+  statusChanges.forEach(h => {
+    if (h.new_value === 'approved') {
+      totalReviewed++;
+      totalApproved++;
+    }
+  });
+
+  const rejectedHistoryQuery: any = { field_changed: 'status', new_value: 'REJECTED' };
+  if (fromDate || toDate) {
+    rejectedHistoryQuery.changed_at = {};
+    if (fromDate) rejectedHistoryQuery.changed_at.$gte = fromDate;
+    if (toDate) rejectedHistoryQuery.changed_at.$lte = toDate;
+  }
+  const rejectedChanges = await CompanyStatusHistory.find(rejectedHistoryQuery).lean();
+  totalReviewed += rejectedChanges.length;
+
+  return {
+    totalScanned,
+    totalReviewed,
+    totalApproved,
+    breakdown: { internship, fullTime, startup }
+  };
+}
+
+router.get('/history/scan-stats', async (req, res) => {
+  try {
+    const from = req.query.from ? new Date(req.query.from as string) : undefined;
+    const to = req.query.to ? new Date(req.query.to as string) : undefined;
+    const stats = await getScanStats(from, to);
+    res.json(stats);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch scan stats' });
+  }
+});
+
+router.get('/history/current-scan-stats', async (req, res) => {
+  try {
+    const fromDate = getCurrentCycleStart(req.query.override_cycle_start as string);
+    const stats = await getScanStats(fromDate);
+    res.json({ current_cycle_start: fromDate, ...stats });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch current scan stats' });
   }
 });
 
@@ -211,7 +1123,97 @@ router.delete('/sources/:id', async (req, res) => {
   }
 });
 
-// --- SETTINGS ---
+// Helper for dynamic academic year calculation
+function getAcademicYears(overrideYear?: string) {
+  let current: string;
+  if (overrideYear && process.env.NODE_ENV !== 'production') {
+    current = overrideYear;
+  } else {
+    const now = new Date();
+    const year = now.getFullYear();
+    if (now.getMonth() < 6) { // Jan - June
+      current = `${year - 1}-${year}`;
+    } else { // July - Dec
+      current = `${year}-${year + 1}`;
+    }
+  }
+  const [start, end] = current.split('-');
+  const last = `${parseInt(start) - 1}-${parseInt(end) - 1}`;
+  return { current, last };
+}
+
+function aggregateCompanyGroups(companies: any[]) {
+  const total = companies.length;
+  const drive_types: Record<string, number> = {};
+  const roles: Record<string, number> = {};
+
+  companies.forEach(c => {
+    // Standardize empty/null cases
+    let dt = (c.drive_type || 'Unknown').trim();
+    if (dt.toLowerCase() === 'pool') dt = 'Pool';
+    if (dt.toLowerCase() === 'in-campus' || dt.toLowerCase() === 'incampus') dt = 'In-Campus';
+    
+    drive_types[dt] = (drive_types[dt] || 0) + 1;
+
+    let r = (c.role || 'General Application').trim();
+    roles[r] = (roles[r] || 0) + 1;
+  });
+
+  return { total, drive_types, roles, companies };
+}
+
+router.post('/target-companies/import', async (req, res) => {
+  try {
+    const companies = req.body;
+    if (!Array.isArray(companies)) {
+      return res.status(400).json({ error: 'Payload must be an array' });
+    }
+    
+    // Clear out target companies matching the academic years provided in the payload
+    const years = new Set(companies.map(c => c.academic_year).filter(Boolean));
+    for (const year of years) {
+      await TargetCompany.deleteMany({ academic_year: year });
+    }
+
+    await TargetCompany.insertMany(companies);
+    res.json({ message: 'Target companies imported successfully', count: companies.length });
+  } catch (error) {
+    console.error('Import target companies error:', error);
+    res.status(500).json({ error: 'Failed to import target companies' });
+  }
+});
+
+router.get('/dashboard/target-companies', async (req, res) => {
+  try {
+    const { current } = getAcademicYears(req.query.override_year as string);
+    const companies = await TargetCompany.find({ academic_year: current }).lean();
+    
+    // Normalize data shape to match company response
+    const normalizedCompanies = companies.map(c => ({
+      ...c,
+      companyName: c.company_name
+    }));
+
+    res.json({ academic_year: current, ...aggregateCompanyGroups(normalizedCompanies) });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch target companies' });
+  }
+});
+
+router.get('/dashboard/confirmed-last-year', async (req, res) => {
+  try {
+    const { last } = getAcademicYears(req.query.override_year as string);
+    const companies = await Company.find({ 
+      confirmation_status: 'confirmed',
+      academic_year: last 
+    }).lean();
+    res.json({ academic_year: last, ...aggregateCompanyGroups(companies) });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch confirmed companies for last year' });
+  }
+});
+
+// --- COMPANIES ---
 router.get('/settings', async (req, res) => {
   try {
     let settings = await Settings.findOne();
@@ -233,9 +1235,8 @@ router.put('/settings', async (req, res) => {
     if (!settings) {
       settings = new Settings(req.body);
     } else {
-      settings.googleSheetId = req.body.googleSheetId;
-      settings.googleSheetName = req.body.googleSheetName;
-      settings.targetWorksheet = req.body.targetWorksheet;
+      settings.currentAcademicYearSheetId = req.body.currentAcademicYearSheetId;
+      settings.pastAcademicYearSheetId = req.body.pastAcademicYearSheetId;
     }
     await settings.save();
     res.json(settings);
@@ -249,42 +1250,17 @@ router.get('/settings/google-sheet/service-account', (req, res) => {
 });
 
 router.post('/settings/google-sheet/test', async (req, res) => {
-  const { sheetId, worksheetName } = req.body;
-  if (!sheetId || !worksheetName) {
-    return res.status(400).json({ error: 'sheetId and worksheetName are required' });
+  const { sheetId } = req.body;
+  if (!sheetId) {
+    return res.status(400).json({ error: 'sheetId is required' });
   }
 
-  const result = await googleSheetService.testConnection(sheetId, worksheetName);
+  const result = await googleSheetService.testConnection(sheetId);
   if (!result.success) {
     return res.status(400).json({ error: result.error });
   }
   
   res.json({ success: true, message: 'Connection successful' });
-});
-
-router.post('/companies/sync-sheet', async (req, res) => {
-  try {
-    const companies = await Company.find({ status: CompanyStatus.APPROVED });
-    if (companies.length === 0) {
-      return res.status(400).json({ error: 'No approved companies to sync' });
-    }
-
-    // Convert new company models to match old structure expected by GoogleSheetProvider
-    // Or we should update GoogleSheetProvider as well. 
-    // Let's assume we will update GoogleSheetProvider next.
-    const syncedCount = await googleSheetService.syncAllCompanies(companies);
-    
-    let settings = await Settings.findOne();
-    if (settings) {
-      settings.lastSyncDate = new Date();
-      settings.totalSynced = syncedCount;
-      await settings.save();
-    }
-
-    res.json({ success: true, syncedCount });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message || 'Failed to sync companies' });
-  }
 });
 
 // --- SCAN HISTORY ---

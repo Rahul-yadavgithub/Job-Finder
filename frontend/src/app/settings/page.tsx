@@ -8,9 +8,8 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 interface Settings {
-  googleSheetId: string;
-  googleSheetName: string;
-  targetWorksheet: string;
+  currentAcademicYearSheetId: string;
+  pastAcademicYearSheetId: string;
   lastSyncDate?: string;
   totalSynced?: number;
 }
@@ -18,9 +17,8 @@ interface Settings {
 export default function SettingsPage() {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
-    googleSheetId: '',
-    googleSheetName: '',
-    targetWorksheet: 'Sheet1',
+    currentAcademicYearSheetId: '',
+    pastAcademicYearSheetId: '',
   });
   
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
@@ -46,12 +44,11 @@ export default function SettingsPage() {
   useEffect(() => {
     if (settings) {
       setFormData({
-        googleSheetId: settings.googleSheetId || '',
-        googleSheetName: settings.googleSheetName || '',
-        targetWorksheet: settings.targetWorksheet || 'Sheet1',
+        currentAcademicYearSheetId: settings.currentAcademicYearSheetId || '',
+        pastAcademicYearSheetId: settings.pastAcademicYearSheetId || '',
       });
-      // If we already have a saved ID, we can assume it's previously tested
-      if (settings.googleSheetId) {
+      // If we have at least one ID saved, we mark as saved
+      if (settings.currentAcademicYearSheetId || settings.pastAcademicYearSheetId) {
         setIsSaved(true);
       }
     }
@@ -59,15 +56,15 @@ export default function SettingsPage() {
 
   const testConnection = useMutation({
     mutationFn: async () => {
-      if (!formData.googleSheetId) throw new Error('Google Sheet ID is required');
-      if (!formData.targetWorksheet) throw new Error('Target Worksheet is required');
+      const idToTest = formData.currentAcademicYearSheetId || formData.pastAcademicYearSheetId;
+      if (!idToTest) throw new Error('At least one Sheet ID is required to test');
       
       setTestStatus('testing');
       setTestError('');
       
       const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/settings/google-sheet/test`, {
-        sheetId: formData.googleSheetId,
-        worksheetName: formData.targetWorksheet
+        sheetId: idToTest,
+        worksheetName: 'Sheet1'
       });
       return res.data;
     },
@@ -134,17 +131,6 @@ export default function SettingsPage() {
               Automatically sync extracted companies to a Google Sheet.
             </p>
           </div>
-          {isSaved && formData.googleSheetId && (
-            <a 
-              href={`https://docs.google.com/spreadsheets/d/${formData.googleSheetId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
-            >
-              <ExternalLink className="w-4 h-4" />
-              Open Sheet
-            </a>
-          )}
         </div>
 
         <div className="p-6">
@@ -176,51 +162,79 @@ export default function SettingsPage() {
             }}
             className="space-y-6"
           >
-            <div>
-              <label className="block text-sm font-medium mb-2">Google Sheet ID</label>
-              <input 
-                type="text" 
-                className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm text-slate-900 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                placeholder="e.g. 1BxiMVs0XRYFgwnAKBTO21wMDw2N8491x7"
-                value={formData.googleSheetId}
-                onChange={(e) => {
-                  setFormData({...formData, googleSheetId: e.target.value});
-                  setTestStatus('idle');
-                  setIsSaved(false);
-                }}
-                required
-              />
-              <p className="text-xs text-slate-500 mt-1">The long string of characters in your Google Sheet URL.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between bg-slate-50 p-2 rounded border border-slate-200">
+                  <h3 className="font-semibold text-sm text-slate-700">Current Academic Year</h3>
+                  {formData.currentAcademicYearSheetId ? (
+                    <a 
+                      href={`https://docs.google.com/spreadsheets/d/${formData.currentAcademicYearSheetId}/edit`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 font-medium bg-blue-50 px-2 py-1 rounded transition-colors"
+                    >
+                      <ExternalLink className="w-3 h-3" /> Open Sheet
+                    </a>
+                  ) : (
+                    <span className="text-xs text-slate-400 flex items-center gap-1 font-medium bg-slate-100 px-2 py-1 rounded cursor-not-allowed">
+                      <ExternalLink className="w-3 h-3" /> Open Sheet
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1">Master Database Sheet ID</label>
+                  <input 
+                    type="text" 
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm text-slate-900 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                    placeholder="e.g. 1BxiMVs..."
+                    value={formData.currentAcademicYearSheetId || ''}
+                    onChange={(e) => {
+                      setFormData({...formData, currentAcademicYearSheetId: e.target.value});
+                      setTestStatus('idle');
+                      setIsSaved(false);
+                    }}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between bg-slate-50 p-2 rounded border border-slate-200">
+                  <h3 className="font-semibold text-sm text-slate-700">Past Academic Year</h3>
+                  {formData.pastAcademicYearSheetId ? (
+                    <a 
+                      href={`https://docs.google.com/spreadsheets/d/${formData.pastAcademicYearSheetId}/edit`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 font-medium bg-blue-50 px-2 py-1 rounded transition-colors"
+                    >
+                      <ExternalLink className="w-3 h-3" /> Open Sheet
+                    </a>
+                  ) : (
+                    <span className="text-xs text-slate-400 flex items-center gap-1 font-medium bg-slate-100 px-2 py-1 rounded cursor-not-allowed">
+                      <ExternalLink className="w-3 h-3" /> Open Sheet
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1">Master Database Sheet ID</label>
+                  <input 
+                    type="text" 
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm text-slate-900 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                    placeholder="e.g. 1BxiMVs..."
+                    value={formData.pastAcademicYearSheetId || ''}
+                    onChange={(e) => {
+                      setFormData({...formData, pastAcademicYearSheetId: e.target.value});
+                      setTestStatus('idle');
+                      setIsSaved(false);
+                    }}
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">Sheet Name (Display Only)</label>
-                <input 
-                  type="text" 
-                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm text-slate-900 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                  placeholder="e.g. My Startup DB"
-                  value={formData.googleSheetName}
-                  onChange={(e) => setFormData({...formData, googleSheetName: e.target.value})}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Target Worksheet</label>
-                <input 
-                  type="text" 
-                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm text-slate-900 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                  placeholder="e.g. Sheet1"
-                  value={formData.targetWorksheet}
-                  onChange={(e) => {
-                    setFormData({...formData, targetWorksheet: e.target.value});
-                    setTestStatus('idle');
-                    setIsSaved(false);
-                  }}
-                  required
-                />
-                <p className="text-xs text-slate-500 mt-1">The name of the specific tab at the bottom of the sheet.</p>
-              </div>
-            </div>
+
 
             {/* Test Connection Results */}
             {testStatus === 'success' && (
@@ -253,7 +267,7 @@ export default function SettingsPage() {
                 <button 
                   type="button"
                   onClick={() => testConnection.mutate()}
-                  disabled={testConnection.isPending || !formData.googleSheetId || !formData.targetWorksheet}
+                  disabled={testConnection.isPending || (!formData.currentAcademicYearSheetId && !formData.pastAcademicYearSheetId)}
                   className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2.5 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors disabled:opacity-50"
                 >
                   {testConnection.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}

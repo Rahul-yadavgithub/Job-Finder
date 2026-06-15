@@ -33,17 +33,9 @@ export class GoogleSheetProvider {
     }
   }
 
-  public async appendCompany(company: ICompany): Promise<boolean> {
-    try {
-      await this.syncAllCompanies([company]);
-      return true;
-    } catch (error) {
-      console.error('Error appending company to Google Sheet:', error);
-      return false;
-    }
-  }
 
-  public async testConnection(sheetId: string, worksheetName: string): Promise<{ success: boolean; error?: string }> {
+
+  public async testConnection(sheetId: string): Promise<{ success: boolean; error?: string }> {
     await this.initialize();
     if (!this.sheets) {
       return { success: false, error: 'Google Sheets Auth is not configured properly in .env' };
@@ -52,15 +44,15 @@ export class GoogleSheetProvider {
     try {
       const spreadsheet = await this.sheets.spreadsheets.get({ spreadsheetId: sheetId });
       const sheets = spreadsheet.data.sheets || [];
-      const sheetExists = sheets.some(s => s.properties?.title === worksheetName);
-      
-      if (!sheetExists) {
-        return { success: false, error: `Worksheet "${worksheetName}" not found` };
+      if (sheets.length === 0 || !sheets[0].properties?.title) {
+        return { success: false, error: 'No worksheets found in the spreadsheet' };
       }
+      
+      const firstSheetName = sheets[0].properties.title;
 
       const appendRes = await this.sheets.spreadsheets.values.append({
         spreadsheetId: sheetId,
-        range: `${worksheetName}!A:A`,
+        range: `${firstSheetName}!A:A`,
         valueInputOption: 'USER_ENTERED',
         requestBody: { values: [['__jobfinder_test_row__']] },
       });
@@ -82,81 +74,133 @@ export class GoogleSheetProvider {
     }
   }
 
-  public async syncAllCompanies(companies: ICompany[]): Promise<number> {
+
+
+  public async appendCompaniesToSheet(
+    companies: ICompany[],
+    branchName: string
+  ): Promise<{ success: boolean }> {
     await this.initialize();
     if (!this.sheets) throw new Error('Google Sheets Auth not configured');
 
     const settings = await Settings.findOne();
-    if (!settings || !settings.googleSheetId) {
-      throw new Error('Google Sheets not configured in Settings DB');
+    if (!settings) throw new Error('Settings not configured in DB');
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    let currentAcademicYear = '';
+    if (now.getMonth() < 5) { // Jan-May
+      currentAcademicYear = `${currentYear - 1}-${currentYear}`;
+    } else { // Jun-Dec
+      currentAcademicYear = `${currentYear}-${currentYear + 1}`;
     }
 
-    const sheetData = await this.sheets.spreadsheets.values.get({
-      spreadsheetId: settings.googleSheetId,
-      range: `${settings.targetWorksheet || 'Sheet1'}!A:Z`,
-    });
-
-    const rows = sheetData.data.values || [];
-    if (rows.length === 0) {
-      throw new Error('Google Sheet is empty or headers not found');
-    }
-
-    const headers = rows[0];
-    const companyNameIdx = headers.findIndex((h: string) => h.trim() === 'Company Name');
-    const roleIdx = headers.findIndex((h: string) => h.trim() === 'Role');
-
-    if (companyNameIdx === -1 || roleIdx === -1) {
-      throw new Error('Required headers "Company Name" and "Role" not found in the first row of the sheet');
-    }
-
-    const existingSet = new Set<string>();
-    for (let i = 1; i < rows.length; i++) {
-      const row = rows[i];
-      const compName = row[companyNameIdx]?.trim() || '';
-      const role = row[roleIdx]?.trim() || '';
-      if (compName && role) {
-        existingSet.add(`${compName.toLowerCase()}:${role.toLowerCase()}`);
-      }
-    }
-
-    const valuesToAppend: string[][] = [];
-    const maxIdx = Math.max(companyNameIdx, roleIdx);
-    let appendedCount = 0;
+    const currentCompanies: ICompany[] = [];
+    const pastCompanies: ICompany[] = [];
 
     for (const company of companies) {
-      const companyName = company.companyName.trim();
-      let rawRoles = company.hiringType || 'General Application';
-      
-      const roles = rawRoles.split(/[,;\n]+/).map(r => r.trim()).filter(r => r);
-      if (roles.length === 0) roles.push('General Application');
-
-      for (const role of roles) {
-        const key = `${companyName.toLowerCase()}:${role.toLowerCase()}`;
-        if (!existingSet.has(key)) {
-          const newRow = new Array(maxIdx + 1).fill('');
-          newRow[companyNameIdx] = companyName;
-          newRow[roleIdx] = role;
-          valuesToAppend.push(newRow);
-          existingSet.add(key); 
-          appendedCount++;
-        }
+      if (!company.academic_year || company.academic_year === currentAcademicYear) {
+        currentCompanies.push(company);
+      } else {
+        pastCompanies.push(company);
       }
     }
 
-    if (valuesToAppend.length > 0) {
-      const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      const lastColLetter = alphabet[maxIdx] || 'Z';
-      const range = `${settings.targetWorksheet || 'Sheet1'}!A:${lastColLetter}`;
+    const syncBatch = async (batch: ICompany[], sheetId: string) => {
+      if (batch.length === 0) return;
+      if (!sheetId) throw new Error(`Target Google Sheet ID is missing.`);
 
-      await this.sheets.spreadsheets.values.append({
-        spreadsheetId: settings.googleSheetId,
-        range,
+      const valuesToAppend: string[][] = [];
+      for (const company of batch) {
+        const expectedDate = `${company.expected_month || ''} ${company.expected_year || ''}`.trim();
+        valuesToAppend.push([
+          company.companyName,
+          company.role || '',
+          company.drive_type || '',
+          expectedDate,
+          company.confirmation_status || 'not_confirmed',
+          company.contact_status || 'not_contacted',
+          company.contact_outcome || '',
+          company._id.toString()
+        ]);
+      }
+
+      if (valuesToAppend.length === 0) return;
+
+      await this.sheets!.spreadsheets.values.append({
+        spreadsheetId: sheetId,
+        range: `${branchName}!A:H`,
         valueInputOption: 'USER_ENTERED',
         requestBody: { values: valuesToAppend },
       });
-    }
+    };
 
-    return appendedCount;
+    try {
+      await syncBatch(currentCompanies, settings.currentAcademicYearSheetId);
+      await syncBatch(pastCompanies, settings.pastAcademicYearSheetId);
+
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to append companies to sheet:', error);
+      throw error;
+    }
+  }
+
+  public async fetchInboundData(spreadsheetId: string, sheetTab: string): Promise<string[][]> {
+    await this.initialize();
+    if (!this.sheets) throw new Error('Google Sheets Auth not configured');
+    if (!spreadsheetId) throw new Error('Spreadsheet ID is required');
+
+    try {
+      const res = await this.sheets.spreadsheets.values.get({
+        spreadsheetId: spreadsheetId,
+        range: `${sheetTab}!A:H`,
+      });
+      return res.data.values || [];
+    } catch (error) {
+      console.error(`Failed to fetch inbound data for tab ${sheetTab}:`, error);
+      return [];
+    }
+  }
+
+  public async deleteRows(spreadsheetId: string, sheetTab: string, rowRefs: string[]): Promise<boolean> {
+    await this.initialize();
+    if (!this.sheets) throw new Error('Google Sheets Auth not configured');
+
+    try {
+      const spreadsheet = await this.sheets.spreadsheets.get({ spreadsheetId });
+      const sheet = spreadsheet.data.sheets?.find(s => s.properties?.title === sheetTab);
+      
+      if (!sheet || sheet.properties?.sheetId === undefined) {
+        throw new Error(`Sheet tab ${sheetTab} not found`);
+      }
+
+      const sheetId = sheet.properties.sheetId;
+
+      const sortedRows = rowRefs.map(r => parseInt(r, 10)).filter(r => !isNaN(r)).sort((a, b) => b - a);
+      if (sortedRows.length === 0) return true;
+
+      const requests: sheets_v4.Schema$Request[] = sortedRows.map(rowIdx => ({
+        deleteDimension: {
+          range: {
+            sheetId,
+            dimension: 'ROWS',
+            startIndex: rowIdx - 1, // 0-indexed in API
+            endIndex: rowIdx
+          }
+        }
+      }));
+
+      await this.sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: { requests }
+      });
+
+      return true;
+    } catch (error) {
+      console.error(`Failed to delete rows in tab ${sheetTab}:`, error);
+      throw error;
+    }
   }
 }
 

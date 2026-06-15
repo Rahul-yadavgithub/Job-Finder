@@ -114,9 +114,10 @@ export class AgentPipeline {
     // 2. Duplicate Check
     await updatePhase('Checking Duplicates...');
     const normalizedName = DuplicateDetectionAgent.normalizeName(validationResult.companyName);
+    const companyHash = DuplicateDetectionAgent.generateHash(normalizedName);
     
     // Check our database directly
-    const existingDb = await Company.findOne({ normalizedName });
+    const existingDb = await Company.findOne({ companyHash });
     if (existingDb) {
       console.log(`Duplicate found in DB: ${normalizedName}. Merging history...`);
       existingDb.discoveryHistory.push({
@@ -162,6 +163,7 @@ export class AgentPipeline {
       await Company.create({
         companyName: validationResult.companyName,
         normalizedName,
+        companyHash,
         website: validationResult.website,
         description: enrichmentResult.summary || validationResult.description,
         category: enrichmentResult.category,

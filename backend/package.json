@@ -7,7 +7,8 @@
     "dev": "ts-node-dev -r tsconfig-paths/register --respawn src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "seed:branches": "ts-node -r tsconfig-paths/register scripts/seed-branches.ts"
   },
   "keywords": [],
   "author": "",
