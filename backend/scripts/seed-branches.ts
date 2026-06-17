@@ -7,14 +7,15 @@ import Branch from '../src/models/Branch';
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const branches = [
-  { name: 'CSE' },
-  { name: 'ECE' },
-  { name: 'EE' },
-  { name: 'ME' },
-  { name: 'CE' },
-  { name: 'MNC' },
-  { name: 'MSE'},
-  { name: 'EP'}
+  { name: 'CSE', category: 'Circuital' },
+  { name: 'ECE', category: 'Circuital' },
+  { name: 'EE', category: 'Circuital' },
+  { name: 'MNC', category: 'Circuital' },
+  { name: 'ME', category: 'Core' },
+  { name: 'CE', category: 'Core' },
+  { name: 'MSE', category: 'Core'},
+  { name: 'EP', category: 'Core'},
+  { name: 'CH', category: 'Core'}
 ];
 
 async function seedBranches() {

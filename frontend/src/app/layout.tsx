@@ -8,8 +8,12 @@ import { Toaster } from 'sonner';
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "JobFinder Dashboard",
+  title: "NITH TPR Dashboard",
   description: "Automated Job Discovery and Company Tracking",
+  icons: {
+    icon: "https://res.cloudinary.com/dzbliymin/image/upload/v1781725894/logonith_gb3opv.webp",
+    apple: "https://res.cloudinary.com/dzbliymin/image/upload/v1781725894/logonith_gb3opv.webp",
+  }
 };
 
 export default function RootLayout({

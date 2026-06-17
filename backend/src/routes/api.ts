@@ -13,6 +13,9 @@ import ContactLog from '../models/ContactLog';
 import TargetCompany from '../models/TargetCompany';
 import { googleSheetService } from '../services/google/GoogleSheetProvider';
 
+import { apiKeyController } from '../controllers/apiKeyController';
+import { hrValidationController } from '../controllers/hrValidationController';
+
 const router = Router();
 
 // --- DASHBOARD STATS ---
@@ -144,6 +147,44 @@ router.get('/companies', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch companies' });
+  }
+});
+
+// GET /api/companies/check-name?name=...
+router.get('/companies/check-name', async (req, res) => {
+  try {
+    const { name } = req.query;
+    if (!name || typeof name !== 'string') {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
+    const normalizedName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const company = await Company.findOne({ normalizedName });
+
+    if (!company) {
+      return res.json({ exists: false });
+    }
+
+    const hrContact = await HrContact.findOne({ company_id: company._id });
+
+    return res.json({
+      exists: true,
+      company: {
+        _id: company._id,
+        companyName: company.companyName,
+        assignedBranch: company.assignedBranch,
+        linkedinCompanyUrl: company.linkedinCompanyUrl,
+        linkedinRecruiterUrl: company.linkedinRecruiterUrl
+      },
+      hrContact: hrContact ? {
+        name: hrContact.name,
+        mobile: hrContact.mobile,
+        email: hrContact.email
+      } : null
+    });
+  } catch (error) {
+    console.error('Check name error:', error);
+    res.status(500).json({ error: 'Failed to check company name' });
   }
 });
 
@@ -474,12 +515,20 @@ router.post('/sync/bulk-sync', async (req, res) => {
   }
 });
 
-router.post('/sync/branch/:branch_id', async (req, res) => {
+router.post('/sync/branch/:branch_identifier', async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const branchId = new mongoose.Types.ObjectId(req.params.branch_id);
-    const branch = await Branch.findById(branchId).session(session);
+    const param = req.params.branch_identifier;
+    let branch;
+    
+    if (mongoose.Types.ObjectId.isValid(param)) {
+      branch = await Branch.findById(param).session(session);
+    }
+    if (!branch) {
+      branch = await Branch.findOne({ name: param }).session(session);
+    }
+    
     if (!branch) {
       await session.abortTransaction();
       session.endSession();
@@ -508,21 +557,34 @@ router.post('/sync/branch/:branch_id', async (req, res) => {
     const now = new Date();
 
     for (const company of pendingCompanies) {
-      await Company.updateOne(
-        { _id: company._id },
-        { $set: { syncStatus: 'synced', lastSynced: now } },
-        { session }
-      );
+      if (company.contact_outcome === 'rejected') {
+        // The user explicitly requested to permanently delete rejected companies
+        await Company.deleteOne({ _id: company._id }, { session });
+        await HrContact.deleteMany({ company_id: company._id }, { session });
+        await ContactLog.deleteMany({ company_id: company._id }, { session });
+        await CompanyStatusHistory.deleteMany({ company_id: company._id }, { session });
+      } else {
+        await Company.updateOne(
+          { _id: company._id },
+          { $set: { syncStatus: 'synced', lastSynced: now } },
+          { session }
+        );
+      }
     }
 
-    const historyLogs = pendingCompanies.map(company => ({
-      company_id: company._id,
-      field_changed: 'sync_status',
-      old_value: 'pending',
-      new_value: 'synced',
-      changed_by: 'System'
-    }));
-    await CompanyStatusHistory.insertMany(historyLogs, { session });
+    const historyLogs = pendingCompanies
+      .filter(company => company.contact_outcome !== 'rejected')
+      .map(company => ({
+        company_id: company._id,
+        field_changed: 'sync_status',
+        old_value: 'pending',
+        new_value: 'synced',
+        changed_by: 'System'
+      }));
+      
+    if (historyLogs.length > 0) {
+      await CompanyStatusHistory.insertMany(historyLogs, { session });
+    }
 
     await session.commitTransaction();
     session.endSession();
@@ -554,7 +616,19 @@ router.get('/sync/history/:branch_id/companies', async (req, res) => {
 
 router.post('/sync/inbound', async (req, res) => {
   try {
-    const branches = await Branch.find();
+    const { branch_id } = req.body;
+    let branches = [];
+    if (branch_id) {
+      const b = await Branch.findById(branch_id);
+      if (!b) return res.status(404).json({ error: 'Branch not found' });
+      branches = [b];
+    } else {
+      branches = await Branch.find();
+    }
+    
+    const allBranches = await Branch.find();
+    const branchCategoryMap = new Map(allBranches.map(b => [b.name, b.category]));
+
     const settings = await Settings.findOne();
     if (!settings) return res.status(400).json({ error: 'Settings not configured' });
 
@@ -592,6 +666,11 @@ router.post('/sync/inbound', async (req, res) => {
         for (let i = 0; i < rows.length; i++) {
           const row = rows[i];
           const companyName = row[0]?.trim();
+
+          if (i === 0 && companyName?.toLowerCase().includes('company')) {
+            continue;
+          }
+
           const hrName = row[1]?.trim();
           const hrPhone = row[2]?.trim();
           const hrEmail = row[3]?.trim();
@@ -606,13 +685,42 @@ router.post('/sync/inbound', async (req, res) => {
           if (hiddenId && mongoose.Types.ObjectId.isValid(hiddenId)) {
             company = await Company.findById(hiddenId);
           }
+          
           if (!company) {
-            company = await Company.findOne({ companyName });
+            const normalized = companyName.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const possibleCompanies = await Company.find({
+              $or: [{ companyName }, { normalizedName: normalized }]
+            });
+            
+            // Deduplicate only within the SAME category (Circuital vs Core)
+            company = possibleCompanies.find(c => {
+              const cCat = branchCategoryMap.get(c.assignedBranch || '');
+              return cCat === branch.category || !cCat; // if no assigned branch, assume it's a match
+            });
           }
 
           if (!company) {
-            conflicts.push(`Row ${i + 1} in ${sheetTab} (Company: ${companyName}) not found in DB.`);
-            continue;
+             if (statusText?.toUpperCase() === 'REJECTED') {
+                 // The user requested that REJECTED ghost companies in the sheet should NOT be imported.
+                 continue;
+             }
+             
+            // Create the missing company from sheet data
+            company = new Company({
+              companyName,
+              normalizedName: companyName.toLowerCase().replace(/[^a-z0-9]/g, ''),
+              status: CompanyStatus.PENDING_REVIEW,
+              data_source: 'excel_import',
+              assignedBranch: branch.name,
+              source: {
+                platform: 'Google Sheets Import',
+                sourceUrl: 'N/A',
+                discoveryMethod: 'DIRECT',
+                discoveredAt: new Date()
+              }
+            });
+            await company.save();
+            conflicts.push(`Imported new company from ${sheetTab}: ${companyName}`);
           }
 
           let updated = false;
@@ -629,7 +737,8 @@ router.post('/sync/inbound', async (req, res) => {
             await hrContact.save();
           }
 
-          // 2. Status Mapping
+          // 2. Parse Date and Status Mapping
+          const parsedDate = parseNextCallDate(nextCallText);
           let newContactStatus = 'not_contacted';
           let newContactOutcome = null;
           let newConfirmationStatus = company.confirmation_status;
@@ -650,6 +759,10 @@ router.post('/sync/inbound', async (req, res) => {
               newContactStatus = 'contacted';
               newContactOutcome = 'call_again'; // Default for non-empty
             }
+          } else if (parsedDate) {
+            // Auto-detect 'CALL AGAIN' if they just typed a date but left status blank
+            newContactStatus = 'contacted';
+            newContactOutcome = 'call_again';
           }
 
           const trackChange = async (field: string, oldVal: any, newVal: any) => {
@@ -692,18 +805,12 @@ router.post('/sync/inbound', async (req, res) => {
             }
           }
 
-          if (newContactOutcome === 'call_again') {
-            const parsedDate = parseNextCallDate(nextCallText);
-            if (parsedDate) {
-              if (company.nextFollowupDate?.getTime() !== parsedDate.getTime()) {
-                company.nextFollowupDate = parsedDate;
-                updated = true;
-              }
-            } else if (company.nextFollowupDate) {
-              company.nextFollowupDate = undefined;
+          if (parsedDate) {
+            if (company.nextFollowupDate?.getTime() !== parsedDate.getTime()) {
+              company.nextFollowupDate = parsedDate;
               updated = true;
             }
-          } else {
+          } else if (nextCallText === '') {
              if (company.nextFollowupDate) {
                company.nextFollowupDate = undefined;
                updated = true;
@@ -789,6 +896,8 @@ router.post('/contact-logs', async (req, res) => {
         company.contact_outcome = 'accepted';
         company.confirmation_status = 'confirmed';
       }
+      
+      company.syncStatus = 'pending';
       await company.save({ session });
 
       await CompanyStatusHistory.create([{
@@ -876,6 +985,96 @@ router.get('/branch/:branch_id/not-confirmed', async (req, res) => {
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch not confirmed companies' });
+  }
+});
+
+// POST /api/branch/:branch_id/manual-company
+router.post('/branch/:branch_id/manual-company', async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const branchIdParam = req.params.branch_id;
+    let branch;
+    
+    if (mongoose.Types.ObjectId.isValid(branchIdParam)) {
+      branch = await Branch.findById(branchIdParam).session(session);
+    }
+    if (!branch) {
+      branch = await Branch.findOne({ name: branchIdParam }).session(session);
+    }
+    
+    if (!branch) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ error: 'Branch not found' });
+    }
+
+    const { companyName, hrName, hrPhone, hrEmail, linkedinProfile } = req.body;
+    if (!companyName) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ error: 'Company Name is required' });
+    }
+
+    const normalizedName = companyName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    let company = await Company.findOne({ normalizedName }).session(session);
+
+    if (company) {
+      // Update existing company
+      company.syncStatus = 'pending'; // Queue for sheet sync
+      await company.save({ session });
+    } else {
+      // Create new company
+      company = new Company({
+        companyName,
+        normalizedName,
+        assignedBranch: branch.name,
+        syncStatus: 'pending',
+        status: CompanyStatus.DISCOVERED,
+        placementScore: 0,
+        confidenceScore: 0,
+        aiConfidence: 0,
+        source: {
+          platform: 'MANUAL',
+          sourceUrl: 'MANUAL',
+          discoveredAt: new Date()
+        },
+        discoveryHistory: [],
+        startupSignals: [],
+        confirmation_status: 'not_confirmed',
+        contact_status: 'not_contacted'
+      });
+      await company.save({ session });
+    }
+
+    // Upsert HrContact
+    let hrContact = await HrContact.findOne({ company_id: company._id }).session(session);
+    if (hrContact) {
+      if (hrName) hrContact.name = hrName;
+      if (hrPhone) hrContact.mobile = hrPhone;
+      if (hrEmail) hrContact.email = hrEmail;
+      if (linkedinProfile) hrContact.linkedin_url = linkedinProfile;
+      await hrContact.save({ session });
+    } else if (hrName || hrPhone || hrEmail || linkedinProfile) {
+      await HrContact.create([{
+        company_id: company._id,
+        name: hrName,
+        mobile: hrPhone,
+        email: hrEmail,
+        linkedin_url: linkedinProfile
+      }], { session });
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.json({ success: true, company });
+  } catch (error) {
+    console.error('Manual company add error:', error);
+    await session.abortTransaction();
+    session.endSession();
+    res.status(500).json({ error: 'Failed to add or update company' });
   }
 });
 
@@ -1292,5 +1491,20 @@ router.delete('/history/:id', async (req, res) => {
     res.status(500).json({ error: 'Failed to delete history record' });
   }
 });
+
+// --- API KEY MANAGEMENT ROUTES ---
+router.get('/branches/:branch_id/api-keys', apiKeyController.getApiKeys);
+router.post('/branches/:branch_id/api-keys/validate', apiKeyController.validateAndSaveKey);
+router.delete('/branches/:branch_id/api-keys/:key_id', apiKeyController.disableApiKey);
+router.post('/branches/:branch_id/api-keys/:key_id/replace', apiKeyController.replaceApiKey);
+router.get('/branches/:branch_id/notifications', apiKeyController.getNotifications);
+router.post('/branches/:branch_id/notifications/:id/dismiss', apiKeyController.dismissNotification);
+
+// --- HR VALIDATION ROUTES ---
+router.post('/companies/:company_id/find-hr', hrValidationController.findHrContact);
+router.post('/companies/:company_id/hr-contacts/commit', hrValidationController.commitHrContact);
+router.post('/companies/:company_id/hr-contacts/approve-pending', hrValidationController.approvePendingContact);
+router.post('/companies/:company_id/hr-contacts/discard-pending', hrValidationController.discardPendingContact);
+router.post('/companies/:company_id/acknowledge-hr-update', hrValidationController.acknowledgeHrUpdate);
 
 export default router;

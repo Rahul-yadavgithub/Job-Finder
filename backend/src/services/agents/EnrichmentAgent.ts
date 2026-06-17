@@ -17,12 +17,19 @@ export interface EnrichmentResult {
 }
 
 export class EnrichmentAgent {
+  private apiUrl: string;
   private apiKey: string;
   private model: string;
 
   constructor() {
-    this.apiKey = process.env.OPENROUTER_API_KEY || '';
-    this.model = 'qwen/qwen-2.5-72b-instruct'; // Fallback if exact model name is different
+    // Dynamically select the API provider endpoint
+    this.apiUrl = process.env.LLM_API_URL || 'https://openrouter.ai/api/v1/chat/completions';
+    
+    // Support generic LLM keys or fallback to the specific OpenRouter key
+    this.apiKey = process.env.LLM_API_KEY || process.env.OPENROUTER_API_KEY || '';
+    
+    // Support generic models or fallback to specific ones
+    this.model = process.env.LLM_MODEL || process.env.OPENROUTER_MODEL || 'qwen/qwen-2.5-72b-instruct';
   }
 
   public async enrich(companyName: string, website?: string, rawContext?: string): Promise<EnrichmentResult> {
@@ -69,7 +76,7 @@ Return ONLY a valid JSON object (no markdown tags):
 
     try {
       const response = await axios.post(
-        'https://openrouter.ai/api/v1/chat/completions',
+        this.apiUrl,
         {
           model: this.model,
           messages: [{ role: 'user', content: prompt }],

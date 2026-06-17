@@ -6,6 +6,7 @@ import { useState, use } from 'react';
 import { Loader2, ArrowLeft, ExternalLink, Building2, MapPin, Target, Users, Calendar, BarChart3, CloudUpload } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 export default function CompanyDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -44,10 +45,10 @@ export default function CompanyDetailsPage({ params }: { params: Promise<{ id: s
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company', companyId] });
-      alert('Branch assignment updated successfully!');
+      toast.success('Branch assignment updated successfully!');
     },
     onError: (error: any) => {
-      alert(error.response?.data?.error || 'Failed to assign branch');
+      toast.error(error.response?.data?.error || 'Failed to assign branch');
     }
   });
 
@@ -60,10 +61,10 @@ export default function CompanyDetailsPage({ params }: { params: Promise<{ id: s
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company', companyId] });
-      alert('Company synced to Google Sheets successfully!');
+      toast.success('Company synced to Google Sheets successfully!');
     },
     onError: (error: any) => {
-      alert(error.response?.data?.error || 'Failed to sync company');
+      toast.error(error.response?.data?.error || 'Failed to sync company');
     }
   });
 

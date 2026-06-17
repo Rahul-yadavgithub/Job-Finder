@@ -15,6 +15,7 @@ import {
   Menu,
   X
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -64,18 +65,60 @@ export function Sidebar() {
       )}>
         <div 
           className={cn(
-            "flex items-center border-b border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors",
-            isCollapsed && !isMobileOpen ? "p-6 justify-center" : "p-6 gap-3"
+            "flex items-center border-b border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors group",
+            isCollapsed && !isMobileOpen ? "p-6 justify-center" : "px-5 py-5 gap-3"
           )}
           onClick={() => {
             if (!isMobileOpen) setIsCollapsed(!isCollapsed);
           }}
           title={isCollapsed && !isMobileOpen ? "Expand Sidebar" : "Collapse Sidebar"}
         >
-          <div className="w-8 h-8 flex-shrink-0 rounded bg-blue-600 flex items-center justify-center text-white font-bold">
-            J
+          <div className="w-10 h-10 flex-shrink-0 rounded-full border border-slate-200 shadow-sm overflow-hidden flex items-center justify-center bg-white relative z-10">
+            <img 
+              src="https://res.cloudinary.com/dzbliymin/image/upload/v1781725894/logonith_gb3opv.webp" 
+              alt="NITH Logo"
+              className="w-full h-full object-cover p-0.5"
+            />
           </div>
-          {(!isCollapsed || isMobileOpen) && <span className="font-bold text-lg text-slate-900 whitespace-nowrap overflow-hidden">JobFinder</span>}
+          
+          <AnimatePresence>
+            {(!isCollapsed || isMobileOpen) && (
+              <motion.div 
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 'auto' }}
+                exit={{ opacity: 0, width: 0, transition: { duration: 0.2 } }}
+                className="flex items-center gap-3 overflow-hidden whitespace-nowrap"
+              >
+                {/* Elegant separator */}
+                <motion.div 
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 24, opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+                  className="w-[1px] bg-gradient-to-b from-transparent via-slate-300 to-transparent"
+                />
+                
+                {/* Animated Text Sequence */}
+                <div className="flex items-baseline gap-1.5">
+                  <motion.span 
+                    initial={{ y: 10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.3, ease: [0.23, 1, 0.32, 1] }}
+                    className="font-extrabold text-xl tracking-tight text-slate-900"
+                  >
+                    NITH
+                  </motion.span>
+                  <motion.span 
+                    initial={{ y: 10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.45, ease: [0.23, 1, 0.32, 1] }}
+                    className="font-medium text-xl tracking-widest text-blue-600"
+                  >
+                    TPR
+                  </motion.span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <nav className="flex-1 py-6 px-4 space-y-1 overflow-y-auto overflow-x-hidden">

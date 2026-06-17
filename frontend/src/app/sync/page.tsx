@@ -6,11 +6,14 @@ import { useState } from 'react';
 import { CloudUpload, History, CheckCircle2, Loader2, DownloadCloud, Settings2, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 export default function SyncCenterPage() {
   const queryClient = useQueryClient();
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
   const [selectedBulkBranch, setSelectedBulkBranch] = useState<string>('');
+  const [selectedInboundBranch, setSelectedInboundBranch] = useState<string>('');
+  const [expandedBranches, setExpandedBranches] = useState<string[]>([]);
 
   const { data: pending, isLoading: pendingLoading } = useQuery({
     queryKey: ['sync-pending'],
@@ -52,6 +55,10 @@ export default function SyncCenterPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sync-pending'] });
       queryClient.invalidateQueries({ queryKey: ['sync-history'] });
+      toast.success('Branch synced successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Failed to sync branch');
     }
   });
 
@@ -64,10 +71,10 @@ export default function SyncCenterPage() {
       queryClient.invalidateQueries({ queryKey: ['sync-pending'] });
       queryClient.invalidateQueries({ queryKey: ['sync-history'] });
       setSelectedCompanies([]);
-      alert('Bulk sync successful!');
+      toast.success('Bulk sync successful!');
     },
     onError: (error: any) => {
-      alert(error.response?.data?.error || 'Bulk sync failed');
+      toast.error(error.response?.data?.error || 'Bulk sync failed');
     }
   });
 
@@ -84,23 +91,26 @@ export default function SyncCenterPage() {
       queryClient.invalidateQueries({ queryKey: ['sync-history'] });
       setSelectedCompanies([]);
       setSelectedBulkBranch('');
-      alert('Bulk assignment successful!');
+      toast.success('Bulk assignment successful!');
     },
     onError: (error: any) => {
-      alert(error.response?.data?.error || 'Bulk assignment failed');
+      toast.error(error.response?.data?.error || 'Bulk assignment failed');
     }
   });
 
   const inboundSyncMutation = useMutation({
-    mutationFn: async () => {
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/sync/inbound`);
+    mutationFn: async (branchId?: string) => {
+      const payload = branchId ? { branch_id: branchId } : {};
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/sync/inbound`, payload);
       return res.data;
     },
     onSuccess: (data) => {
-      alert(`Inbound Sync Complete!\nUpdated ${data.totalUpdated} companies.\nConflicts: ${data.conflicts.length}`);
+      toast.success('Inbound Sync Complete!', {
+        description: `Updated ${data.totalUpdated} companies. Conflicts: ${data.conflicts.length}`
+      });
     },
     onError: () => {
-      alert('Inbound sync failed.');
+      toast.error('Inbound sync failed.');
     }
   });
 
@@ -108,28 +118,52 @@ export default function SyncCenterPage() {
     setSelectedCompanies(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
   };
 
-  const renderBranchTable = (item: any, isHistory: boolean = false) => (
-    <div key={item.branch_name} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-8 flex flex-col">
-      <div className="bg-slate-50 border-b border-slate-200 p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h4 className="text-lg font-bold text-slate-900">{item.branch_name} {isHistory ? `(${item.count} Synced)` : `(${item.count} Pending)`}</h4>
-          {isHistory && (
-            <p className="text-sm text-slate-500 mt-1">Last Synced: {format(new Date(item.lastSynced), 'MMM d, h:mm a')}</p>
-          )}
+  const toggleBranch = (branchName: string) => {
+    setExpandedBranches(prev => 
+      prev.includes(branchName) 
+        ? prev.filter(b => b !== branchName) 
+        : [...prev, branchName]
+    );
+  };
+
+  const renderBranchTable = (item: any, isHistory: boolean = false) => {
+    const isExpanded = expandedBranches.includes(item.branch_name);
+    const shouldCollapse = item.count > 10;
+    const showCompanies = !shouldCollapse || isExpanded;
+
+    return (
+      <div key={item.branch_name} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-8 flex flex-col">
+        <div className="bg-slate-50 border-b border-slate-200 p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h4 className="text-lg font-bold text-slate-900">{item.branch_name} {isHistory ? `(${item.count} Synced)` : `(${item.count} Pending)`}</h4>
+            {isHistory && (
+              <p className="text-sm text-slate-500 mt-1">Last Synced: {format(new Date(item.lastSynced), 'MMM d, h:mm a')}</p>
+            )}
+          </div>
+          <div className="flex gap-3 w-full sm:w-auto">
+            {shouldCollapse && (
+              <button
+                onClick={() => toggleBranch(item.branch_name)}
+                className="w-full sm:w-auto text-sm bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-medium py-2.5 px-5 rounded-lg transition-colors shadow-sm"
+              >
+                {isExpanded ? 'Hide Details' : 'View Details'}
+              </button>
+            )}
+            {!isHistory && (
+              <button
+                onClick={() => syncMutation.mutate(item.branch_name)}
+                disabled={syncMutation.isPending}
+                className="w-full sm:w-auto text-sm bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 px-5 rounded-lg transition-colors flex justify-center items-center gap-2 disabled:opacity-50 shadow-sm"
+              >
+                {syncMutation.isPending && syncMutation.variables === item.branch_name ? <Loader2 className="w-4 h-4 animate-spin" /> : <CloudUpload className="w-4 h-4" />}
+                Sync Entire Branch
+              </button>
+            )}
+          </div>
         </div>
-        {!isHistory && (
-          <button
-            onClick={() => syncMutation.mutate(item.branch_name)}
-            disabled={syncMutation.isPending}
-            className="w-full sm:w-auto text-sm bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 px-5 rounded-lg transition-colors flex justify-center items-center gap-2 disabled:opacity-50 shadow-sm"
-          >
-            {syncMutation.isPending && syncMutation.variables === item.branch_name ? <Loader2 className="w-4 h-4 animate-spin" /> : <CloudUpload className="w-4 h-4" />}
-            Sync Entire Branch
-          </button>
-        )}
-      </div>
-      
-      <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 bg-slate-50/30">
+        
+        {showCompanies && (
+          <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 bg-slate-50/30">
         {item.companies?.map((company: any) => (
           <div key={company._id} className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col hover:shadow-md transition-shadow relative">
             <div className="flex items-start gap-3 mb-6">
@@ -175,8 +209,10 @@ export default function SyncCenterPage() {
           </div>
         ))}
       </div>
+        )}
     </div>
   );
+};
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-12">
@@ -205,8 +241,18 @@ export default function SyncCenterPage() {
               Open Master Sheet
             </span>
           )}
+          <select 
+            value={selectedInboundBranch}
+            onChange={(e) => setSelectedInboundBranch(e.target.value)}
+            className="text-sm border border-slate-200 bg-white rounded-lg py-2.5 px-3 text-slate-700 shadow-sm"
+          >
+            <option value="">All Branches</option>
+            {branches?.map((b: any) => (
+              <option key={b._id} value={b._id}>{b.name}</option>
+            ))}
+          </select>
           <button
-            onClick={() => inboundSyncMutation.mutate()}
+            onClick={() => inboundSyncMutation.mutate(selectedInboundBranch)}
             disabled={inboundSyncMutation.isPending}
             className="flex items-center gap-2 bg-blue-900 hover:bg-blue-800 disabled:bg-slate-400 text-white font-medium py-2.5 px-6 rounded-lg transition-colors shadow-sm"
           >

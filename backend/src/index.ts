@@ -28,6 +28,10 @@ import apiRoutes from './routes/api';
 // Connect DB
 connectDB();
 
+// Initialize Schedulers
+import { initSchedulers } from './scheduler/job-scheduler';
+initSchedulers();
+
 // API Routes
 app.use('/api', apiRoutes);
 
