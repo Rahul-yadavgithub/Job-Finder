@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { Plus, Power, Trash2, Edit2, Play, Globe, Link2, Loader2 } from 'lucide-react';
+import { Plus, Power, Trash2, Edit2, Play, Globe, Link2, Loader2, Activity, CheckCircle2 } from 'lucide-react';
 import { AddSourceModal } from '@/components/AddSourceModal';
 import { DeleteConfirmationModal } from '@/components/ui/DeleteConfirmationModal';
 import { formatDistanceToNow } from 'date-fns';
@@ -23,6 +23,7 @@ export default function SourcesPage() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sourceToDelete, setSourceToDelete] = useState<any | null>(null);
+  const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'completed' | 'error'>('idle');
 
   const { data: sources, isLoading } = useQuery({
     queryKey: ['sources'],
@@ -69,6 +70,26 @@ export default function SourcesPage() {
     }
   };
 
+  const triggerScan = useMutation({
+    mutationFn: async () => {
+      setScanStatus('scanning');
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/scan/trigger`);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Global scan engaged successfully!');
+      setTimeout(() => setScanStatus('completed'), 5000);
+      setTimeout(() => setScanStatus('idle'), 10000);
+    },
+    onError: () => {
+      toast.error('Failed to trigger global scan');
+      setScanStatus('error');
+      setTimeout(() => setScanStatus('idle'), 5000);
+    }
+  });
+
+  const isGlobalScanning = scanStatus === 'scanning' || triggerScan.isPending;
+
 
 
   return (
@@ -76,18 +97,44 @@ export default function SourcesPage() {
       <div className="p-8 max-w-7xl mx-auto transition-all duration-300">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Source Management</h1>
-            <p className="text-slate-500 mt-1">
-              Configure job boards, ATS platforms, and career pages for the AI to scan.
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 font-semibold text-xs border border-blue-100 mb-3">
+              <Activity className="w-3.5 h-3.5" />
+              <span>Intelligence Engine Ready</span>
+            </div>
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Scan Center</h1>
+            <p className="text-slate-500 mt-1 max-w-2xl">
+              Deploy deterministic scrapers across the global and Indian hiring ecosystems. Manage your active platform sources below.
             </p>
           </div>
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 font-medium transition-colors shadow-lg shadow-blue-900/20"
-          >
-            <Plus className="w-5 h-5" />
-            Add Custom Source
-          </button>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-5 py-2.5 rounded-lg flex items-center gap-2 font-medium transition-colors shadow-sm"
+            >
+              <Plus className="w-5 h-5" />
+              Add Source
+            </button>
+            <button 
+              onClick={() => triggerScan.mutate()}
+              disabled={isGlobalScanning}
+              className={`px-6 py-2.5 rounded-lg flex items-center gap-2 font-bold transition-all shadow-lg ${
+                isGlobalScanning 
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none' 
+                  : scanStatus === 'completed'
+                    ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/25'
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-blue-900/20 hover:shadow-blue-900/40 hover:-translate-y-0.5'
+              }`}
+            >
+              {isGlobalScanning ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : scanStatus === 'completed' ? (
+                <CheckCircle2 className="w-5 h-5" />
+              ) : (
+                <Play className="w-5 h-5 fill-current" />
+              )}
+              {isGlobalScanning ? 'ENGAGING...' : scanStatus === 'completed' ? 'ENGAGED' : 'ENGAGE ALL'}
+            </button>
+          </div>
         </div>
 
         <AddSourceModal 
@@ -203,7 +250,7 @@ export default function SourcesPage() {
                   
                   <button 
                     onClick={() => triggerSingleScan(source._id, source.platformName)}
-                    disabled={!source.isEnabled}
+                    disabled={!source.isEnabled || isGlobalScanning}
                     className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Play className="w-3.5 h-3.5" />

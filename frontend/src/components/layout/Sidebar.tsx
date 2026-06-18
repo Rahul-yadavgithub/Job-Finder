@@ -20,8 +20,7 @@ import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/sources', label: 'Sources', icon: ListPlus },
-  { href: '/scan', label: 'Scan Center', icon: Briefcase },
+  { href: '/sources', label: 'Scan Center', icon: Briefcase },
   { href: '/companies', label: 'Companies', icon: Database },
   { href: '/sync', label: 'Sync Center', icon: CloudUpload },
   { href: '/branch-portal', label: 'Branch Portal', icon: Users },
