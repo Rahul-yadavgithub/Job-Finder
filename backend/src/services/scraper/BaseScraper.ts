@@ -1,6 +1,8 @@
 import { chromium, Browser, BrowserContext, Page } from 'playwright';
 import ScanHistory from '../../models/ScanHistory';
+import RawDiscovery from '../../models/RawDiscovery';
 import { AgentPipeline } from '../agents/AgentPipeline';
+import { SalaryParser } from '../../utils/SalaryParser';
 
 export interface DiscoveredCompany {
   companyName: string;
@@ -74,17 +76,49 @@ export abstract class BaseScraper {
       await this.initBrowser();
       console.log(`[SCRAPER] Using ${this.constructor.name}`);
       const discoveries = await this.discoverCompanies(sourceUrl || '');
-      this.stats.rawCompaniesFound = discoveries.length;
-      console.log(`[SCRAPER] Found ${discoveries.length} companies`);
+      console.log(`[SCRAPER] Found ${discoveries.length} companies initially`);
+
+      const filteredDiscoveries: { discovery: DiscoveredCompany, rawId: string }[] = [];
+      
+      for (const discovery of discoveries) {
+        const parsed = SalaryParser.parse(discovery.salaryText);
+        const isLowSalary = parsed.salaryMax && parsed.salaryMax < 600000;
+        
+        if (isLowSalary) {
+          console.log(`Discarding ${discovery.companyName} due to low salary (< 6 LPA). Not saving anywhere.`);
+          continue;
+        }
+
+        let rawId = '';
+        if (this.scanHistoryId) {
+          const rawDoc = await RawDiscovery.create({
+            scanHistoryId: this.scanHistoryId,
+            companyName: discovery.companyName || discovery.description?.substring(0, 50) || 'Unknown',
+            website: discovery.website,
+            description: discovery.description,
+            source: discovery.source,
+            sourceUrl: discovery.sourceUrl,
+            careersUrl: discovery.careersUrl,
+            salaryText: discovery.salaryText,
+            status: 'PENDING'
+          });
+          rawId = rawDoc._id as unknown as string;
+        }
+        
+        filteredDiscoveries.push({ discovery, rawId });
+      }
+
+      this.stats.rawCompaniesFound = filteredDiscoveries.length;
+      console.log(`[SCRAPER] Proceeding with ${filteredDiscoveries.length} valid companies`);
 
       const pipeline = new AgentPipeline();
       
       // OPTIMIZATION: Process in parallel batches of 5 to speed up AI
       const batchSize = 5;
-      for (let i = 0; i < discoveries.length; i += batchSize) {
-        const batch = discoveries.slice(i, i + batchSize);
+      for (let i = 0; i < filteredDiscoveries.length; i += batchSize) {
+        const batch = filteredDiscoveries.slice(i, i + batchSize);
         const results = await Promise.all(
-          batch.map(discovery => pipeline.processDiscoveredCompany(discovery, this.scanHistoryId || undefined))
+          batch.map(item => pipeline.processDiscoveredCompany(item.discovery, this.scanHistoryId || undefined, item.rawId))
         );
         
         results.forEach(res => {
@@ -111,7 +145,7 @@ export abstract class BaseScraper {
              newCompaniesAdded: this.stats.newCompaniesAdded,
              averagePlacementScore: this.stats.validatedCompanies > 0 ? Math.round(this.stats.totalPlacementScore / this.stats.newCompaniesAdded || 1) : 0,
              averageAiConfidence: this.stats.validatedCompanies > 0 ? Math.round(this.stats.totalAiConfidence / this.stats.newCompaniesAdded || 1) : 0,
-             phase: `Processed ${Math.min(i + batchSize, discoveries.length)} / ${discoveries.length}`
+             phase: `Processed ${Math.min(i + batchSize, filteredDiscoveries.length)} / ${filteredDiscoveries.length}`
            });
         }
       }

@@ -69,7 +69,7 @@ export default function CompaniesPage() {
         <div>
           <h1 className="text-3xl font-bold">Company Database</h1>
           <p className="text-muted-foreground mt-1">
-            Browse, review, and manage discovered companies.
+            Auto-discovered companies pending review and assignment. Sheet-synced companies are managed via the Sync Center.
           </p>
         </div>
         
@@ -131,8 +131,11 @@ export default function CompaniesPage() {
                 ))
               ) : data?.data?.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
-                    No companies found matching criteria.
+                  <td colSpan={5} className="px-6 py-16 text-center text-slate-500">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <span className="font-bold text-slate-700 text-lg">No discovered companies yet</span>
+                      <span className="text-sm text-slate-400">New companies found by the scanner will appear here for review.</span>
+                    </div>
                   </td>
                 </tr>
               ) : (

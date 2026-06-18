@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { scrapeQueue } from '../jobs/queue';
 import Company, { CompanyStatus } from '../models/Company';
 import ScanHistory from '../models/ScanHistory';
+import RawDiscovery from '../models/RawDiscovery';
 import Source from '../models/Source';
 import Settings from '../models/Settings';
 import CompanyStatusHistory from '../models/CompanyStatusHistory';
@@ -15,6 +16,7 @@ import { googleSheetService } from '../services/google/GoogleSheetProvider';
 
 import { apiKeyController } from '../controllers/apiKeyController';
 import { hrValidationController } from '../controllers/hrValidationController';
+import { AgentPipeline } from '../services/agents/AgentPipeline';
 
 const router = Router();
 
@@ -24,20 +26,34 @@ router.get('/stats', async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const companiesFound = await Company.countDocuments();
-    const newCompaniesToday = await Company.countDocuments({ createdAt: { $gte: today } });
-    
-    const freshersHiring = await Company.countDocuments({ fresherHiring: true });
-    const internships = await Company.countDocuments({ internshipAvailable: true });
-    const startups = await Company.countDocuments({ fundingStage: { $in: ['Seed', 'Series A', 'Series B'] } }); // Approximated
-    const highConfidence = await Company.countDocuments({ confidenceScore: { $gte: 90 } });
-    const campusHiring = await Company.countDocuments({ placementPriority: 'HIGH' });
-    const pendingReview = await Company.countDocuments({ status: CompanyStatus.PENDING_REVIEW });
-    const approvedCompanies = await Company.countDocuments({ status: CompanyStatus.APPROVED });
-    const rejectedCompanies = await Company.countDocuments({ status: CompanyStatus.REJECTED });
-
-    const activeSourcesCount = await Source.countDocuments({ isEnabled: true });
-    const lastScan = await ScanHistory.findOne().sort({ date: -1 });
+    // Run ALL stat queries in parallel — avoids sequential DB round-trips
+    const [
+      companiesFound,
+      newCompaniesToday,
+      freshersHiring,
+      internships,
+      startups,
+      highConfidence,
+      campusHiring,
+      pendingReview,
+      approvedCompanies,
+      rejectedCompanies,
+      activeSourcesCount,
+      lastScan
+    ] = await Promise.all([
+      Company.countDocuments(),
+      Company.countDocuments({ createdAt: { $gte: today } }),
+      Company.countDocuments({ fresherHiring: true }),
+      Company.countDocuments({ internshipAvailable: true }),
+      Company.countDocuments({ fundingStage: { $in: ['Seed', 'Series A', 'Series B'] } }),
+      Company.countDocuments({ confidenceScore: { $gte: 90 } }),
+      Company.countDocuments({ placementPriority: 'HIGH' }),
+      Company.countDocuments({ status: CompanyStatus.PENDING_REVIEW }),
+      Company.countDocuments({ status: CompanyStatus.APPROVED }),
+      Company.countDocuments({ status: CompanyStatus.REJECTED }),
+      Source.countDocuments({ isEnabled: true }),
+      ScanHistory.findOne().sort({ date: -1 }).select('date').lean()
+    ]);
 
     res.json({
       companiesFound,
@@ -122,7 +138,7 @@ router.get('/companies', async (req, res) => {
     const limit = parseInt(req.query.limit as string) || 20;
     const skip = (page - 1) * limit;
 
-    const query: any = {};
+    const query: any = { data_source: 'scanned' };
     if (req.query.search) {
       query.companyName = { $regex: req.query.search, $options: 'i' };
     }
@@ -130,12 +146,15 @@ router.get('/companies', async (req, res) => {
       query.status = req.query.status;
     }
 
-    const companies = await Company.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
-      
-    const total = await Company.countDocuments(query);
+    // Run find and count in parallel + use .lean() to skip Mongoose hydration
+    const [companies, total] = await Promise.all([
+      Company.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Company.countDocuments(query)
+    ]);
 
     res.json({
       data: companies,
@@ -1412,6 +1431,133 @@ router.get('/dashboard/confirmed-last-year', async (req, res) => {
   }
 });
 
+router.get('/dashboard/summary', async (req, res) => {
+  try {
+    const { current, last } = getAcademicYears(req.query.override_year as string);
+
+    // Query confirmed companies. If academic_year is null/empty/missing, fallback to current year.
+    const [pendingReview, thisYearCompanies, lastYearCompanies] = await Promise.all([
+      Company.countDocuments({ data_source: 'scanned', review_status: 'scanned' }),
+      Company.find({
+        confirmation_status: 'confirmed',
+        $or: [
+          { academic_year: current },
+          { academic_year: null },
+          { academic_year: '' },
+          { academic_year: { $exists: false } }
+        ]
+      }).lean(),
+      Company.find({ confirmation_status: 'confirmed', academic_year: last }).lean(),
+    ]);
+
+    const buildGroup = (companies: any[]) => {
+      const by_drive_type: Record<string, number> = {};
+      const by_role: Record<string, number> = {};
+      companies.forEach(c => {
+        let dt = (c.drive_type || '').trim().toLowerCase();
+        if (dt === 'pool') {
+          dt = 'Pool';
+        } else {
+          // If no status or not Pool, consider in the on-campus calculation
+          dt = 'In-Campus';
+        }
+        by_drive_type[dt] = (by_drive_type[dt] || 0) + 1;
+
+        const r = (c.role || 'General Application').trim();
+        by_role[r] = (by_role[r] || 0) + 1;
+      });
+      return {
+        total: companies.length,
+        by_drive_type,
+        by_role: Object.entries(by_role)
+          .sort((a, b) => b[1] - a[1])
+          .map(([role, count]) => ({ role, count }))
+      };
+    };
+
+    res.json({
+      pending_review_count: pendingReview,
+      confirmed_this_year: { academic_year: current, ...buildGroup(thisYearCompanies) },
+      confirmed_last_year: { academic_year: last, ...buildGroup(lastYearCompanies) },
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch dashboard summary' });
+  }
+});
+
+router.get('/dashboard/confirmed-companies', async (req, res) => {
+  try {
+    const year = req.query.year as string;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = 20;
+    const skip = (page - 1) * limit;
+
+    const { current } = getAcademicYears();
+    const isCurrentYear = year === current;
+
+    let companies: any[];
+    let total: number;
+
+    if (isCurrentYear) {
+      // Current year confirmed companies (includes those with null/empty/missing academic_year)
+      const query: any = {
+        confirmation_status: 'confirmed',
+        $or: [
+          { academic_year: year },
+          { academic_year: null },
+          { academic_year: '' },
+          { academic_year: { $exists: false } }
+        ]
+      };
+      [companies, total] = await Promise.all([
+        Company.find(query)
+          .sort({ expected_year: -1, expected_month: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        Company.countDocuments(query)
+      ]);
+    } else {
+      const query: any = { confirmation_status: 'confirmed', academic_year: year };
+      [companies, total] = await Promise.all([
+        Company.find(query)
+          .sort({ expected_year: -1, expected_month: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        Company.countDocuments(query)
+      ]);
+    }
+
+    // Join HR contacts
+    const companyIds = companies.map(c => c._id).filter(Boolean);
+    const hrContacts = companyIds.length > 0
+      ? await HrContact.find({ company_id: { $in: companyIds } }).lean()
+      : [];
+    const hrMap = new Map(hrContacts.map(h => [h.company_id.toString(), h]));
+
+    const enriched = companies.map(c => ({
+      _id: c._id,
+      company_name: c.companyName || c.company_name || 'Unknown',
+      drive_type: c.drive_type || null,
+      role: c.role || null,
+      package: c.package || null,
+      expected_month: c.expected_month || null,
+      expected_year: c.expected_year || null,
+      assignedBranch: c.assignedBranch || null,
+      hr: hrMap.get(c._id?.toString()) ? {
+        name: hrMap.get(c._id.toString())?.name,
+        email: hrMap.get(c._id.toString())?.email,
+        mobile: hrMap.get(c._id.toString())?.mobile,
+      } : null
+    }));
+
+    res.json({ companies: enriched, total, page, per_page: limit, pages: Math.ceil(total / limit) });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch confirmed companies list' });
+  }
+});
+
 // --- COMPANIES ---
 router.get('/settings', async (req, res) => {
   try {
@@ -1465,7 +1611,7 @@ router.post('/settings/google-sheet/test', async (req, res) => {
 // --- SCAN HISTORY ---
 router.get('/history', async (req, res) => {
   try {
-    const history = await ScanHistory.find().sort({ date: -1 }).limit(50);
+    const history = await ScanHistory.find().sort({ date: -1 }).limit(50).lean();
     res.json(history);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch scan history' });
@@ -1474,7 +1620,7 @@ router.get('/history', async (req, res) => {
 
 router.get('/history/:id', async (req, res) => {
   try {
-    const history = await ScanHistory.findById(req.params.id);
+    const history = await ScanHistory.findById(req.params.id).lean();
     if (!history) return res.status(404).json({ error: 'History not found' });
     res.json(history);
   } catch (error) {
@@ -1492,6 +1638,43 @@ router.delete('/history/:id', async (req, res) => {
   }
 });
 
+router.get('/history/:id/raw', async (req, res) => {
+  try {
+    const raw = await RawDiscovery.find({ scanHistoryId: req.params.id })
+      .sort({ createdAt: -1 })
+      .lean();
+    res.json(raw);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch raw discoveries' });
+  }
+});
+
+router.post('/history/raw/:id/validate', async (req, res) => {
+  try {
+    const rawDoc = await RawDiscovery.findById(req.params.id);
+    if (!rawDoc) return res.status(404).json({ error: 'Raw discovery not found' });
+
+    if (rawDoc.status === 'VALIDATED' || rawDoc.status === 'DUPLICATE') {
+      return res.status(400).json({ error: 'Already processed' });
+    }
+
+    const pipeline = new AgentPipeline();
+    const result = await pipeline.processDiscoveredCompany({
+      companyName: rawDoc.companyName,
+      website: rawDoc.website || '',
+      description: rawDoc.description || '',
+      source: rawDoc.source,
+      sourceUrl: rawDoc.sourceUrl,
+      careersUrl: rawDoc.careersUrl || '',
+      salaryText: rawDoc.salaryText || ''
+    }, rawDoc.scanHistoryId.toString(), rawDoc._id as unknown as string, true);
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to manually validate raw company' });
+  }
+});
+
 // --- API KEY MANAGEMENT ROUTES ---
 router.get('/branches/:branch_id/api-keys', apiKeyController.getApiKeys);
 router.post('/branches/:branch_id/api-keys/validate', apiKeyController.validateAndSaveKey);
@@ -1506,5 +1689,43 @@ router.post('/companies/:company_id/hr-contacts/commit', hrValidationController.
 router.post('/companies/:company_id/hr-contacts/approve-pending', hrValidationController.approvePendingContact);
 router.post('/companies/:company_id/hr-contacts/discard-pending', hrValidationController.discardPendingContact);
 router.post('/companies/:company_id/acknowledge-hr-update', hrValidationController.acknowledgeHrUpdate);
+
+// Startup migration for legacy scanned companies
+(async () => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      await new Promise((resolve) => mongoose.connection.once('open', resolve));
+    }
+    
+    // 1. Set data_source = 'scanned' where data_source is missing
+    const res1 = await Company.updateMany(
+      { data_source: { $exists: false } } as any,
+      { $set: { data_source: 'scanned' } }
+    );
+    if (res1.modifiedCount > 0) {
+      console.log(`[Migration] Set data_source='scanned' for ${res1.modifiedCount} legacy companies.`);
+    }
+
+    // 2. Set review_status = 'scanned' where missing and status is not APPROVED
+    const res2 = await Company.updateMany(
+      { review_status: { $exists: false }, status: { $ne: 'APPROVED' } } as any,
+      { $set: { review_status: 'scanned' } }
+    );
+    if (res2.modifiedCount > 0) {
+      console.log(`[Migration] Set review_status='scanned' for ${res2.modifiedCount} legacy pending companies.`);
+    }
+
+    // 3. Set review_status = 'approved' where missing and status is APPROVED
+    const res3 = await Company.updateMany(
+      { review_status: { $exists: false }, status: 'APPROVED' } as any,
+      { $set: { review_status: 'approved' } }
+    );
+    if (res3.modifiedCount > 0) {
+      console.log(`[Migration] Set review_status='approved' for ${res3.modifiedCount} legacy approved companies.`);
+    }
+  } catch (err) {
+    console.error('[Migration] Failed to run legacy company migration:', err);
+  }
+})();
 
 export default router;

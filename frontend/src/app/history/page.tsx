@@ -105,31 +105,33 @@ export default function HistoryPage() {
         </p>
       </div>
 
-      <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit">
-        <button
-          onClick={() => setActiveTab('jobs')}
-          className={`px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${
-            activeTab === 'jobs' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <List className="w-4 h-4" /> Jobs Log
-        </button>
-        <button
-          onClick={() => setActiveTab('branch')}
-          className={`px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${
-            activeTab === 'branch' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <Building2 className="w-4 h-4" /> Assigned by Branch
-        </button>
-        <button
-          onClick={() => setActiveTab('stats')}
-          className={`px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${
-            activeTab === 'stats' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <BarChart3 className="w-4 h-4" /> Scanned Data History
-        </button>
+      <div className="flex bg-slate-100 p-1.5 rounded-xl w-full overflow-x-auto no-scrollbar shadow-sm border border-slate-200/60">
+        <div className="flex gap-2 min-w-max w-full sm:w-auto">
+          <button
+            onClick={() => setActiveTab('jobs')}
+            className={`flex-1 sm:flex-none px-5 py-2.5 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${
+              activeTab === 'jobs' ? 'bg-white text-slate-900 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+            }`}
+          >
+            <List className="w-4 h-4 shrink-0" /> Jobs Log
+          </button>
+          <button
+            onClick={() => setActiveTab('branch')}
+            className={`flex-1 sm:flex-none px-5 py-2.5 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${
+              activeTab === 'branch' ? 'bg-white text-slate-900 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+            }`}
+          >
+            <Building2 className="w-4 h-4 shrink-0" /> Assigned by Branch
+          </button>
+          <button
+            onClick={() => setActiveTab('stats')}
+            className={`flex-1 sm:flex-none px-5 py-2.5 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${
+              activeTab === 'stats' ? 'bg-white text-slate-900 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4 shrink-0" /> Scanned Data History
+          </button>
+        </div>
       </div>
 
       {activeTab === 'jobs' && (
@@ -275,36 +277,36 @@ export default function HistoryPage() {
       {activeTab === 'stats' && (
         <div className="space-y-8">
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-            <h3 className="font-bold text-lg text-slate-900 mb-4">Historical Date Filter</h3>
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-slate-500">From Date</label>
+            <h3 className="font-bold text-lg text-slate-900 mb-5">Historical Date Filter</h3>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-5">
+              <div className="flex flex-col gap-1.5 flex-1">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">From Date</label>
                 <div className="relative">
-                  <CalendarIcon className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                  <CalendarIcon className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
                   <input 
                     type="date" 
-                    className="pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full pl-10 pr-4 py-3 border border-slate-200 bg-slate-50 rounded-xl text-sm font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                     value={dateRange.from}
                     onChange={(e) => setDateRange(prev => ({ ...prev, from: e.target.value }))}
                   />
                 </div>
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-slate-500">To Date</label>
+              <div className="flex flex-col gap-1.5 flex-1">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">To Date</label>
                 <div className="relative">
-                  <CalendarIcon className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                  <CalendarIcon className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
                   <input 
                     type="date" 
-                    className="pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full pl-10 pr-4 py-3 border border-slate-200 bg-slate-50 rounded-xl text-sm font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                     value={dateRange.to}
                     onChange={(e) => setDateRange(prev => ({ ...prev, to: e.target.value }))}
                   />
                 </div>
               </div>
-              <div className="flex flex-col gap-1 self-end">
+              <div className="flex flex-col gap-1.5 sm:self-end">
                 <button 
                   onClick={() => setDateRange({ from: '', to: '' })}
-                  className="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                  className="w-full sm:w-auto px-6 py-3 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 hover:text-slate-900 rounded-xl transition-colors shadow-sm"
                 >
                   Clear Filters
                 </button>
@@ -318,7 +320,7 @@ export default function HistoryPage() {
               {statsLoading ? (
                 <div className="text-slate-500">Loading stats...</div>
               ) : (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="p-6 bg-white rounded-xl border border-slate-200 shadow-sm">
                     <h4 className="font-semibold text-sm text-slate-500">Total Scanned</h4>
                     <p className="text-3xl font-bold mt-2 text-slate-900">{statsData?.totalScanned || 0}</p>
@@ -360,7 +362,7 @@ export default function HistoryPage() {
                   </span>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-6 bg-slate-900 rounded-xl border border-slate-800 shadow-sm text-white">
                   <h4 className="font-semibold text-sm text-slate-400">Total Scanned</h4>
                   <p className="text-3xl font-bold mt-2">{currentStats?.totalScanned || 0}</p>

@@ -3,6 +3,7 @@ import { EnrichmentAgent } from './EnrichmentAgent';
 import { DuplicateDetectionAgent } from './DuplicateDetectionAgent';
 import Company, { CompanyStatus } from '../../models/Company';
 import ScanHistory from '../../models/ScanHistory';
+import RawDiscovery from '../../models/RawDiscovery';
 import { DiscoveredCompany } from '../scraper/BaseScraper';
 import { SalaryParser } from '../../utils/SalaryParser';
 
@@ -80,7 +81,7 @@ export class AgentPipeline {
     return { score: finalScore, priority };
   }
 
-  public async processDiscoveredCompany(discovery: DiscoveredCompany, scanHistoryId?: string): Promise<PipelineResult> {
+  public async processDiscoveredCompany(discovery: DiscoveredCompany, scanHistoryId?: string, rawDiscoveryId?: string, forceValidate: boolean = false): Promise<PipelineResult> {
     console.log(`Pipeline started for: ${discovery.companyName || discovery.description?.substring(0, 50)}...`);
 
     const updatePhase = async (phase: string) => {
@@ -89,31 +90,38 @@ export class AgentPipeline {
       }
     };
 
+    const updateRawStatus = async (status: string) => {
+      if (rawDiscoveryId) {
+        await RawDiscovery.findByIdAndUpdate(rawDiscoveryId, { status });
+      }
+    };
+
     // 1. Validate
     await updatePhase('Validating Companies...');
     
     let validationResult;
     // Generic scraper output needs more rigorous validation. Dedicated scrapers provide structured data directly.
-    if (!discovery.companyName || !discovery.website) {
+    if (!forceValidate && (!discovery.companyName || !discovery.website)) {
        validationResult = await this.validationAgent.validate(discovery.sourceUrl, discovery.description);
     } else {
-       // Deterministic scraper already extracted these
+       // Deterministic scraper already extracted these OR forceValidate is true
        validationResult = {
          isValid: true,
-         companyName: discovery.companyName,
-         website: discovery.website,
+         companyName: discovery.companyName || discovery.description?.substring(0, 50) || 'Unknown',
+         website: discovery.website || '',
          description: discovery.description
        };
     }
 
-    if (!validationResult.isValid || !validationResult.companyName) {
+    if (!forceValidate && (!validationResult.isValid || !validationResult.companyName)) {
       console.log(`Validation failed: ${validationResult.reason}`);
+      await updateRawStatus('REJECTED');
       return { status: 'REJECTED' };
     }
 
     // 2. Duplicate Check
     await updatePhase('Checking Duplicates...');
-    const normalizedName = DuplicateDetectionAgent.normalizeName(validationResult.companyName);
+    const normalizedName = DuplicateDetectionAgent.normalizeName(validationResult.companyName || '');
     const companyHash = DuplicateDetectionAgent.generateHash(normalizedName);
     
     // Check our database directly
@@ -129,13 +137,14 @@ export class AgentPipeline {
         existingDb.startupSignals.push(discovery.source);
       }
       await existingDb.save();
+      await updateRawStatus('DUPLICATE');
       return { status: 'DUPLICATE' };
     }
 
     // 3. Enrichment
     await updatePhase('Running AI Enrichment...');
     const enrichmentResult = await this.enrichmentAgent.enrich(
-      validationResult.companyName,
+      validationResult.companyName || discovery.companyName || '',
       validationResult.website || discovery.website,
       validationResult.description || discovery.description
     );
@@ -200,9 +209,12 @@ export class AgentPipeline {
         aiConfidence: enrichmentResult.aiConfidence,
 
         status: status,
-        outreachStatus: 'NOT_CONTACTED'
+        outreachStatus: 'NOT_CONTACTED',
+        data_source: 'scanned',
+        review_status: 'scanned'
       });
       console.log(`Successfully saved company: ${validationResult.companyName} with status: ${status}`);
+      await updateRawStatus('VALIDATED');
       return { 
         status: 'NEW_ADD', 
         placementScore: placement.score, 
@@ -210,6 +222,7 @@ export class AgentPipeline {
       };
     } catch (err) {
       console.error(`Failed to save company ${validationResult.companyName}:`, err);
+      await updateRawStatus('REJECTED');
       return { status: 'REJECTED' };
     }
   }

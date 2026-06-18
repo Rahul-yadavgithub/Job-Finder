@@ -97,13 +97,14 @@ export default function SourcesPage() {
       <div className="p-8 max-w-7xl mx-auto transition-all duration-300">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 font-semibold text-xs border border-blue-100 mb-3">
-              <Activity className="w-3.5 h-3.5" />
-              <span>Intelligence Engine Ready</span>
-            </div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Scan Center</h1>
-            <p className="text-slate-500 mt-1 max-w-2xl">
-              Deploy deterministic scrapers across the global and Indian hiring ecosystems. Manage your active platform sources below.
+            <h1 className="flex items-center gap-3 text-3xl font-extrabold text-slate-900 tracking-tight mb-2">
+              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg border border-blue-100 shadow-sm">
+                <Activity className="w-6 h-6" />
+              </div>
+              Scan Center
+            </h1>
+            <p className="text-slate-500 max-w-2xl text-base">
+              Add your favorite companies and platforms to automate the discovery process.
             </p>
           </div>
           <div className="flex items-center gap-3">

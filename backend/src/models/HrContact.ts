@@ -58,4 +58,7 @@ const HrContactSchema: Schema = new Schema(
   { timestamps: true }
 );
 
+// Primary lookup: HR contact by company — used on every company detail load
+HrContactSchema.index({ company_id: 1 }, { unique: true });
+
 export default mongoose.model<IHrContact>('HrContact', HrContactSchema);

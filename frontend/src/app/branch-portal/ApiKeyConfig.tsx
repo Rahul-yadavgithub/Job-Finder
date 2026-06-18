@@ -64,19 +64,21 @@ export default function ApiKeyConfig({ branchId }: ApiKeyConfigProps) {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Key className="w-6 h-6 text-indigo-600" />
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100 shadow-sm">
+              <Key className="w-6 h-6" />
+            </div>
             API Configuration
           </h2>
-          <p className="text-gray-500 mt-1">Manage API keys and quotas for enrichment providers.</p>
+          <p className="text-gray-500 mt-2 text-base">Manage API keys and quotas for enrichment providers.</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm font-medium"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all shadow-md hover:shadow-lg font-bold"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-5 h-5" />
           Add API Key
         </button>
       </div>
@@ -102,17 +104,17 @@ export default function ApiKeyConfig({ branchId }: ApiKeyConfigProps) {
             
             return (
               <div key={platform.id} className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
-                <div className="bg-gray-50 border-b border-gray-200 px-5 py-4 flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <h3 className="font-bold text-gray-900">{platform.name}</h3>
+                <div className="bg-gray-50 border-b border-gray-200 px-5 py-4 flex flex-wrap sm:flex-nowrap justify-between items-center gap-3">
+                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <h3 className="font-bold text-gray-900 text-lg">{platform.name}</h3>
                     <button 
                       onClick={() => setShowGuideModal(platform.id)}
-                      className="text-xs text-indigo-600 font-semibold hover:underline flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100 transition-colors hover:bg-indigo-100"
+                      className="text-xs text-indigo-600 font-semibold hover:underline flex items-center gap-1 bg-indigo-50 px-2.5 py-1.5 rounded-md border border-indigo-100 transition-colors hover:bg-indigo-100"
                     >
-                      <BookOpen className="w-3 h-3" /> Setup Guide
+                      <BookOpen className="w-3.5 h-3.5" /> Setup Guide
                     </button>
                   </div>
-                  <span className="text-xs font-medium bg-white border border-gray-200 px-2.5 py-1 rounded-full text-gray-600">
+                  <span className="text-xs font-semibold bg-white border border-gray-200 px-3 py-1.5 rounded-full text-gray-700 shadow-sm shrink-0">
                     {keys.filter((k: any) => k.status === 'active').length} Active
                   </span>
                 </div>

@@ -42,4 +42,9 @@ const ScanHistorySchema: Schema = new Schema(
   { timestamps: true }
 );
 
+// Sort by most recent scan (history page default view)
+ScanHistorySchema.index({ date: -1 });
+// Filter by platform when grouping scan results
+ScanHistorySchema.index({ platform: 1, date: -1 });
+
 export default mongoose.model<IScanHistory>('ScanHistory', ScanHistorySchema);

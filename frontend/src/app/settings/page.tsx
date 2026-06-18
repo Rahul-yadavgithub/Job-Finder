@@ -139,14 +139,16 @@ export default function SettingsPage() {
             <div className="text-sm text-blue-900 w-full">
               <p className="font-semibold mb-1">Service Account Required</p>
               <p>To use this integration, you must share your Google Sheet with the following service account email as an <strong>Editor</strong>:</p>
-              <div className="mt-3 flex items-center justify-between bg-white border border-blue-200 rounded p-2">
-                <code className="text-blue-700 font-mono select-all truncate mr-4">
-                  {isLoadingSA ? 'Loading...' : serviceAccount?.email}
-                </code>
+              <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white border border-blue-200 rounded-lg p-3 overflow-hidden">
+                <div className="flex-1 min-w-0 bg-slate-50 p-2 rounded border border-slate-100 flex items-center">
+                  <code className="block text-blue-700 font-mono select-all truncate text-xs sm:text-sm w-full">
+                    {isLoadingSA ? 'Loading...' : serviceAccount?.email}
+                  </code>
+                </div>
                 <button 
                   type="button"
                   onClick={copyEmail}
-                  className="flex-shrink-0 flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded transition-colors"
+                  className="w-full sm:w-auto flex-shrink-0 flex justify-center items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-md transition-colors"
                 >
                   <Copy className="w-3.5 h-3.5" />
                   Copy Email
@@ -262,13 +264,13 @@ export default function SettingsPage() {
               </div>
             )}
 
-            <div className="pt-4 flex items-center justify-between border-t border-slate-100">
-              <div className="flex items-center gap-3">
+            <div className="pt-6 border-t border-slate-100">
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-3">
                 <button 
                   type="button"
                   onClick={() => testConnection.mutate()}
                   disabled={testConnection.isPending || (!formData.currentAcademicYearSheetId && !formData.pastAcademicYearSheetId)}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2.5 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors disabled:opacity-50"
+                  className="w-full sm:w-auto bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-xl flex justify-center items-center gap-2 text-sm font-bold transition-colors disabled:opacity-50"
                 >
                   {testConnection.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                   Test Connection
@@ -276,7 +278,7 @@ export default function SettingsPage() {
                 <button 
                   type="submit" 
                   disabled={saveSettings.isPending || (testStatus !== 'success' && !isSaved)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-900/20"
+                  className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl flex justify-center items-center gap-2 text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-900/20"
                 >
                   {saveSettings.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   Save Settings
@@ -289,7 +291,7 @@ export default function SettingsPage() {
 
       {/* Sync Status Section */}
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div className="p-6 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold">Google Sheet Status</h2>
             <p className="text-sm text-slate-500 mt-1">
@@ -299,7 +301,7 @@ export default function SettingsPage() {
           <button 
             onClick={() => syncCompanies.mutate()}
             disabled={syncCompanies.isPending || !isSaved}
-            className="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors disabled:opacity-50 shadow-md"
+            className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-xl flex justify-center items-center gap-2 text-sm font-bold transition-colors disabled:opacity-50 shadow-md"
           >
             {syncCompanies.isPending ? (
               <>

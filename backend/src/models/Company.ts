@@ -190,9 +190,34 @@ const CompanySchema: Schema = new Schema(
   { timestamps: true }
 );
 
-// Indexes
+// ── High-frequency query indexes ────────────────────────────────────────────
+// List page: filter by status, sort by createdAt — covers 90% of all queries
+CompanySchema.index({ status: 1, createdAt: -1 });
 
+// Duplicate detection: exact lookup by normalizedName
+CompanySchema.index({ normalizedName: 1 });
+// Note: companyHash already has unique:true on the field — no duplicate index needed
+
+// Sync center: fetch pending/synced by branch
+CompanySchema.index({ assignedBranch: 1, syncStatus: 1 });
+CompanySchema.index({ syncStatus: 1, lastSynced: -1 });
+
+// Dashboard counters (covered queries — no doc fetch needed)
+CompanySchema.index({ fresherHiring: 1 });
+CompanySchema.index({ internshipAvailable: 1 });
+CompanySchema.index({ placementPriority: 1 });
+CompanySchema.index({ confidenceScore: 1 });
+
+// Placement score sort for listings
 CompanySchema.index({ placementScore: -1 });
+
+// Review workflow
 CompanySchema.index({ review_status: 1, confirmation_status: 1, academic_year: 1, drive_type: 1, role: 1 });
+
+// Contact workflow
+CompanySchema.index({ contact_status: 1, contact_outcome: 1 });
+
+// Text search on company name (case-insensitive regex queries)
+CompanySchema.index({ companyName: 'text' });
 
 export default mongoose.model<ICompany>('Company', CompanySchema);

@@ -40,13 +40,28 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile Toggle Button */}
-      <button 
-        className="md:hidden fixed top-4 right-4 z-50 p-2.5 bg-white rounded-xl shadow-md border border-slate-200 text-slate-700 hover:text-blue-600 hover:border-blue-200 transition-colors"
-        onClick={() => setIsMobileOpen(!isMobileOpen)}
-      >
-        {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-      </button>
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 z-[40] flex items-center px-4 gap-3 shadow-sm">
+        <button 
+          className="p-2 -ml-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+          onClick={() => setIsMobileOpen(true)}
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full border border-slate-200 overflow-hidden bg-white">
+            <img 
+              src="https://res.cloudinary.com/dzbliymin/image/upload/v1781725894/logonith_gb3opv.webp" 
+              alt="NITH Logo"
+              className="w-full h-full object-cover p-0.5"
+            />
+          </div>
+          <div className="flex items-baseline gap-1">
+            <span className="font-extrabold tracking-tight text-slate-900">NITH</span>
+            <span className="font-medium tracking-widest text-blue-600">TPR</span>
+          </div>
+        </div>
+      </div>
 
       {/* Overlay for mobile */}
       {isMobileOpen && (
@@ -58,66 +73,90 @@ export function Sidebar() {
 
       {/* Sidebar */}
       <div className={cn(
-        "flex flex-col bg-white text-slate-800 border-r border-slate-200 h-screen sticky top-0 transition-all duration-300 z-50",
+        "flex flex-col bg-white text-slate-800 border-r border-slate-200 h-screen sticky top-0 transition-all duration-300 ease-in-out z-50",
         isCollapsed ? "w-20" : "w-64",
-        isMobileOpen ? "fixed inset-y-0 left-0 shadow-2xl" : "hidden md:flex"
+        "max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:shadow-2xl",
+        isMobileOpen ? "max-md:translate-x-0" : "max-md:-translate-x-full"
       )}>
         <div 
           className={cn(
-            "flex items-center border-b border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors group",
-            isCollapsed && !isMobileOpen ? "p-6 justify-center" : "px-5 py-5 gap-3"
+            "flex items-center justify-between border-b border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors group",
+            isCollapsed && !isMobileOpen ? "p-6 justify-center" : "px-5 py-5"
           )}
           onClick={() => {
             if (!isMobileOpen) setIsCollapsed(!isCollapsed);
           }}
           title={isCollapsed && !isMobileOpen ? "Expand Sidebar" : "Collapse Sidebar"}
         >
-          <div className="w-10 h-10 flex-shrink-0 rounded-full border border-slate-200 shadow-sm overflow-hidden flex items-center justify-center bg-white relative z-10">
-            <img 
-              src="https://res.cloudinary.com/dzbliymin/image/upload/v1781725894/logonith_gb3opv.webp" 
-              alt="NITH Logo"
-              className="w-full h-full object-cover p-0.5"
-            />
-          </div>
-          
-          <AnimatePresence>
-            {(!isCollapsed || isMobileOpen) && (
-              <motion.div 
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: 'auto' }}
-                exit={{ opacity: 0, width: 0, transition: { duration: 0.2 } }}
-                className="flex items-center gap-3 overflow-hidden whitespace-nowrap"
-              >
-                {/* Elegant separator */}
+          <div className={cn("flex items-center gap-3", isCollapsed && !isMobileOpen && "hidden")}>
+            <div className="w-10 h-10 flex-shrink-0 rounded-full border border-slate-200 shadow-sm overflow-hidden flex items-center justify-center bg-white relative z-10">
+              <img 
+                src="https://res.cloudinary.com/dzbliymin/image/upload/v1781725894/logonith_gb3opv.webp" 
+                alt="NITH Logo"
+                className="w-full h-full object-cover p-0.5"
+              />
+            </div>
+            
+            <AnimatePresence>
+              {(!isCollapsed || isMobileOpen) && (
                 <motion.div 
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 24, opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
-                  className="w-[1px] bg-gradient-to-b from-transparent via-slate-300 to-transparent"
-                />
-                
-                {/* Animated Text Sequence */}
-                <div className="flex items-baseline gap-1.5">
-                  <motion.span 
-                    initial={{ y: 10, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 0.3, ease: [0.23, 1, 0.32, 1] }}
-                    className="font-extrabold text-xl tracking-tight text-slate-900"
-                  >
-                    NITH
-                  </motion.span>
-                  <motion.span 
-                    initial={{ y: 10, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 0.45, ease: [0.23, 1, 0.32, 1] }}
-                    className="font-medium text-xl tracking-widest text-blue-600"
-                  >
-                    TPR
-                  </motion.span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: 'auto' }}
+                  exit={{ opacity: 0, width: 0, transition: { duration: 0.2 } }}
+                  className="flex items-center gap-3 overflow-hidden whitespace-nowrap"
+                >
+                  <motion.div 
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 24, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+                    className="w-[1px] bg-gradient-to-b from-transparent via-slate-300 to-transparent"
+                  />
+                  
+                  <div className="flex items-baseline gap-1.5">
+                    <motion.span 
+                      initial={{ y: 10, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ duration: 0.5, delay: 0.3, ease: [0.23, 1, 0.32, 1] }}
+                      className="font-extrabold text-xl tracking-tight text-slate-900"
+                    >
+                      NITH
+                    </motion.span>
+                    <motion.span 
+                      initial={{ y: 10, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ duration: 0.5, delay: 0.45, ease: [0.23, 1, 0.32, 1] }}
+                      className="font-medium text-xl tracking-widest text-blue-600"
+                    >
+                      TPR
+                    </motion.span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Logo when collapsed */}
+          {isCollapsed && !isMobileOpen && (
+            <div className="w-10 h-10 flex-shrink-0 rounded-full border border-slate-200 shadow-sm overflow-hidden flex items-center justify-center bg-white relative z-10">
+              <img 
+                src="https://res.cloudinary.com/dzbliymin/image/upload/v1781725894/logonith_gb3opv.webp" 
+                alt="NITH Logo"
+                className="w-full h-full object-cover p-0.5"
+              />
+            </div>
+          )}
+
+          {isMobileOpen && (
+            <button 
+              className="md:hidden p-2 -mr-2 text-slate-500 hover:text-slate-800 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsMobileOpen(false);
+              }}
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         <nav className="flex-1 py-6 px-4 space-y-1 overflow-y-auto overflow-x-hidden">
