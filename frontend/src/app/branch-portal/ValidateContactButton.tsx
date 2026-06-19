@@ -18,19 +18,7 @@ export default function ValidateContactButton({ companyId, branchId }: ValidateC
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewData, setPreviewData] = useState<any>(null);
 
-  // Check if branch has active API keys
-  const { data: activeKeysCount = 0, isLoading: keysLoading } = useQuery({
-    queryKey: ['active-keys-count', branchId],
-    queryFn: async () => {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/branches/${branchId}/api-keys`);
-      let count = 0;
-      for (const platform of Object.values(res.data.data) as any[][]) {
-        count += platform.filter((k: any) => k.status === 'active').length;
-      }
-      return count;
-    },
-    enabled: !!branchId
-  });
+
 
   const validateMutation = useMutation({
     mutationFn: async () => {
@@ -79,7 +67,7 @@ export default function ValidateContactButton({ companyId, branchId }: ValidateC
     }
   });
 
-  const isDisabled = keysLoading || activeKeysCount === 0;
+  const isDisabled = false;
 
   return (
     <>
@@ -103,13 +91,7 @@ export default function ValidateContactButton({ companyId, branchId }: ValidateC
           {validateMutation.isPending ? 'Validating...' : 'Validate Contact Info'}
         </button>
 
-        {/* Tooltip for disabled state */}
-        {isDisabled && isHovered && (
-          <div className="absolute z-50 w-64 bottom-full left-1/2 -translate-x-1/2 mb-3 bg-slate-900 text-white text-xs rounded-xl p-3 shadow-xl text-center font-medium transition-opacity">
-            No active API keys configured. Please add an API key in the configuration tab.
-            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900"></div>
-          </div>
-        )}
+
       </div>
 
       {showPreviewModal && previewData && (

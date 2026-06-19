@@ -2,59 +2,33 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { useState } from 'react';
-import { CloudUpload, History, CheckCircle2, Loader2, DownloadCloud, Settings2, ExternalLink } from 'lucide-react';
+import { CloudUpload, History, Loader2, DownloadCloud, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
-import Link from 'next/link';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
 
 export default function SyncCenterPage() {
   const queryClient = useQueryClient();
-  const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
-  const [selectedBulkBranch, setSelectedBulkBranch] = useState<string>('');
-  const [selectedInboundBranch, setSelectedInboundBranch] = useState<string>('');
-  const [expandedBranches, setExpandedBranches] = useState<string[]>([]);
+  const { user } = useAuth();
 
-  const { data: pending, isLoading: pendingLoading } = useQuery({
-    queryKey: ['sync-pending'],
-    queryFn: async () => {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/sync/pending`);
-      return res.data;
-    }
-  });
+
 
   const { data: history, isLoading: historyLoading } = useQuery({
-    queryKey: ['sync-history'],
+    queryKey: ['tpr-sync-history'],
     queryFn: async () => {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/sync/history`);
-      return res.data;
-    }
-  });
-
-  const { data: branches } = useQuery({
-    queryKey: ['branches'],
-    queryFn: async () => {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/branches`);
-      return res.data;
-    }
-  });
-
-  const { data: settings } = useQuery({
-    queryKey: ['settings'],
-    queryFn: async () => {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/settings`);
-      return res.data;
-    }
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/tpr/sync-history`, { withCredentials: true });
+      return res.data.data;
+    },
+    enabled: !!user
   });
 
   const syncMutation = useMutation({
-    mutationFn: async (branchId: string) => {
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/sync/branch/${branchId}`);
+    mutationFn: async () => {
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/tpr/sync`, {}, { withCredentials: true });
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sync-pending'] });
-      queryClient.invalidateQueries({ queryKey: ['sync-history'] });
+      queryClient.invalidateQueries({ queryKey: ['tpr-sync-history'] });
       toast.success('Branch synced successfully!');
     },
     onError: (error: any) => {
@@ -62,51 +36,15 @@ export default function SyncCenterPage() {
     }
   });
 
-  const bulkSyncMutation = useMutation({
-    mutationFn: async () => {
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/sync/bulk-sync`, { companyIds: selectedCompanies });
-      return res.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sync-pending'] });
-      queryClient.invalidateQueries({ queryKey: ['sync-history'] });
-      setSelectedCompanies([]);
-      toast.success('Bulk sync successful!');
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Bulk sync failed');
-    }
-  });
-
-  const bulkAssignMutation = useMutation({
-    mutationFn: async (branch_id: string) => {
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/companies/bulk-assign`, { 
-        companyIds: selectedCompanies,
-        branch_id
-      });
-      return res.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sync-pending'] });
-      queryClient.invalidateQueries({ queryKey: ['sync-history'] });
-      setSelectedCompanies([]);
-      setSelectedBulkBranch('');
-      toast.success('Bulk assignment successful!');
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Bulk assignment failed');
-    }
-  });
-
+  // Pull Updates is actually the inbound sync for this specific branch
   const inboundSyncMutation = useMutation({
-    mutationFn: async (branchId?: string) => {
-      const payload = branchId ? { branch_id: branchId } : {};
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/sync/inbound`, payload);
+    mutationFn: async () => {
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/tpr/sync/inbound`, {}, { withCredentials: true });
       return res.data;
     },
     onSuccess: (data) => {
       toast.success('Inbound Sync Complete!', {
-        description: `Updated ${data.totalUpdated} companies. Conflicts: ${data.conflicts.length}`
+        description: `Updated ${data.totalUpdated} companies. Conflicts: ${data.conflicts?.length || 0}`
       });
     },
     onError: () => {
@@ -114,105 +52,7 @@ export default function SyncCenterPage() {
     }
   });
 
-  const toggleSelection = (id: string) => {
-    setSelectedCompanies(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
-  };
-
-  const toggleBranch = (branchName: string) => {
-    setExpandedBranches(prev => 
-      prev.includes(branchName) 
-        ? prev.filter(b => b !== branchName) 
-        : [...prev, branchName]
-    );
-  };
-
-  const renderBranchTable = (item: any, isHistory: boolean = false) => {
-    const isExpanded = expandedBranches.includes(item.branch_name);
-    const shouldCollapse = item.count > 10;
-    const showCompanies = !shouldCollapse || isExpanded;
-
-    return (
-      <div key={item.branch_name} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-8 flex flex-col">
-        <div className="bg-slate-50 border-b border-slate-200 p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h4 className="text-lg font-bold text-slate-900">{item.branch_name} {isHistory ? `(${item.count} Synced)` : `(${item.count} Pending)`}</h4>
-            {isHistory && (
-              <p className="text-sm text-slate-500 mt-1">Last Synced: {format(new Date(item.lastSynced), 'MMM d, h:mm a')}</p>
-            )}
-          </div>
-          <div className="flex gap-3 w-full sm:w-auto">
-            {shouldCollapse && (
-              <button
-                onClick={() => toggleBranch(item.branch_name)}
-                className="w-full sm:w-auto text-sm bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-medium py-2.5 px-5 rounded-lg transition-colors shadow-sm"
-              >
-                {isExpanded ? 'Hide Details' : 'View Details'}
-              </button>
-            )}
-            {!isHistory && (
-              <button
-                onClick={() => syncMutation.mutate(item.branch_name)}
-                disabled={syncMutation.isPending}
-                className="w-full sm:w-auto text-sm bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 px-5 rounded-lg transition-colors flex justify-center items-center gap-2 disabled:opacity-50 shadow-sm"
-              >
-                {syncMutation.isPending && syncMutation.variables === item.branch_name ? <Loader2 className="w-4 h-4 animate-spin" /> : <CloudUpload className="w-4 h-4" />}
-                Sync Entire Branch
-              </button>
-            )}
-          </div>
-        </div>
-        
-        {showCompanies && (
-          <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 bg-slate-50/30">
-        {item.companies?.map((company: any) => (
-          <div key={company._id} className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col hover:shadow-md transition-shadow relative">
-            <div className="flex items-start gap-3 mb-6">
-              <input 
-                type="checkbox" 
-                className="w-5 h-5 mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" 
-                checked={selectedCompanies.includes(company._id)}
-                onChange={() => toggleSelection(company._id)}
-              />
-              <div className="flex-1 min-w-0">
-                <span className="font-bold text-slate-800 block truncate text-base" title={company.companyName}>{company.companyName}</span>
-                <span className={`inline-block mt-2 text-[10px] px-2.5 py-1 rounded-md font-bold uppercase tracking-wider ${isHistory ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-yellow-50 text-yellow-700 border border-yellow-200'}`}>
-                  {isHistory ? 'Synced' : 'Pending'}
-                </span>
-              </div>
-            </div>
-            
-            <div className="mt-auto grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
-              <Link href={`/companies/${company._id}`} className="flex items-center justify-center text-sm text-slate-700 hover:text-blue-700 font-semibold py-2 bg-slate-50 hover:bg-blue-50 rounded-lg transition-colors border border-slate-200 hover:border-blue-200 shadow-sm">
-                Details
-              </Link>
-              {!isHistory ? (
-                <button 
-                  onClick={() => {
-                    if (selectedCompanies.includes(company._id)) {
-                      bulkSyncMutation.mutate();
-                    } else {
-                      setSelectedCompanies([company._id]);
-                      setTimeout(() => bulkSyncMutation.mutate(), 0);
-                    }
-                  }}
-                  disabled={bulkSyncMutation.isPending}
-                  className="flex items-center justify-center text-sm text-blue-700 hover:text-blue-800 font-semibold py-2 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-200 hover:border-blue-300 shadow-sm disabled:opacity-50"
-                >
-                  Sync
-                </button>
-              ) : (
-                <div className="flex items-center justify-center text-sm text-green-700 font-semibold py-2 bg-green-50 rounded-lg border border-green-200 shadow-sm">
-                  Completed
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-        )}
-    </div>
-  );
-};
+  if (!user) return null;
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 md:space-y-12">
@@ -227,150 +67,31 @@ export default function SyncCenterPage() {
           </div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">Sync Center</h1>
           <p className="text-slate-500 mt-3 text-base leading-relaxed">
-            Manage and push assigned companies seamlessly to their respective Google Sheets for your placement drives. Keep your master records in perfect sync.
+            Manage and push assigned companies seamlessly to your branch's Google Sheet tab. Keep your master records in perfect sync.
           </p>
         </div>
         
         <div className="flex flex-col sm:flex-row flex-wrap xl:flex-nowrap items-stretch sm:items-center gap-4 relative z-10 w-full lg:w-auto mt-6 lg:mt-0">
-          {settings?.currentAcademicYearSheetId ? (
-            <a 
-              href={`https://docs.google.com/spreadsheets/d/${settings.currentAcademicYearSheetId}/edit`} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-medium py-2.5 px-5 rounded-lg transition-colors shadow-sm flex-1 sm:flex-none whitespace-nowrap"
-            >
-              <ExternalLink className="w-4 h-4" />
-              Open Master Sheet
-            </a>
-          ) : (
-            <span 
-              className="flex items-center justify-center gap-2 bg-slate-100 text-slate-400 border border-slate-200 font-medium py-2.5 px-5 rounded-lg cursor-not-allowed shadow-sm flex-1 sm:flex-none whitespace-nowrap"
-              title="Configure Master Database Sheet ID in Settings"
-            >
-              <ExternalLink className="w-4 h-4" />
-              Open Master Sheet
-            </span>
-          )}
-          
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1 sm:flex-none">
-            <select 
-              value={selectedInboundBranch}
-              onChange={(e) => setSelectedInboundBranch(e.target.value)}
-              className="flex-1 sm:flex-none text-sm border border-slate-200 bg-white rounded-lg py-2.5 px-4 text-slate-700 shadow-sm min-w-[160px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-            >
-              <option value="">All Branches</option>
-              {branches?.map((b: any) => (
-                <option key={b._id} value={b._id}>{b.name}</option>
-              ))}
-            </select>
             <button
-              onClick={() => inboundSyncMutation.mutate(selectedInboundBranch)}
+              onClick={() => inboundSyncMutation.mutate()}
               disabled={inboundSyncMutation.isPending}
               className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 text-white font-semibold py-2.5 px-6 rounded-lg transition-all shadow-md hover:shadow-lg flex-1 sm:flex-none whitespace-nowrap"
             >
               {inboundSyncMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <DownloadCloud className="w-5 h-5" />}
-              Pull Updates
+              Pull Updates — {user.branchName}
+            </button>
+            <button
+              onClick={() => syncMutation.mutate()}
+              disabled={syncMutation.isPending}
+              className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white font-semibold py-2.5 px-6 rounded-lg transition-all shadow-md hover:shadow-lg flex-1 sm:flex-none whitespace-nowrap"
+            >
+              {syncMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <CloudUpload className="w-5 h-5" />}
+              Push Sync — {user.branchName}
             </button>
           </div>
         </div>
       </div>
-
-      {selectedCompanies.length > 0 && (
-        <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sticky top-4 z-10 shadow-lg shadow-indigo-500/10">
-          <div className="flex items-center gap-3">
-            <span className="bg-indigo-600 text-white font-bold px-3.5 py-1.5 rounded-full text-sm shadow-sm">{selectedCompanies.length}</span>
-            <span className="font-semibold text-indigo-900">Companies Selected</span>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center w-full md:w-auto">
-            <div className="flex flex-1 sm:flex-none items-center gap-2 bg-white p-1.5 rounded-lg border border-indigo-200 shadow-sm">
-              <select 
-                value={selectedBulkBranch}
-                onChange={(e) => setSelectedBulkBranch(e.target.value)}
-                className="flex-1 text-sm border-none bg-transparent rounded-md py-1.5 px-2 text-slate-700 focus:ring-0 outline-none min-w-[130px]"
-              >
-                <option value="">Select Branch...</option>
-                {branches?.map((b: any) => (
-                  <option key={b._id} value={b._id}>{b.name} ({b.category})</option>
-                ))}
-              </select>
-              <button 
-                onClick={() => bulkAssignMutation.mutate(selectedBulkBranch)}
-                disabled={!selectedBulkBranch || bulkAssignMutation.isPending}
-                className="bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold py-1.5 px-4 rounded-md transition-colors disabled:opacity-50 whitespace-nowrap"
-              >
-                {bulkAssignMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Bulk Assign'}
-              </button>
-            </div>
-            <div className="hidden sm:block w-px h-8 bg-indigo-200 mx-1"></div>
-            <button 
-              onClick={() => bulkSyncMutation.mutate()}
-              disabled={bulkSyncMutation.isPending}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-2.5 px-6 rounded-lg transition-colors shadow-md disabled:opacity-50"
-            >
-              {bulkSyncMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Bulk Sync Selected'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Pending Section */}
-      <section className="space-y-6">
-        <div className="flex items-center gap-2 border-b pb-4">
-          <CloudUpload className="w-6 h-6 text-blue-600" />
-          <h2 className="text-2xl font-bold text-slate-800">Pending Sync</h2>
-        </div>
-
-        {pendingLoading ? (
-          <div className="flex items-center gap-2 text-slate-500 py-8">
-            <Loader2 className="w-5 h-5 animate-spin" /> Loading pending items...
-          </div>
-        ) : pending?.length === 0 ? (
-          <div className="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-12 text-center text-slate-500">
-            No pending assignments to sync.
-          </div>
-        ) : (
-          <div className="space-y-10">
-            {/* Pending: Circuital */}
-            {pending?.filter((item: any) => item.branch_category === 'Circuital').length > 0 && (
-              <div>
-                <h3 className="text-xl font-bold text-slate-700 mb-6 flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                  Circuital Branches
-                </h3>
-                <div className="space-y-2">
-                  {pending.filter((item: any) => item.branch_category === 'Circuital').map((item: any) => renderBranchTable(item))}
-                </div>
-              </div>
-            )}
-
-            {/* Pending: Core */}
-            {pending?.filter((item: any) => item.branch_category === 'Core').length > 0 && (
-              <div>
-                <h3 className="text-xl font-bold text-slate-700 mb-6 flex items-center gap-2 mt-8">
-                  <div className="w-3 h-3 rounded-full bg-slate-500"></div>
-                  Core Branches
-                </h3>
-                <div className="space-y-2">
-                  {pending.filter((item: any) => item.branch_category === 'Core').map((item: any) => renderBranchTable(item))}
-                </div>
-              </div>
-            )}
-
-            {/* Pending: Other */}
-            {pending?.filter((item: any) => item.branch_category !== 'Circuital' && item.branch_category !== 'Core').length > 0 && (
-              <div>
-                <h3 className="text-xl font-bold text-slate-700 mb-6 flex items-center gap-2 mt-8">
-                  <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
-                  Other Branches
-                </h3>
-                <div className="space-y-2">
-                  {pending.filter((item: any) => item.branch_category !== 'Circuital' && item.branch_category !== 'Core').map((item: any) => renderBranchTable(item))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </section>
 
       {/* History Section */}
       <section className="space-y-6 pt-8 border-t border-slate-200">
@@ -380,53 +101,36 @@ export default function SyncCenterPage() {
         </div>
 
         {historyLoading ? (
-          <div className="flex items-center gap-2 text-slate-500 py-8">
-            <Loader2 className="w-5 h-5 animate-spin" /> Loading history...
+          <div className="space-y-4 py-8">
+            <div className="h-20 bg-slate-100 rounded-xl animate-pulse"></div>
+            <div className="h-20 bg-slate-100 rounded-xl animate-pulse"></div>
+            <div className="h-20 bg-slate-100 rounded-xl animate-pulse"></div>
           </div>
         ) : history?.length === 0 ? (
           <div className="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-12 text-center text-slate-500">
             No sync history available yet.
           </div>
         ) : (
-          <div className="space-y-10">
-            {/* History: Circuital */}
-            {history?.filter((item: any) => item.branch_category === 'Circuital').length > 0 && (
-              <div>
-                <h3 className="text-xl font-bold text-slate-700 mb-6 flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                  Circuital Branches
-                </h3>
-                <div className="space-y-2">
-                  {history.filter((item: any) => item.branch_category === 'Circuital').map((item: any) => renderBranchTable(item, true))}
+          <div className="space-y-4">
+            {history?.map((item: any) => (
+              <div key={item.id || item._id || Math.random()} className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:shadow-md transition-shadow">
+                <div>
+                  <h4 className="text-lg font-bold text-slate-900">{user.branchName} Sync</h4>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {format(new Date(item.lastSynced || item.created_at || item.timestamp), 'MMM d, yyyy h:mm a')}
+                  </p>
+                </div>
+                <div className="flex gap-4 items-center w-full sm:w-auto justify-between sm:justify-end">
+                  <div className="text-right">
+                    <span className="block font-bold text-slate-800">{item.count || item.synced_count || 0}</span>
+                    <span className="text-xs text-slate-500 uppercase tracking-wider">Records</span>
+                  </div>
+                  <span className="inline-flex items-center justify-center text-xs font-bold px-3 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full">
+                    Completed
+                  </span>
                 </div>
               </div>
-            )}
-
-            {/* History: Core */}
-            {history?.filter((item: any) => item.branch_category === 'Core').length > 0 && (
-              <div>
-                <h3 className="text-xl font-bold text-slate-700 mb-6 flex items-center gap-2 mt-8">
-                  <div className="w-3 h-3 rounded-full bg-slate-500"></div>
-                  Core Branches
-                </h3>
-                <div className="space-y-2">
-                  {history.filter((item: any) => item.branch_category === 'Core').map((item: any) => renderBranchTable(item, true))}
-                </div>
-              </div>
-            )}
-
-            {/* History: Other */}
-            {history?.filter((item: any) => item.branch_category !== 'Circuital' && item.branch_category !== 'Core').length > 0 && (
-              <div>
-                <h3 className="text-xl font-bold text-slate-700 mb-6 flex items-center gap-2 mt-8">
-                  <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
-                  Other Branches
-                </h3>
-                <div className="space-y-2">
-                  {history.filter((item: any) => item.branch_category !== 'Circuital' && item.branch_category !== 'Core').map((item: any) => renderBranchTable(item, true))}
-                </div>
-              </div>
-            )}
+            ))}
           </div>
         )}
       </section>

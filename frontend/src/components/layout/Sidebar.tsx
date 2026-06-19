@@ -13,10 +13,12 @@ import {
   CloudUpload,
   Users,
   Menu,
-  X
+  X,
+  Key
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -25,13 +27,14 @@ const navItems = [
   { href: '/sync', label: 'Sync Center', icon: CloudUpload },
   { href: '/branch-portal', label: 'Branch Portal', icon: Users },
   { href: '/history', label: 'Scan History', icon: History },
-  { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/api-config', label: 'API Config', icon: Key },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   // Close mobile sidebar on route change
   useEffect(() => {
@@ -130,6 +133,16 @@ export function Sidebar() {
                       TPR
                     </motion.span>
                   </div>
+                  {user && (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.6 }}
+                      className="text-xs text-slate-500 font-medium truncate mt-1"
+                    >
+                      {user.name} • <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-md border border-slate-200">{user.branchName}</span>
+                    </motion.div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -181,6 +194,20 @@ export function Sidebar() {
             );
           })}
         </nav>
+        
+        <div className="p-4 border-t border-slate-200">
+          <button
+            onClick={logout}
+            className={cn(
+              "flex items-center w-full rounded-md transition-colors text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700",
+              isCollapsed && !isMobileOpen ? "justify-center p-3" : "gap-3 px-3 py-2.5"
+            )}
+            title={isCollapsed && !isMobileOpen ? "Logout" : undefined}
+          >
+            <X className="w-5 h-5 flex-shrink-0" />
+            {(!isCollapsed || isMobileOpen) && <span className="whitespace-nowrap">Logout</span>}
+          </button>
+        </div>
       </div>
     </>
   );

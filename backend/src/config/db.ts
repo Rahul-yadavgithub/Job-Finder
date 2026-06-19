@@ -1,3 +1,6 @@
+// MongoDB: used for discovery pipeline, scraper data, AI enrichment,
+// API key management, notifications, and raw data only.
+// Portal structured data (users, companies, status) lives in Supabase.
 import mongoose from 'mongoose';
 
 export const connectDB = async () => {

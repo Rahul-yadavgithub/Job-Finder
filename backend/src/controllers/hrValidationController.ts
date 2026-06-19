@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import Company from '../models/Company';
-import Branch from '../models/Branch';
 import HrContact from '../models/HrContact';
 import BranchApiKey from '../models/BranchApiKey';
+import { supabase } from '../config/supabase';
 import { ApiKeyRotatorService } from '../services/api-key-rotator.service';
 import { EnrichmentService } from '../services/enrichment.service';
 
@@ -21,13 +21,18 @@ export const hrValidationController = {
         return res.status(400).json({ success: false, message: 'Company is not assigned to a branch' });
       }
 
-      // Resolve branch ID
-      const branch = await Branch.findOne({ name: company.assignedBranch });
+      // Resolve branch ID from Supabase
+      const { data: branch } = await supabase
+        .from('branches')
+        .select('id')
+        .eq('name', company.assignedBranch)
+        .single();
+        
       if (!branch) {
         return res.status(404).json({ success: false, message: 'Assigned branch not found' });
       }
 
-      const branchIdStr = branch._id.toString();
+      const branchIdStr = branch.id;
 
       // Enforce zero keys check (Requirement #2)
       const activeKeysCount = await BranchApiKey.countDocuments({ branchId: branchIdStr, status: 'active' });

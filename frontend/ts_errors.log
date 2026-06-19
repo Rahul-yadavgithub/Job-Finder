@@ -1,0 +1,7 @@
+src/features/communicationTPR/hooks/useCommunicationAuth.ts(56,27): error TS1005: '>' expected.
+src/features/communicationTPR/hooks/useCommunicationAuth.ts(56,32): error TS1005: ')' expected.
+src/features/communicationTPR/hooks/useCommunicationAuth.ts(56,34): error TS1136: Property assignment expected.
+src/features/communicationTPR/hooks/useCommunicationAuth.ts(56,67): error TS1109: Expression expected.
+src/features/communicationTPR/hooks/useCommunicationAuth.ts(58,6): error TS1161: Unterminated regular expression literal.
+src/features/communicationTPR/hooks/useCommunicationAuth.ts(59,3): error TS1128: Declaration or statement expected.
+src/features/communicationTPR/hooks/useCommunicationAuth.ts(60,1): error TS1128: Declaration or statement expected.
