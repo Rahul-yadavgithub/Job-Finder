@@ -57,7 +57,7 @@ export default function LoginPage() {
         window.location.href = '/communication-tpr/dashboard';
       } else {
         // Force a hard refresh to re-evaluate AuthContext and layout
-        window.location.href = '/branch-portal';
+        window.location.href = '/dashboard';
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Invalid email or password. Please try again.');

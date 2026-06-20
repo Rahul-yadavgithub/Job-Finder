@@ -4,7 +4,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { useState } from 'react';
 import { Search, Globe, CheckCircle, XCircle, Info } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 import { CompanyDetailsModal } from '@/components/ui/CompanyDetailsModal';
 
 interface Company {
@@ -39,16 +41,17 @@ interface Company {
 export default function CompaniesPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('PENDING_REVIEW');
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const { data, isLoading } = useQuery({
     queryKey: ['companies', page, search, statusFilter],
     queryFn: async () => {
       const params: any = { page, limit: 10, search };
       if (statusFilter) params.status = statusFilter;
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/companies`, { params });
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/companies`, { params, withCredentials: true });
       return res.data;
     },
   });
@@ -56,11 +59,17 @@ export default function CompaniesPage() {
   const reviewMutation = useMutation({
     mutationFn: async ({ id, action }: { id: string; action: 'approve' | 'reject' }) => {
       await axios.patch(`${process.env.NEXT_PUBLIC_API_URL}/companies/${id}/review`, {
-        action,
-        reviewed_by: 'Admin' // Hardcoded for now, will come from auth later
-      });
+        action
+      }, { withCredentials: true });
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['companies'] }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      if (variables.action === 'approve') {
+        toast.success('Company approved and queued for sync!');
+      } else {
+        toast.info('Company rejected and removed from pending review.');
+      }
+    },
   });
 
   return (

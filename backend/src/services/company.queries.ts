@@ -41,7 +41,11 @@ export async function getCompaniesByBranch({
     .eq('locked', false);
 
   if (status) {
-    query = query.eq('base_status', status);
+    if (status === 'pending') {
+      query = query.or('base_status.eq.not_contacted,base_status.eq.pending,base_status.is.null');
+    } else {
+      query = query.eq('base_status', status);
+    }
   }
   if (search) {
     query = query.ilike('companies.company_name', `%${search}%`);
@@ -65,7 +69,7 @@ export async function getTodayCompaniesByBranch(branchId: string) {
     .select('*, companies!inner(*)')
     .eq('branch_id', branchId)
     .eq('locked', false)
-    .or(`base_status.eq.not_contacted,next_followup_date.lte.${currentDate}`)
+    .eq('base_status', 'call_again') // "whose status and followup data is mentioned"
     .order('next_followup_date', { ascending: true, nullsFirst: false });
 
   if (error) throw error;
@@ -77,20 +81,19 @@ export async function getDashboardCounts(branchId: string) {
   // Using parallel head-only requests to emulate it efficiently.
   const currentDate = new Date().toISOString().split('T')[0];
 
-  const [totalRes, notContactedRes, interestedRes, notConfirmedRes, followupDueRes] = await Promise.all([
+  const [totalRes, pendingRes, interestedRes, callAgainRes] = await Promise.all([
     supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('branch_id', branchId),
-    supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('branch_id', branchId).eq('base_status', 'not_contacted'),
-    supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('branch_id', branchId).or('base_status.eq.interested,locked.eq.true'),
-    supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('branch_id', branchId).eq('locked', false).in('base_status', ['call_again', 'not_available', 'rejected']),
-    supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('branch_id', branchId).eq('locked', false).lte('next_followup_date', currentDate)
+    supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('branch_id', branchId).or('base_status.eq.not_contacted,base_status.eq.pending,base_status.is.null'), // "status is either nothing"
+    supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('branch_id', branchId).eq('base_status', 'interested'),
+    supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('branch_id', branchId).eq('base_status', 'call_again')
   ]);
 
   return {
     total: totalRes.count || 0,
-    not_contacted: notContactedRes.count || 0,
+    not_contacted: pendingRes.count || 0, // Maps to Not Confirmed
     interested_count: interestedRes.count || 0,
-    not_confirmed_count: notConfirmedRes.count || 0,
-    followup_due: followupDueRes.count || 0
+    not_confirmed_count: pendingRes.count || 0, // Using same value for Not Confirmed
+    followup_due: callAgainRes.count || 0 // Maps to Contact Today
   };
 }
 
@@ -122,36 +125,80 @@ export async function insertCompany(data: CompanyInsert, userId: string, branchI
 }
 
 export async function insertCompanyBatch(rows: CompanyInsert[], userId: string, branchId: string) {
-  if (!rows.length) return { inserted: 0, skipped: 0 };
+  let inserted = 0;
+  let skipped = 0;
 
-  const payload = rows.map(r => ({
-    ...r,
-    branch_id: branchId,
-    created_by: userId
-  }));
+  for (const row of rows) {
+    const { data: result, error } = await supabase.rpc('insert_company_safe', {
+      p_company_name: row.company_name,
+      p_branch_id: branchId,
+      p_hr_name: row.hr_name || null,
+      p_email: row.email || null,
+      p_phone_number: row.phone_number || null,
+      p_description: row.description || null,
+      p_data: { created_by: userId, data_source: row.data_source || 'scan' }
+    });
 
-  const { data: insertedCompanies, error: insertError } = await supabase
-    .from('companies')
-    .upsert(payload, { onConflict: 'company_name,branch_id', ignoreDuplicates: true })
-    .select('id');
-
-  if (insertError) throw insertError;
-
-  if (insertedCompanies && insertedCompanies.length > 0) {
-    const statusPayload = insertedCompanies.map(c => ({
-      company_id: c.id,
-      branch_id: branchId
-    }));
-    const { error: statusError } = await supabase
-      .from('company_status')
-      .insert(statusPayload);
-    if (statusError) throw statusError;
+    if (error) {
+      console.error('Error inserting company:', error);
+      skipped++;
+    } else if (result && result.is_duplicate) {
+      skipped++;
+    } else {
+      inserted++;
+    }
   }
 
-  return {
-    inserted: insertedCompanies?.length || 0,
-    skipped: rows.length - (insertedCompanies?.length || 0)
-  };
+  return { inserted, skipped };
+}
+
+export async function syncCompanyBatchFromSheet(rows: CompanyInsert[], userId: string, branchId: string) {
+  let updated = 0;
+  let skipped = 0;
+
+  const { data: branchData } = await supabase.from('branches').select('branch_group').eq('id', branchId).single();
+  const branchGroup = branchData?.branch_group;
+  if (!branchGroup) throw new Error('Branch group not found');
+
+  for (const row of rows) {
+    const { data: existing } = await supabase
+      .from('companies')
+      .select('id')
+      .eq('branch_group_key', branchGroup)
+      .eq('status', 'active')
+      .ilike('company_name', row.company_name.trim())
+      .limit(1)
+      .single();
+
+    if (existing) {
+      const { error } = await supabase
+        .from('companies')
+        .update({
+          hr_name: row.hr_name || null,
+          email: row.email || null,
+          phone_number: row.phone_number || null,
+          description: row.description || null
+        })
+        .eq('id', existing.id);
+        
+      if (!error) updated++;
+      else skipped++;
+    } else {
+      const { data: result, error } = await supabase.rpc('insert_company_safe', {
+        p_company_name: row.company_name,
+        p_branch_id: branchId,
+        p_hr_name: row.hr_name || null,
+        p_email: row.email || null,
+        p_phone_number: row.phone_number || null,
+        p_description: row.description || null,
+        p_data: { created_by: userId, data_source: row.data_source || 'sheet_sync' }
+      });
+      if (!error && result && !result.is_duplicate) updated++;
+      else skipped++;
+    }
+  }
+
+  return { updated, skipped };
 }
 
 export async function getMidDashboardCounts() {

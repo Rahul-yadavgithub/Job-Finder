@@ -39,12 +39,19 @@ export function ImportPreviewTable({ rows, onRemoveRow }: ImportPreviewTableProp
                       <CheckCircle2 className="w-3.5 h-3.5" /> Valid
                     </span>
                   ) : (
-                    <span 
-                      className="flex items-center gap-1.5 text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-full w-max cursor-help"
-                      title={row.errors?.join(', ')}
-                    >
-                      <AlertCircle className="w-3.5 h-3.5" /> Error
-                    </span>
+                    <div className="flex flex-col gap-1">
+                      <span 
+                        className="flex items-center gap-1.5 text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-full w-max"
+                        title={row.errors?.join(', ')}
+                      >
+                        <AlertCircle className="w-3.5 h-3.5" /> Error
+                      </span>
+                      {row.errors && row.errors.length > 0 && (
+                        <span className="text-[10px] text-rose-600 max-w-[150px] leading-tight">
+                          {row.errors.join(', ')}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </td>
                 <td className="px-6 py-4 text-sm font-medium text-slate-900">{row.companyName || '-'}</td>

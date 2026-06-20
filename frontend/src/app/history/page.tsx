@@ -23,7 +23,7 @@ interface ScanRecord {
 
 export default function HistoryPage() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'jobs' | 'branch' | 'stats'>('jobs');
+  const [activeTab, setActiveTab] = useState<'jobs' | 'stats'>('jobs');
   const [recordToDelete, setRecordToDelete] = useState<ScanRecord | null>(null);
   
   const [dateRange, setDateRange] = useState<{from: string, to: string}>({ from: '', to: '' });
@@ -32,7 +32,7 @@ export default function HistoryPage() {
   const { data: history, isLoading: historyLoading } = useQuery<ScanRecord[]>({
     queryKey: ['history'],
     queryFn: async () => {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/history`);
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/history`, { withCredentials: true });
       return res.data;
     },
     refetchInterval: (query) => {
@@ -41,14 +41,6 @@ export default function HistoryPage() {
     },
   });
 
-  // Branch Assignment Query
-  const { data: branchData, isLoading: branchLoading } = useQuery({
-    queryKey: ['history-branch-assignments'],
-    queryFn: async () => {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/history/assigned-by-branch`);
-      return res.data;
-    },
-  });
 
   // Stats Query
   const { data: statsData, isLoading: statsLoading } = useQuery({
@@ -57,7 +49,7 @@ export default function HistoryPage() {
       let url = `${process.env.NEXT_PUBLIC_API_URL}/history/scan-stats?`;
       if (dateRange.from) url += `from=${dateRange.from}&`;
       if (dateRange.to) url += `to=${dateRange.to}`;
-      const res = await axios.get(url);
+      const res = await axios.get(url, { withCredentials: true });
       return res.data;
     },
   });
@@ -66,14 +58,14 @@ export default function HistoryPage() {
   const { data: currentStats } = useQuery({
     queryKey: ['history-current-scan-stats'],
     queryFn: async () => {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/history/current-scan-stats`);
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/history/current-scan-stats`, { withCredentials: true });
       return res.data;
     },
   });
 
   const deleteHistory = useMutation({
     mutationFn: async (id: string) => {
-      await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/history/${id}`);
+      await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/history/${id}`, { withCredentials: true });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['history'] });
@@ -115,14 +107,7 @@ export default function HistoryPage() {
           >
             <List className="w-4 h-4 shrink-0" /> Jobs Log
           </button>
-          <button
-            onClick={() => setActiveTab('branch')}
-            className={`flex-1 sm:flex-none px-5 py-2.5 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${
-              activeTab === 'branch' ? 'bg-white text-slate-900 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
-            }`}
-          >
-            <Building2 className="w-4 h-4 shrink-0" /> Assigned by Branch
-          </button>
+
           <button
             onClick={() => setActiveTab('stats')}
             className={`flex-1 sm:flex-none px-5 py-2.5 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${
@@ -225,54 +210,6 @@ export default function HistoryPage() {
         </div>
       )}
 
-      {activeTab === 'branch' && (
-        <div className="space-y-6">
-          {branchLoading ? (
-            <div className="text-center py-12 text-slate-500">Loading branch assignments...</div>
-          ) : branchData?.length === 0 ? (
-            <div className="text-center py-12 text-slate-500">No branch assignments found.</div>
-          ) : (
-            branchData?.map((branch: any) => (
-              <div key={branch._id} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex justify-between items-center">
-                  <h3 className="font-bold text-lg text-slate-900">{branch.branchName}</h3>
-                  <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded-full">{branch.companies.length} Companies</span>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className="text-xs text-slate-500 uppercase bg-white border-b border-slate-200">
-                      <tr>
-                        <th className="px-6 py-3">Company</th>
-                        <th className="px-6 py-3">Role</th>
-                        <th className="px-6 py-3">Drive Type</th>
-                        <th className="px-6 py-3">Status</th>
-                        <th className="px-6 py-3">Assigned Date</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {branch.companies.map((company: any) => (
-                        <tr key={company._id} className="hover:bg-slate-50">
-                          <td className="px-6 py-3 font-medium text-slate-900">{company.companyName}</td>
-                          <td className="px-6 py-3 text-slate-600">{company.role || '--'}</td>
-                          <td className="px-6 py-3 text-slate-600">{company.drive_type || '--'}</td>
-                          <td className="px-6 py-3">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-800">
-                              {company.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-3 text-slate-500">
-                            {company.assigned_at ? format(new Date(company.assigned_at), 'MMM d, yyyy') : '--'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      )}
 
       {activeTab === 'stats' && (
         <div className="space-y-8">

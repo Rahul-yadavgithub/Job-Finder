@@ -22,7 +22,7 @@ export default function ScanCenterPage() {
   const triggerScan = useMutation({
     mutationFn: async () => {
       setScanStatus('scanning');
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/scan/trigger`);
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/scan/trigger`, {}, { withCredentials: true });
       return res.data;
     },
     onSuccess: () => {

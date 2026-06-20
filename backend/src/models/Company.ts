@@ -19,6 +19,7 @@ export interface ICompany extends Document {
   website?: string;
   description?: string;
   category?: string;
+  branchCategory?: string;
   foundedYear?: string;
   teamSize?: string;
   fundingStage?: string;
@@ -106,6 +107,7 @@ const CompanySchema: Schema = new Schema(
     website: { type: String },
     description: { type: String },
     category: { type: String },
+    branchCategory: { type: String },
     foundedYear: { type: String },
     teamSize: { type: String },
     fundingStage: { type: String },

@@ -5,17 +5,20 @@ import {
   getCompaniesByBranch,
   getTodayCompaniesByBranch,
   insertCompanyBatch,
+  syncCompanyBatchFromSheet,
   CompanyInsert
 } from '../services/company.queries';
 import { applyStatusUpdate } from '../services/statusUpdate.service';
 import { AuthRequest } from '../types/auth.types';
 import xlsx from 'xlsx';
 import Settings from '../models/Settings';
+import Company, { CompanyStatus } from '../models/Company';
+import SyncJob from '../models/SyncJob';
 import { googleSheetService } from '../services/google/GoogleSheetProvider';
 
 export const getDashboard = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const counts = await getDashboardCounts(req.user!.branchId!);
+    const fs = require("fs"); fs.writeFileSync("debug_dash.txt", JSON.stringify(req.user)); const counts = await getDashboardCounts(req.user!.branchId!);
     res.status(200).json({ success: true, data: counts });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message || 'Internal server error' });
@@ -75,14 +78,64 @@ export const updateStatus = async (req: AuthRequest, res: Response): Promise<voi
   }
 };
 
+export const getCompanyHistory = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userRole = req.user!.role;
+    
+    const { data: statusData, error: statusError } = await supabase
+      .from('company_status')
+      .select('base_status, mid_status, top_status, locked')
+      .eq('company_id', id)
+      .single();
+
+    if (statusError || !statusData) {
+      res.status(404).json({ success: false, message: 'Company not found' });
+      return;
+    }
+
+    // Role-Based Visibility Checks
+    if (userRole === 'branch_tpr') {
+      if (statusData.base_status === 'interested' || statusData.locked) {
+        res.status(200).json({ success: true, data: [], hidden: true, message: 'History hidden. Company has progressed to the next layer.' });
+        return;
+      }
+    } else if (userRole === 'communication_tpr') {
+      if (statusData.top_status || statusData.mid_status === 'confirmed') {
+         res.status(200).json({ success: true, data: [], hidden: true, message: 'History hidden. Company has progressed to the top layer.' });
+         return;
+      }
+    }
+
+    let query = supabase
+      .from('status_history')
+      .select('*')
+      .eq('company_id', id)
+      .order('changed_at', { ascending: false });
+
+    if (userRole === 'branch_tpr') {
+      query = query.eq('layer', 'base');
+    } else if (userRole === 'communication_tpr') {
+      query = query.in('layer', ['base', 'mid']);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    res.status(200).json({ success: true, data, hidden: false });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || 'Internal server error' });
+  }
+};
+
 export const importCSV = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    if (!req.file) {
+    if (!(req as any).file) {
       res.status(400).json({ success: false, message: 'No file uploaded' });
       return;
     }
 
-    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+    const workbook = xlsx.read((req as any).file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
     const rows = xlsx.utils.sheet_to_json<Record<string, any>>(sheet);
@@ -171,8 +224,105 @@ export const syncSheet = async (req: AuthRequest, res: Response): Promise<void> 
       });
     }
 
-    const result = await insertCompanyBatch(inserts, req.user!.userId, req.user!.branchId!);
-    res.status(200).json({ success: true, data: result });
+    const result = await syncCompanyBatchFromSheet(inserts, req.user!.userId, req.user!.branchId!);
+    res.status(200).json({ success: true, data: { ...result, totalUpdated: result.updated } });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || 'Internal server error' });
+  }
+};
+
+export const pushSync = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const branchId = req.user!.branchId!;
+    
+    const { companyIds: targetCompanyIds } = req.body;
+    
+    // 1. Fetch pending companies from MongoDB
+    const query: any = {
+      assignedBranch: branchId,
+      syncStatus: 'pending',
+      status: CompanyStatus.APPROVED
+    };
+    if (targetCompanyIds && Array.isArray(targetCompanyIds) && targetCompanyIds.length > 0) {
+      query._id = { $in: targetCompanyIds };
+    }
+
+    const pendingCompanies = await Company.find(query);
+
+    if (!pendingCompanies || pendingCompanies.length === 0) {
+      res.status(200).json({ success: true, message: 'No pending companies to sync', count: 0 });
+      return;
+    }
+
+    // 2. Prepare inserts for Supabase - ONLY company_name to prevent conflicts
+    const inserts: CompanyInsert[] = pendingCompanies.map(c => ({
+      company_name: c.companyName,
+      data_source: 'scan'
+    }));
+
+    // 3. Insert into Supabase
+    const result = await insertCompanyBatch(inserts, req.user!.userId, branchId);
+
+    // 4. Update MongoDB status
+    const companyIds = pendingCompanies.map(c => c._id);
+    await Company.updateMany(
+      { _id: { $in: companyIds } },
+      { $set: { syncStatus: 'synced', lastSynced: new Date() } }
+    );
+
+    // 5. Create SyncHistory record
+    const syncHistory = await SyncJob.create({
+      branchId: branchId,
+      status: 'completed',
+      totalRecords: pendingCompanies.length,
+      syncedRecords: result.inserted,
+      failedRecords: result.skipped,
+      startedAt: new Date(),
+      completedAt: new Date()
+    });
+
+    res.status(200).json({ success: true, data: result, history: syncHistory });
+  } catch (error: any) {
+    console.error('Push Sync Error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Internal server error' });
+  }
+};
+
+export const getPendingSyncCompanies = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const branchId = req.user!.branchId!;
+    const companies = await Company.find({
+      assignedBranch: branchId,
+      syncStatus: 'pending',
+      status: CompanyStatus.APPROVED
+    }).sort({ updatedAt: -1 }).lean();
+    
+    res.status(200).json({ success: true, data: companies });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || 'Internal server error' });
+  }
+};
+
+export const removePendingCompany = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const branchId = req.user!.branchId!;
+    
+    const company = await Company.findOne({ _id: id, assignedBranch: branchId });
+    if (!company) {
+      res.status(404).json({ success: false, message: 'Company not found in pending queue' });
+      return;
+    }
+
+    if (company.data_source === ('manual' as any)) {
+      await Company.findByIdAndDelete(id);
+    } else {
+      company.status = CompanyStatus.REJECTED;
+      company.syncStatus = undefined as any;
+      await company.save();
+    }
+
+    res.status(200).json({ success: true, message: 'Company removed from pending queue' });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message || 'Internal server error' });
   }
@@ -197,10 +347,139 @@ export const getSheetUrl = async (req: AuthRequest, res: Response): Promise<void
 
 export const getSyncHistory = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    // Currently no persistent sync_history table for branches, returning empty array
-    // To be implemented fully when Supabase schema for sync history is added
-    res.status(200).json({ success: true, data: [] });
+    const branchId = req.user!.branchId!;
+    const history = await SyncJob.find({ branchId })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean();
+      
+    const mappedHistory = history.map(h => ({
+      id: h._id,
+      timestamp: h.createdAt,
+      count: h.syncedRecords,
+      status: h.status
+    }));
+
+    res.status(200).json({ success: true, data: mappedHistory });
   } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || 'Internal server error' });
+  }
+};
+
+export const checkCompanyName = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { name } = req.query;
+    if (!name || typeof name !== 'string') {
+      res.status(400).json({ success: false, message: 'Name is required' });
+      return;
+    }
+
+    const branchId = req.user!.branchId!;
+    
+    // 1. Get the branch group
+    const { data: branchData, error: branchError } = await supabase
+      .from('branches')
+      .select('branch_group')
+      .eq('id', branchId)
+      .single();
+
+    if (branchError || !branchData) {
+      res.status(500).json({ success: false, message: 'Branch not found' });
+      return;
+    }
+
+    const branchGroup = branchData.branch_group;
+
+    // 2. Check if the normalized name exists in the same branch group
+    const { data: existingCompany, error: searchError } = await supabase
+      .from('companies')
+      .select('id, company_name, hr_name, email, phone_number')
+      .eq('branch_group_key', branchGroup)
+      .eq('status', 'active')
+      .ilike('company_name', name.trim())
+      .limit(1)
+      .single();
+
+    if (searchError && searchError.code !== 'PGRST116') { // PGRST116 is PostgreSQL code for zero rows returned on .single()
+      res.status(500).json({ success: false, message: searchError.message });
+      return;
+    }
+
+    if (!existingCompany) {
+      res.json({ exists: false });
+      return;
+    }
+
+    res.json({
+      exists: true,
+      company: {
+        _id: existingCompany.id,
+        companyName: existingCompany.company_name,
+      },
+      hrContact: {
+        name: existingCompany.hr_name,
+        email: existingCompany.email,
+        mobile: existingCompany.phone_number
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || 'Internal server error' });
+  }
+};
+
+export const addManualCompany = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const branchId = req.user!.branchId!;
+    const { companyName, hrName, hrPhone, hrEmail, linkedinProfile } = req.body;
+
+    if (!companyName) {
+      res.status(400).json({ success: false, message: 'Company name is required' });
+      return;
+    }
+
+    const normalizedName = companyName.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    // Check if it already exists in MongoDB
+    let company = await Company.findOne({ 
+      normalizedName,
+      $or: [{ assignedBranch: branchId }, { assignedBranch: { $exists: false } }]
+    });
+
+    if (company) {
+      // Update existing
+      company.hrEmail = hrEmail || company.hrEmail;
+      company.founderEmail = company.founderEmail || hrEmail; // Fallback
+      if (hrName) {
+        // We don't have an hrName field on the Company model, but we have hrEmail, talentAcquisitionEmail, etc.
+        // We can just rely on the API passing the updated data.
+      }
+      company.assignedBranch = branchId;
+      company.status = CompanyStatus.APPROVED;
+      company.syncStatus = 'pending';
+      company.review_status = 'approved';
+      await company.save();
+    } else {
+      // Create new
+      company = new Company({
+        companyName,
+        normalizedName,
+        hrEmail: hrEmail || undefined,
+        assignedBranch: branchId,
+        status: CompanyStatus.APPROVED,
+        syncStatus: 'pending',
+        review_status: 'approved',
+        data_source: 'manual',
+        reviewed_by: req.user!.userId,
+        reviewed_at: new Date(),
+        confidenceScore: 100,
+        placementScore: 0
+      });
+      await company.save();
+    }
+
+    res.status(200).json({ success: true, data: company });
+  } catch (error: any) {
+    console.error('Manual company add error:', error);
     res.status(500).json({ success: false, message: error.message || 'Internal server error' });
   }
 };

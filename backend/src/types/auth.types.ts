@@ -2,7 +2,7 @@ import { Request } from 'express';
 
 export interface JWTPayload {
   userId: string;
-  role: 'branch_tpr' | 'caller' | 'head';
+  role: 'branch_tpr' | 'caller' | 'head' | 'communication_tpr';
   branchId: string | null;
   branchName: string | null;
 }

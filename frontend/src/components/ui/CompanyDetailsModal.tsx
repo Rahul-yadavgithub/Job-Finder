@@ -10,6 +10,7 @@ interface Company {
   normalizedName: string;
   website?: string;
   category?: string;
+  branchCategory?: string;
   description?: string;
   fresherHiring?: boolean;
   internshipAvailable?: boolean;
@@ -43,38 +44,10 @@ interface CompanyDetailsModalProps {
 
 export function CompanyDetailsModal({ isOpen, onClose, company, onUpdate }: CompanyDetailsModalProps) {
   const queryClient = useQueryClient();
-  const [selectedBranch, setSelectedBranch] = useState('');
-
-  const { data: branches, isLoading: branchesLoading } = useQuery({
-    queryKey: ['branches'],
-    queryFn: async () => {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/branches`);
-      return res.data;
-    },
-    enabled: isOpen && company?.status === 'APPROVED',
-  });
-
-  const assignMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedBranch || !company) return;
-      const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/companies/${company._id}/assignment`, {
-        branch_id: selectedBranch,
-        assigned_by: 'Admin'
-      });
-      return res.data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['companies'] });
-      if (onUpdate && data) {
-        onUpdate(data);
-      }
-    }
-  });
-
   // Reset state when modal closes
   React.useEffect(() => {
     if (!isOpen) {
-      setSelectedBranch('');
+      // Any cleanup if needed
     }
   }, [isOpen]);
 
@@ -109,6 +82,15 @@ export function CompanyDetailsModal({ isOpen, onClose, company, onUpdate }: Comp
                   <span className="flex items-center gap-1.5 text-slate-600">
                     <Target className="w-4 h-4" />
                     {company.category}
+                  </span>
+                )}
+                {company.branchCategory && (
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                    company.branchCategory === 'Circuital' 
+                      ? 'bg-blue-100 text-blue-700 border border-blue-200' 
+                      : 'bg-orange-100 text-orange-700 border border-orange-200'
+                  }`}>
+                    {company.branchCategory}
                   </span>
                 )}
               </div>
@@ -193,56 +175,7 @@ export function CompanyDetailsModal({ isOpen, onClose, company, onUpdate }: Comp
             {/* Right Column */}
             <div className="space-y-6">
 
-              {/* Branch Assignment */}
-              {company.status === 'APPROVED' && (
-                <section className="bg-slate-50 border border-slate-200 rounded-2xl p-6 shadow-sm">
-                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Branch Assignment</h3>
-                  
-                  {branchesLoading ? (
-                    <div className="flex justify-center p-4">
-                      <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
-                    </div>
-                  ) : company.assignedBranch ? (
-                    <div className="space-y-4">
-                      <div className="flex gap-2">
-                        <div className="flex-1 rounded-lg border border-slate-300 shadow-sm sm:text-sm p-2.5 bg-white text-slate-900 font-medium">
-                          {company.assignedBranch}
-                        </div>
-                      </div>
-                      <div className="pt-4 mt-2 border-t border-slate-200">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-semibold text-slate-600">Sync Status</span>
-                          <span className={`text-sm font-bold ${company.syncStatus === 'synced' ? 'text-green-600' : 'text-yellow-600'}`}>
-                            {company.syncStatus === 'synced' ? 'Synced' : 'Pending'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="flex gap-2">
-                        <select
-                          value={selectedBranch}
-                          onChange={(e) => setSelectedBranch(e.target.value)}
-                          className="flex-1 rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2.5 bg-white"
-                        >
-                          <option value="">Select a branch...</option>
-                          {branches?.map((b: any) => (
-                            <option key={b._id} value={b._id}>{b.name} ({b.category})</option>
-                          ))}
-                        </select>
-                      </div>
-                      <button
-                        onClick={() => assignMutation.mutate()}
-                        disabled={assignMutation.isPending || !selectedBranch}
-                        className="w-full mt-3 bg-slate-200 hover:bg-slate-300 text-slate-700 disabled:opacity-50 font-bold px-4 py-2 rounded-lg transition-colors text-sm"
-                      >
-                        {assignMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Assign Branch'}
-                      </button>
-                    </div>
-                  )}
-                </section>
-              )}
+              {/* Removed Branch Assignment block, handled automatically on approval */}
 
               {/* Company Profile */}
               <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">

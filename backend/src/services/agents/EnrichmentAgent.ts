@@ -5,6 +5,7 @@ dotenv.config();
 
 export interface EnrichmentResult {
   category?: string;
+  branchCategory?: string;
   hiringType?: string;
   engineeringRelevance?: string;
   summary?: string;
@@ -50,18 +51,20 @@ Website: "${website || 'Unknown'}"
 Additional Context from scraping: "${rawContext || 'None'}"
 
 Tasks:
-1. Determine Company Category (e.g. Startup, Product, Service, FinTech, AI, SaaS, Cybersecurity, Healthcare)
-2. Determine Hiring Type (Internship, Freshers, Experienced, Mixed) based on context or general knowledge.
-3. Assess Engineering Relevance (High, Medium, Low) - How relevant is this company for CS/Engineering students?
-4. Generate a 3 line company summary.
-5. Extract team size, funding stage, and founded year if available.
-6. Extract ANY raw salary information (e.g. "6-10 LPA", "Competitive", "Industry Standard") into salaryRawText. If absolutely no salary info is found, return null. DO NOT invent salaries.
-7. Extract ANY raw stipend information (e.g. "20k/month", "15000") into stipendRawText. If none, return null. DO NOT invent stipends.
-8. Provide an AI Confidence score (0-100) representing how confident you are in this metadata.
+1. Determine Company Category (e.g. Startup, Product, Service, FinTech, AI, SaaS, Cybersecurity, Healthcare).
+2. Determine Branch Category: Output EXACTLY "Circuital" if the company's primary business is IT, Software Development, Tech, AI, SaaS, or Computer Science related. Output EXACTLY "Core" if it is a non-IT company (e.g., Mechanical, Civil, Chemical, Manufacturing, generic Finance, generic Consulting, core Hardware).
+3. Determine Hiring Type (Internship, Freshers, Experienced, Mixed) based on context or general knowledge.
+4. Assess Engineering Relevance (High, Medium, Low) - How relevant is this company for CS/Engineering students?
+5. Generate a 3 line company summary.
+6. Extract team size, funding stage, and founded year if available.
+7. Extract ANY raw salary information (e.g. "6-10 LPA", "Competitive", "Industry Standard") into salaryRawText. If absolutely no salary info is found, return null. DO NOT invent salaries.
+8. Extract ANY raw stipend information (e.g. "20k/month", "15000") into stipendRawText. If none, return null. DO NOT invent stipends.
+9. Provide an AI Confidence score (0-100) representing how confident you are in this metadata.
 
 Return ONLY a valid JSON object (no markdown tags):
 {
   "category": "e.g., AI",
+  "branchCategory": "Circuital or Core",
   "hiringType": "e.g., Freshers",
   "engineeringRelevance": "High",
   "summary": "Your 3 line summary here",
@@ -98,6 +101,7 @@ Return ONLY a valid JSON object (no markdown tags):
       
       return {
         category: parsed.category,
+        branchCategory: parsed.branchCategory,
         hiringType: parsed.hiringType,
         engineeringRelevance: parsed.engineeringRelevance,
         summary: parsed.summary,

@@ -6,6 +6,7 @@ import ScanHistory from '../../models/ScanHistory';
 import RawDiscovery from '../../models/RawDiscovery';
 import { DiscoveredCompany } from '../scraper/BaseScraper';
 import { SalaryParser } from '../../utils/SalaryParser';
+import { supabase } from '../../config/supabase';
 
 export interface PipelineResult {
   status: 'NEW_ADD' | 'DUPLICATE' | 'REJECTED';
@@ -90,9 +91,9 @@ export class AgentPipeline {
       }
     };
 
-    const updateRawStatus = async (status: string) => {
+    const updateRawStatus = async (status: string, additionalData?: any) => {
       if (rawDiscoveryId) {
-        await RawDiscovery.findByIdAndUpdate(rawDiscoveryId, { status });
+        await RawDiscovery.findByIdAndUpdate(rawDiscoveryId, { status, ...additionalData });
       }
     };
 
@@ -119,24 +120,66 @@ export class AgentPipeline {
       return { status: 'REJECTED' };
     }
 
-    // 2. Duplicate Check
+    // 2. Duplicate Check (Supabase is Primary Source of Truth)
     await updatePhase('Checking Duplicates...');
     const normalizedName = DuplicateDetectionAgent.normalizeName(validationResult.companyName || '');
     const companyHash = DuplicateDetectionAgent.generateHash(normalizedName);
     
-    // Check our database directly
-    const existingDb = await Company.findOne({ companyHash });
-    if (existingDb) {
-      console.log(`Duplicate found in DB: ${normalizedName}. Merging history...`);
-      existingDb.discoveryHistory.push({
+    // Level 1: Fetch potential matches from Supabase using the first word to narrow down, then normalize in JS
+    const firstWord = (validationResult.companyName || '').split(' ')[0].replace(/[^a-zA-Z0-9]/g, '');
+    let existsInSupabase = false;
+    
+    if (firstWord.length > 1) {
+      const { data: potentialMatches } = await supabase
+        .from('companies')
+        .select('company_name')
+        .eq('status', 'active')
+        .ilike('company_name', `${firstWord}%`);
+        
+      if (potentialMatches && potentialMatches.length > 0) {
+        for (const match of potentialMatches) {
+          if (DuplicateDetectionAgent.normalizeName(match.company_name) === normalizedName) {
+            existsInSupabase = true;
+            break;
+          }
+        }
+      }
+    } else {
+      // Fallback if first word is too short: fetch all or do direct ilike on full name
+      const { data: exactMatch } = await supabase
+        .from('companies')
+        .select('company_name')
+        .eq('status', 'active')
+        .ilike('company_name', validationResult.companyName?.trim() || '');
+      if (exactMatch && exactMatch.length > 0) existsInSupabase = true;
+    }
+
+    if (existsInSupabase) {
+      console.log(`Duplicate found in Supabase: ${normalizedName}. Ignoring completely.`);
+      await updateRawStatus('DUPLICATE');
+      return { status: 'DUPLICATE' };
+    }
+
+    // Defensive Check in MongoDB
+    const existingMongo = await Company.findOne({ companyHash });
+    if (existingMongo) {
+      console.log(`Duplicate found in MongoDB Staging: ${normalizedName}. Updating history...`);
+      existingMongo.discoveryHistory.push({
         platform: discovery.source,
         sourceUrl: discovery.sourceUrl,
         discoveredAt: new Date()
       });
-      if (!existingDb.startupSignals.includes(discovery.source)) {
-        existingDb.startupSignals.push(discovery.source);
+      if (!existingMongo.startupSignals.includes(discovery.source)) {
+        existingMongo.startupSignals.push(discovery.source);
       }
-      await existingDb.save();
+      await existingMongo.save();
+      await updateRawStatus('DUPLICATE');
+      return { status: 'DUPLICATE' };
+    }
+    
+    const existingHistory = await RawDiscovery.findOne({ companyHash, status: { $in: ['REJECTED', 'MANUALLY_APPROVED'] } });
+    if (existingHistory) {
+      console.log(`Duplicate found in RawDiscovery History Queue: ${normalizedName}. Ignoring.`);
       await updateRawStatus('DUPLICATE');
       return { status: 'DUPLICATE' };
     }
@@ -163,63 +206,84 @@ export class AgentPipeline {
     const isFresher = enrichmentResult.hiringType?.toLowerCase().includes('fresher') || false;
     const isIntern = enrichmentResult.hiringType?.toLowerCase().includes('intern') || false;
 
-    // 6. Build and Save
+    // 6. Build and Save depending on Validation
     await updatePhase('Saving Results...');
     
-    let status = CompanyStatus.PENDING_REVIEW;
-    
     try {
-      await Company.create({
-        companyName: validationResult.companyName,
-        normalizedName,
-        companyHash,
-        website: validationResult.website,
-        description: enrichmentResult.summary || validationResult.description,
-        category: enrichmentResult.category,
-        foundedYear: enrichmentResult.foundedYear,
-        teamSize: enrichmentResult.teamSize,
-        fundingStage: enrichmentResult.fundingStage,
-        
-        source: {
-          platform: discovery.source,
-          sourceUrl: discovery.sourceUrl,
-          careersUrl: discovery.careersUrl,
-          discoveryMethod: discovery.discoveryMethod || 'DISCOVERY',
-          discoveredAt: new Date()
-        },
-        discoveryHistory: [{
-          platform: discovery.source,
-          sourceUrl: discovery.sourceUrl,
-          discoveredAt: new Date()
-        }],
+      // Check if validation passed (for scanner discoveries, they typically pass ValidationAgent but might fail Enrichment)
+      // Actually, if validationAgent already failed, we returned early. But let's check enrichment confidence.
+      const isValidated = confidenceScore >= 40 || validationResult.isValid;
 
-        hiringType: enrichmentResult.hiringType,
-        internshipAvailable: isIntern,
-        fresherHiring: isFresher,
-        
-        salaryRawText: enrichmentResult.salaryRawText,
-        salaryBand: parsedSalary.salaryBand,
-        stipendRawText: enrichmentResult.stipendRawText,
-        stipendBand: parsedSalary.stipendBand,
-        startupSignals: startupSignals,
+      const history = await ScanHistory.findById(scanHistoryId).select('branchId').lean();
+      const branchId = history?.branchId;
 
-        placementScore: placement.score,
-        placementPriority: placement.priority,
-        confidenceScore: confidenceScore,
-        aiConfidence: enrichmentResult.aiConfidence,
+      if (isValidated) {
+        await Company.create({
+          companyName: validationResult.companyName,
+          normalizedName,
+          companyHash,
+          website: validationResult.website,
+          description: enrichmentResult.summary || validationResult.description,
+          category: enrichmentResult.category,
+          branchCategory: enrichmentResult.branchCategory,
+          foundedYear: enrichmentResult.foundedYear,
+          teamSize: enrichmentResult.teamSize,
+          fundingStage: enrichmentResult.fundingStage,
+          
+          source: {
+            platform: discovery.source,
+            sourceUrl: discovery.sourceUrl,
+            careersUrl: discovery.careersUrl,
+            discoveryMethod: discovery.discoveryMethod || 'DISCOVERY',
+            discoveredAt: new Date()
+          },
+          discoveryHistory: [{
+            platform: discovery.source,
+            sourceUrl: discovery.sourceUrl,
+            discoveredAt: new Date()
+          }],
+  
+          hiringType: enrichmentResult.hiringType,
+          internshipAvailable: isIntern,
+          fresherHiring: isFresher,
+          
+          salaryRawText: enrichmentResult.salaryRawText,
+          salaryBand: parsedSalary.salaryBand,
+          stipendRawText: enrichmentResult.stipendRawText,
+          stipendBand: parsedSalary.stipendBand,
+          startupSignals: startupSignals,
+  
+          assignedBranch: branchId || undefined,
+          syncStatus: branchId ? 'pending' : undefined,
 
-        status: status,
-        outreachStatus: 'NOT_CONTACTED',
-        data_source: 'scanned',
-        review_status: 'scanned'
-      });
-      console.log(`Successfully saved company: ${validationResult.companyName} with status: ${status}`);
-      await updateRawStatus('VALIDATED');
-      return { 
-        status: 'NEW_ADD', 
-        placementScore: placement.score, 
-        confidenceScore: enrichmentResult.aiConfidence || confidenceScore
-      };
+          placementScore: placement.score,
+          placementPriority: placement.priority,
+          confidenceScore: confidenceScore,
+          aiConfidence: enrichmentResult.aiConfidence,
+  
+          status: CompanyStatus.PENDING_REVIEW,
+          outreachStatus: 'NOT_CONTACTED',
+          data_source: 'scanned',
+          review_status: 'scanned' // Ready for sync queue
+        });
+        console.log(`Successfully saved validated company: ${validationResult.companyName}`);
+        await updateRawStatus('VALIDATED');
+        return { 
+          status: 'NEW_ADD', 
+          placementScore: placement.score, 
+          confidenceScore: enrichmentResult.aiConfidence || confidenceScore
+        };
+      } else {
+        // Failed Validation -> Move to History Queue (update RawDiscovery)
+        await updateRawStatus('REJECTED', {
+          normalizedName,
+          companyHash,
+          validationResult: enrichmentResult,
+          failureReason: 'AI Validation score too low or missing critical data'
+        });
+        console.log(`Updated failed company in RawDiscovery History: ${validationResult.companyName}`);
+        return { status: 'REJECTED' };
+      }
     } catch (err) {
       console.error(`Failed to save company ${validationResult.companyName}:`, err);
       await updateRawStatus('REJECTED');

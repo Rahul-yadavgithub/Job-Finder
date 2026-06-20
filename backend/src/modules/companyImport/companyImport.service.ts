@@ -22,16 +22,19 @@ export class CompanyImportService {
   /**
    * Fetches data from Google Sheet and parses it
    */
-  public async parseGoogleSheet(sheetId: string): Promise<ImportRowData[]> {
-    const rawData = await googleSheetService.fetchFirstSheetData(sheetId);
+  public async parseGoogleSheet(sheetId: string, tabName?: string): Promise<ImportRowData[]> {
+    const rawData = tabName 
+      ? await googleSheetService.fetchInboundData(sheetId, tabName)
+      : await googleSheetService.fetchFirstSheetData(sheetId);
+
     if (!rawData || rawData.length <= 1) return [];
 
-    const headers = rawData[0].map(h => h.trim().toLowerCase());
+    const headers = rawData[0].map((h: string) => h.trim().toLowerCase());
     const rows = rawData.slice(1);
 
-    return rows.map(rowArray => {
+    return rows.map((rowArray: any) => {
       const rowObj: any = {};
-      headers.forEach((header, index) => {
+      headers.forEach((header: string, index: number) => {
         rowObj[header] = rowArray[index] || '';
       });
       return this.mapRawRow(rowObj);
@@ -42,17 +45,24 @@ export class CompanyImportService {
    * Maps varying header names to our standard ImportRowData interface
    */
   private mapRawRow(row: any): ImportRowData {
-    // Normalization logic for header names
+    // Highly robust normalization logic for header names (strips all non-alphanumeric chars)
     const getVal = (keys: string[]) => {
-      const key = Object.keys(row).find(k => keys.includes(k.trim().toLowerCase()));
+      const key = Object.keys(row).find(k => {
+        const normalizedK = k.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+        return keys.some(validKey => validKey.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() === normalizedK);
+      });
       return key ? String(row[key]).trim() : undefined;
     };
 
+    const rawEmail = getVal(['hr email', 'email', 'contact email', 'hr recruiter email id', 'hr email id', 'email id', 'email address']);
+    // Extract the first valid-looking email if there are multiple (e.g. comma separated)
+    const hrEmail = rawEmail ? (rawEmail.split(/[,;\s\/]+/).find(e => e.includes('@')) || rawEmail).trim() : undefined;
+
     return {
-      companyName: getVal(['company name', 'company', 'name']) || '',
-      hrName: getVal(['hr name', 'contact name', 'contact person']),
-      hrEmail: getVal(['hr email', 'email', 'contact email']),
-      hrPhone: getVal(['hr phone', 'phone', 'contact number', 'mobile']),
+      companyName: getVal(['company name', 'company', 'name', 'organization']) || '',
+      hrName: getVal(['hr name', 'contact name', 'contact person','hr', 'hr recruiter name', 'poc', 'recruiter name', 'spoc', 'contact']),
+      hrEmail: hrEmail,
+      hrPhone: getVal(['hr phone', 'phone', 'contact number', 'mobile', 'hr recruiter phone no', 'mobile number', 'contact no', 'mobile no', 'telephone']),
       description: getVal(['description', 'notes', 'remarks']),
       branch: getVal(['branch', 'department']),
     };
@@ -274,21 +284,29 @@ export class CompanyImportService {
           
           if (detectedHeaders.length === 0) detectedHeaders = rawData[0].map((h: string) => h.trim().toLowerCase());
 
-          const headers = rawData[0].map((h: string) => h.trim().toLowerCase());
+          const headers = rawData[0];
+          // Highly robust matching for syncMasterSheets
           const getVal = (rowArray: any[], keys: string[]) => {
-            const index = headers.findIndex((h: string) => keys.includes(h));
+            const index = headers.findIndex((h: string) => {
+              if (typeof h !== 'string') return false;
+              const normalizedH = h.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+              return keys.some(validKey => validKey.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() === normalizedH);
+            });
             return index >= 0 && rowArray[index] ? String(rowArray[index]).trim() : undefined;
           };
 
           const validRows = rawData.slice(1).filter((r: any) => getVal(r, ['company name', 'company', 'name']));
 
           const batchPromises = validRows.map(async (rowArray: any) => {
-            const companyName = getVal(rowArray, ['company name', 'company', 'name']) || '';
+            const companyName = getVal(rowArray, ['company name', 'company', 'name', 'organization']) || '';
             if (!companyName) return null;
 
-            const hrName = getVal(rowArray, ['hr name', 'contact name', 'contact person', 'hr / recruiter name']);
-            const hrEmail = getVal(rowArray, ['hr email', 'email', 'contact email', 'hr / recruiter email id']);
-            const hrPhone = getVal(rowArray, ['hr phone', 'phone', 'contact number', 'mobile', 'hr /  recruiter phone no.']);
+            const hrName = getVal(rowArray, ['hr name', 'contact name', 'contact person', 'hr recruiter name', 'poc', 'recruiter name', 'spoc', 'contact']);
+            
+            const rawEmail = getVal(rowArray, ['hr email', 'email', 'contact email', 'hr recruiter email id', 'hr email id', 'email id', 'email address']);
+            const hrEmail = rawEmail ? (rawEmail.split(/[,;\s\/]+/).find(e => e.includes('@')) || rawEmail).trim() : null;
+
+            const hrPhone = getVal(rowArray, ['hr phone', 'phone', 'contact number', 'mobile', 'hr recruiter phone no', 'phone number', 'contact no', 'mobile no', 'telephone']);
             const description = getVal(rowArray, ['description', 'notes', 'remarks']);
 
             const { data: result, error: rpcError } = await supabase.rpc('insert_company_safe', {
@@ -326,9 +344,16 @@ export class CompanyImportService {
       }
     }
 
+    // Fetch actual count from supabase to correct any mismatches from previous crashes
+    // Only count active unique companies, ignoring the audit records of rejected duplicates
+    const { count } = await supabase
+      .from('companies')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'active');
+
     // Update settings
     settings.lastSyncDate = new Date();
-    settings.totalSynced = (settings.totalSynced || 0) + totalSynced;
+    settings.totalSynced = count !== null ? count : ((settings.totalSynced || 0) + totalSynced);
     await settings.save();
 
     return { syncedCount: totalSynced, duplicates: totalDuplicates, errors: totalErrors, errorDetails, headers: detectedHeaders };

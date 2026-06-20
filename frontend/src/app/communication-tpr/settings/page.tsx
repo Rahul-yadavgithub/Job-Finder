@@ -94,6 +94,8 @@ export default function SettingsPage() {
     }
   });
 
+  const [lastSyncStats, setLastSyncStats] = useState<{newAdded: number, updated: number, errors: number, errorDetails?: string[]} | null>(null);
+
   const syncCompanies = useMutation({
     mutationFn: async () => {
       const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/companies/sync-sheet`);
@@ -101,6 +103,12 @@ export default function SettingsPage() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['settings'] });
+      setLastSyncStats({
+        newAdded: data.syncedCount,
+        updated: data.duplicates,
+        errors: data.errors,
+        errorDetails: data.errorDetails
+      });
       toast.success(`${data.syncedCount} Companies Synced Successfully`);
     },
     onError: (error: any) => {
@@ -356,7 +364,7 @@ export default function SettingsPage() {
               <div>
                 <p className="text-xs font-medium text-slate-500 mb-1">New Added</p>
                 <p className="text-[28px] font-semibold text-slate-900 leading-none">
-                  --
+                  {lastSyncStats ? lastSyncStats.newAdded.toLocaleString() : '--'}
                 </p>
               </div>
             </div>
@@ -364,9 +372,9 @@ export default function SettingsPage() {
             <div className="bg-slate-50 rounded-xl p-4 flex gap-3">
               <div className="text-blue-600 mt-0.5"><RefreshCw className="w-5 h-5" /></div>
               <div>
-                <p className="text-xs font-medium text-slate-500 mb-1">Updated</p>
+                <p className="text-xs font-medium text-slate-500 mb-1">Already Exist</p>
                 <p className="text-[28px] font-semibold text-slate-900 leading-none">
-                  --
+                  {lastSyncStats ? lastSyncStats.updated.toLocaleString() : '--'}
                 </p>
               </div>
             </div>
@@ -376,11 +384,30 @@ export default function SettingsPage() {
               <div>
                 <p className="text-xs font-medium text-slate-500 mb-1">Sync Errors</p>
                 <p className="text-[28px] font-semibold text-slate-900 leading-none">
-                  0
+                  {lastSyncStats ? lastSyncStats.errors.toLocaleString() : '0'}
                 </p>
               </div>
             </div>
           </div>
+          
+          {/* Detailed Sync Errors List */}
+          {lastSyncStats?.errorDetails && lastSyncStats.errorDetails.length > 0 && (
+            <div className="mt-6 border border-rose-200 rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-4">
+              <div className="bg-rose-50 px-4 py-3 border-b border-rose-200 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600" />
+                <h3 className="text-sm font-semibold text-rose-900">Failed Imports ({lastSyncStats.errorDetails.length})</h3>
+              </div>
+              <div className="bg-white max-h-64 overflow-y-auto p-0">
+                <ul className="divide-y divide-slate-100">
+                  {lastSyncStats.errorDetails.map((err, idx) => (
+                    <li key={idx} className="p-3 text-[13px] text-slate-700 hover:bg-slate-50 transition-colors break-words">
+                      {err}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

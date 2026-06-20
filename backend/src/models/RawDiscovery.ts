@@ -9,7 +9,11 @@ export interface IRawDiscovery extends Document {
   sourceUrl: string;
   careersUrl?: string;
   salaryText?: string;
-  status: 'PENDING' | 'VALIDATED' | 'REJECTED' | 'DUPLICATE' | 'DISCARDED_LOW_SALARY';
+  normalizedName?: string;
+  companyHash?: string;
+  validationResult?: any;
+  failureReason?: string;
+  status: 'PENDING' | 'VALIDATED' | 'REJECTED' | 'DUPLICATE' | 'DISCARDED_LOW_SALARY' | 'MANUALLY_APPROVED';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,9 +28,13 @@ const RawDiscoverySchema: Schema = new Schema(
     sourceUrl: { type: String, required: true },
     careersUrl: { type: String },
     salaryText: { type: String },
+    normalizedName: { type: String },
+    companyHash: { type: String },
+    validationResult: { type: Schema.Types.Mixed },
+    failureReason: { type: String },
     status: { 
       type: String, 
-      enum: ['PENDING', 'VALIDATED', 'REJECTED', 'DUPLICATE', 'DISCARDED_LOW_SALARY'], 
+      enum: ['PENDING', 'VALIDATED', 'REJECTED', 'DUPLICATE', 'DISCARDED_LOW_SALARY', 'MANUALLY_APPROVED'], 
       default: 'PENDING' 
     },
   },

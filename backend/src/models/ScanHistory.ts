@@ -3,6 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IScanHistory extends Document {
   date: Date;
   platform: string;
+  branchId?: string;
   status: 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
   startedAt?: Date;
   completedAt?: Date;
@@ -23,6 +24,7 @@ const ScanHistorySchema: Schema = new Schema(
   {
     date: { type: Date, default: Date.now },
     platform: { type: String, required: true },
+    branchId: { type: String },
     durationMs: { type: Number, default: 0 },
     status: { type: String, enum: ['QUEUED', 'RUNNING', 'COMPLETED', 'FAILED', 'CANCELLED'], default: 'QUEUED' },
     startedAt: { type: Date },

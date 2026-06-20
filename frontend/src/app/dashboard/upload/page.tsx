@@ -98,7 +98,7 @@ export default function BulkImportPage() {
         queryClient.invalidateQueries({ queryKey: ['companies'] });
         
         setTimeout(() => {
-          router.push('/branch-portal');
+          router.push('/dashboard');
         }, 1500);
       }
     } catch (error: any) {
@@ -114,7 +114,7 @@ export default function BulkImportPage() {
       {/* Header */}
       <div>
         <Link 
-          href="/branch-portal" 
+          href="/dashboard" 
           className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Dashboard

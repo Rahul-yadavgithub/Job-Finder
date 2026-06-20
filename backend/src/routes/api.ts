@@ -19,6 +19,9 @@ import { apiKeyController } from '../controllers/apiKeyController';
 import { hrValidationController } from '../controllers/hrValidationController';
 import { AgentPipeline } from '../services/agents/AgentPipeline';
 
+import { verifyToken } from '../middleware/auth.middleware';
+import { AuthRequest } from '../types/auth.types';
+
 const router = Router();
 
 // --- DASHBOARD STATS ---
@@ -75,8 +78,7 @@ router.get('/stats', async (req, res) => {
   }
 });
 
-// --- SCAN TRIGGER ---
-router.post('/scan/trigger', async (req, res) => {
+router.post('/scan/trigger', verifyToken, async (req: AuthRequest, res) => {
   try {
     const activeSources = await Source.find({ isEnabled: true });
     
@@ -90,6 +92,7 @@ router.post('/scan/trigger', async (req, res) => {
          platform: source.platformName,
          status: 'QUEUED',
          phase: 'Queued for processing',
+         branchId: req.user?.branchId || undefined,
          date: new Date(),
        });
 
@@ -106,7 +109,7 @@ router.post('/scan/trigger', async (req, res) => {
   }
 });
 
-router.post('/scan/trigger/:sourceId', async (req, res) => {
+router.post('/scan/trigger/:sourceId', verifyToken, async (req: AuthRequest, res) => {
   try {
     const source = await Source.findById(req.params.sourceId);
     if (!source) {
@@ -117,6 +120,7 @@ router.post('/scan/trigger/:sourceId', async (req, res) => {
       platform: source.platformName,
       status: 'QUEUED',
       phase: 'Queued for processing',
+      branchId: req.user?.branchId || undefined,
       date: new Date(),
     });
 
@@ -133,13 +137,16 @@ router.post('/scan/trigger/:sourceId', async (req, res) => {
 });
 
 // --- COMPANIES ---
-router.get('/companies', async (req, res) => {
+router.get('/companies', verifyToken, async (req: AuthRequest, res) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
     const skip = (page - 1) * limit;
 
     const query: any = { data_source: 'scanned' };
+    if (req.user?.branchId) {
+      query.assignedBranch = req.user.branchId;
+    }
     if (req.query.search) {
       query.companyName = { $regex: req.query.search, $options: 'i' };
     }
@@ -244,36 +251,41 @@ router.get('/companies/:id', async (req, res) => {
   }
 });
 
-// --- HISTORY API ---
-router.get('/history/assigned-by-branch', async (req, res) => {
+// PATCH /api/companies/:id/review
+router.patch('/companies/:id/review', verifyToken, async (req: AuthRequest, res) => {
   try {
-    const results = await Company.aggregate([
-      { $match: { assignedBranch: { $exists: true, $ne: null } } },
-      {
-        $group: {
-          _id: '$assignedBranch',
-          branchName: { $first: '$assignedBranch' },
-          companies: {
-            $push: {
-              _id: '$_id',
-              companyName: '$companyName',
-              role: '$role',
-              drive_type: '$drive_type',
-              status: '$status',
-              confirmation_status: '$confirmation_status',
-              assigned_at: '$updatedAt'
-            }
-          }
-        }
-      },
-      { $sort: { branchName: 1 } }
-    ]);
-    res.json(results);
+    const { action } = req.body;
+    const company = await Company.findById(req.params.id);
+    
+    if (!company) {
+      return res.status(404).json({ error: 'Company not found' });
+    }
+
+    if (action === 'approve') {
+      company.status = CompanyStatus.APPROVED;
+      company.review_status = 'approved';
+      // Automatically assign to the TPR's branch
+      company.assignedBranch = req.user?.branchId || undefined;
+      // Mark as pending so it can be picked up by the Sync Center
+      company.syncStatus = 'pending';
+    } else if (action === 'reject') {
+      company.status = CompanyStatus.REJECTED;
+      company.review_status = 'scanned';
+      company.assignedBranch = undefined;
+    }
+
+    company.reviewed_by = req.user?.userId || 'Admin';
+    company.reviewed_at = new Date();
+    await company.save();
+
+    res.json({ success: true, company });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch branch assignments history' });
+    console.error('Failed to review company:', error);
+    res.status(500).json({ error: 'Failed to review company' });
   }
 });
 
+// --- HISTORY API ---
 function getCurrentCycleStart(overrideDate?: string) {
   if (overrideDate && process.env.NODE_ENV !== 'production') {
     return new Date(overrideDate);
@@ -288,8 +300,11 @@ function getCurrentCycleStart(overrideDate?: string) {
   }
 }
 
-async function getScanStats(fromDate?: Date, toDate?: Date) {
+async function getScanStats(branchId?: string, fromDate?: Date, toDate?: Date) {
   const companyQuery: any = {};
+  if (branchId) {
+    companyQuery.assignedBranch = branchId;
+  }
   if (fromDate || toDate) {
     companyQuery.createdAt = {};
     if (fromDate) companyQuery.createdAt.$gte = fromDate;
@@ -309,34 +324,17 @@ async function getScanStats(fromDate?: Date, toDate?: Date) {
     if (['Seed', 'Series A', 'Series B'].includes(c.fundingStage || '')) startup++;
   });
 
-  const historyQuery: any = { field_changed: 'review_status' };
+  const reviewQuery: any = { status: { $in: [CompanyStatus.APPROVED, CompanyStatus.REJECTED] } };
+  if (branchId) reviewQuery.assignedBranch = branchId;
   if (fromDate || toDate) {
-    historyQuery.changed_at = {};
-    if (fromDate) historyQuery.changed_at.$gte = fromDate;
-    if (toDate) historyQuery.changed_at.$lte = toDate;
+    reviewQuery.reviewed_at = {};
+    if (fromDate) reviewQuery.reviewed_at.$gte = fromDate;
+    if (toDate) reviewQuery.reviewed_at.$lte = toDate;
   }
+  const totalReviewed = await Company.countDocuments(reviewQuery);
 
-  
-  // Use supabase for status changes
-  const { data: statusChangesData } = await supabase
-    .from('status_history')
-    .select('new_status')
-    .gte('changed_at', fromDate ? fromDate.toISOString() : '2000-01-01T00:00:00Z')
-    .lte('changed_at', toDate ? toDate.toISOString() : '2100-01-01T00:00:00Z');
-
-  const statusChanges = statusChangesData || [];
-  let totalReviewed = 0;
-  let totalApproved = 0;
-
-  statusChanges.forEach(h => {
-    if (h.new_status === 'approved') {
-      totalReviewed++;
-      totalApproved++;
-    } else if (h.new_status === 'REJECTED' || h.new_status === 'rejected') {
-      totalReviewed++;
-    }
-  });
-
+  const approveQuery: any = { ...reviewQuery, status: CompanyStatus.APPROVED };
+  const totalApproved = await Company.countDocuments(approveQuery);
 
   return {
     totalScanned,
@@ -346,21 +344,21 @@ async function getScanStats(fromDate?: Date, toDate?: Date) {
   };
 }
 
-router.get('/history/scan-stats', async (req, res) => {
+router.get('/history/scan-stats', verifyToken, async (req: AuthRequest, res) => {
   try {
     const from = req.query.from ? new Date(req.query.from as string) : undefined;
     const to = req.query.to ? new Date(req.query.to as string) : undefined;
-    const stats = await getScanStats(from, to);
+    const stats = await getScanStats(req.user?.branchId || undefined, from, to);
     res.json(stats);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch scan stats' });
   }
 });
 
-router.get('/history/current-scan-stats', async (req, res) => {
+router.get('/history/current-scan-stats', verifyToken, async (req: AuthRequest, res) => {
   try {
     const fromDate = getCurrentCycleStart(req.query.override_cycle_start as string);
-    const stats = await getScanStats(fromDate);
+    const stats = await getScanStats(req.user?.branchId || undefined, fromDate);
     res.json({ current_cycle_start: fromDate, ...stats });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch current scan stats' });
@@ -678,18 +676,26 @@ router.post('/settings/google-sheet/test', async (req, res) => {
 });
 
 // --- SCAN HISTORY ---
-router.get('/history', async (req, res) => {
+router.get('/history', verifyToken, async (req: AuthRequest, res) => {
   try {
-    const history = await ScanHistory.find().sort({ date: -1 }).limit(50).lean();
+    const query: any = {};
+    if (req.user?.branchId) {
+      query.branchId = req.user.branchId;
+    }
+    const history = await ScanHistory.find(query).sort({ date: -1 }).limit(50).lean();
     res.json(history);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch scan history' });
   }
 });
 
-router.get('/history/:id', async (req, res) => {
+router.get('/history/:id', verifyToken, async (req: AuthRequest, res) => {
   try {
-    const history = await ScanHistory.findById(req.params.id).lean();
+    const query: any = { _id: req.params.id };
+    if (req.user?.branchId) {
+      query.branchId = req.user.branchId;
+    }
+    const history = await ScanHistory.findOne(query).lean();
     if (!history) return res.status(404).json({ error: 'History not found' });
     res.json(history);
   } catch (error) {

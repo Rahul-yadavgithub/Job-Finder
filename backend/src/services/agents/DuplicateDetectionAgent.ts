@@ -5,10 +5,10 @@ export class DuplicateDetectionAgent {
   public static normalizeName(rawName: string): string {
     return rawName
       .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, '')
-      .replace(/\b(inc|llc|ltd|pvt|private|limited|corp|corporation)\b/g, '')
-      .trim()
-      .replace(/\s+/g, '-');
+      .replace(/[^a-z0-9\s]/g, '') // remove punctuation
+      .replace(/\b(pvt ltd|private limited|ltd|limited|inc|corporation|technologies|solutions|llc|corp|co|pvt|private)\b/g, '')
+      .replace(/\s+/g, ' ') // replace multiple spaces with single space
+      .trim();
   }
 
   public static generateHash(normalizedName: string): string {

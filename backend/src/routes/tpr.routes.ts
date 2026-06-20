@@ -7,8 +7,14 @@ import {
   updateStatus,
   importCSV,
   syncSheet,
+  pushSync,
+  getPendingSyncCompanies,
   getSheetUrl,
-  getSyncHistory
+  getSyncHistory,
+  checkCompanyName,
+  addManualCompany,
+  removePendingCompany,
+  getCompanyHistory
 } from '../controllers/tpr.controller';
 import { verifyToken, requireRole, requireBranch } from '../middleware/auth.middleware';
 
@@ -21,11 +27,15 @@ router.use(verifyToken, requireRole('branch_tpr'), requireBranch);
 router.get('/dashboard', getDashboard);
 router.get('/companies', getCompanies);
 router.get('/companies/today', getTodayCompanies);
+router.get('/companies/:id/history', getCompanyHistory);
 router.patch('/companies/:id/status', updateStatus);
-router.post('/import', upload.single('file'), importCSV);
-router.post('/sync', syncSheet);
-router.post('/sync/inbound', syncSheet); // If inbound is different, adjust. Using syncSheet for now.
+router.post('/sync', pushSync);
+router.get('/sync/pending', getPendingSyncCompanies);
+router.delete('/sync/pending/:id', removePendingCompany);
+router.post('/sync/inbound', syncSheet);
+router.post('/manual-company', addManualCompany);
 router.get('/sheet-url', getSheetUrl);
 router.get('/sync-history', getSyncHistory);
+router.get('/check-name', checkCompanyName);
 
 export default router;
