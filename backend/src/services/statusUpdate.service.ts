@@ -69,7 +69,7 @@ export async function applyStatusUpdate({
       payload.locked_by = null;
       payload.locked_at = null;
       payload.base_status = 'call_again';
-      payload.mid_status = null;
+      payload.mid_status = 'revoked';
     }
   } else if (layer === 'top') {
     payload.top_status = newStatus;

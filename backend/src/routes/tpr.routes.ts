@@ -14,7 +14,9 @@ import {
   checkCompanyName,
   addManualCompany,
   removePendingCompany,
-  getCompanyHistory
+  getCompanyHistory,
+  previewCSV,
+  confirmCSV
 } from '../controllers/tpr.controller';
 import { verifyToken, requireRole, requireBranch } from '../middleware/auth.middleware';
 
@@ -37,5 +39,7 @@ router.post('/manual-company', addManualCompany);
 router.get('/sheet-url', getSheetUrl);
 router.get('/sync-history', getSyncHistory);
 router.get('/check-name', checkCompanyName);
+router.post('/import/preview', upload.single('file'), previewCSV);
+router.post('/import/confirm', confirmCSV);
 
 export default router;

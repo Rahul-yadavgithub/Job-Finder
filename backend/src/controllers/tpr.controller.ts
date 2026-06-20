@@ -114,7 +114,11 @@ export const getCompanyHistory = async (req: AuthRequest, res: Response): Promis
       .order('changed_at', { ascending: false });
 
     if (userRole === 'branch_tpr') {
-      query = query.eq('layer', 'base');
+      if (statusData.mid_status === 'revoked') {
+        query = query.in('layer', ['base', 'mid']);
+      } else {
+        query = query.eq('layer', 'base');
+      }
     } else if (userRole === 'communication_tpr') {
       query = query.in('layer', ['base', 'mid']);
     }
@@ -254,14 +258,45 @@ export const pushSync = async (req: AuthRequest, res: Response): Promise<void> =
       return;
     }
 
-    // 2. Prepare inserts for Supabase - ONLY company_name to prevent conflicts
+    // 2. Prepare inserts for Supabase
     const inserts: CompanyInsert[] = pendingCompanies.map(c => ({
       company_name: c.companyName,
+      hr_name: c.hrName,
+      email: c.hrEmail,
+      phone_number: c.phoneNumber,
+      description: c.description,
       data_source: 'scan'
     }));
 
     // 3. Insert into Supabase
     const result = await insertCompanyBatch(inserts, req.user!.userId, branchId);
+
+    // 3.5. Insert into Google Sheets
+    try {
+      const { data: branch } = await supabase.from('branches').select('sheet_tab_name').eq('id', branchId).single();
+      const settings = await Settings.findOne();
+      
+      if (branch?.sheet_tab_name && settings?.currentAcademicYearSheetId) {
+        // Prepare rows for Google Sheets: [Company Name, HR Name, Phone, Email, _, _, Description]
+        const sheetRows = pendingCompanies.map(c => [
+          c.companyName || '',
+          c.hrName || '',
+          c.phoneNumber || '',
+          c.hrEmail || '',
+          '',
+          '',
+          c.description || ''
+        ]);
+        
+        await googleSheetService.appendDataToSheet(
+          settings.currentAcademicYearSheetId,
+          branch.sheet_tab_name,
+          sheetRows
+        );
+      }
+    } catch (sheetError) {
+      console.error('Failed to append to Google Sheets during pushSync:', sheetError);
+    }
 
     // 4. Update MongoDB status
     const companyIds = pendingCompanies.map(c => c._id);
@@ -449,10 +484,8 @@ export const addManualCompany = async (req: AuthRequest, res: Response): Promise
       // Update existing
       company.hrEmail = hrEmail || company.hrEmail;
       company.founderEmail = company.founderEmail || hrEmail; // Fallback
-      if (hrName) {
-        // We don't have an hrName field on the Company model, but we have hrEmail, talentAcquisitionEmail, etc.
-        // We can just rely on the API passing the updated data.
-      }
+      if (hrName) company.hrName = hrName;
+      if (hrPhone) company.phoneNumber = hrPhone;
       company.assignedBranch = branchId;
       company.status = CompanyStatus.APPROVED;
       company.syncStatus = 'pending';
@@ -463,6 +496,8 @@ export const addManualCompany = async (req: AuthRequest, res: Response): Promise
       company = new Company({
         companyName,
         normalizedName,
+        hrName: hrName || undefined,
+        phoneNumber: hrPhone || undefined,
         hrEmail: hrEmail || undefined,
         assignedBranch: branchId,
         status: CompanyStatus.APPROVED,
@@ -480,6 +515,135 @@ export const addManualCompany = async (req: AuthRequest, res: Response): Promise
     res.status(200).json({ success: true, data: company });
   } catch (error: any) {
     console.error('Manual company add error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Internal server error' });
+  }
+};
+
+export const previewCSV = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!(req as any).file) {
+      res.status(400).json({ success: false, message: 'No file uploaded' });
+      return;
+    }
+
+    const branchId = req.user!.branchId!;
+    const { data: branchData, error: branchError } = await supabase
+      .from('branches')
+      .select('branch_group')
+      .eq('id', branchId)
+      .single();
+
+    if (branchError || !branchData) {
+      res.status(500).json({ success: false, message: 'Branch not found' });
+      return;
+    }
+
+    const branchGroup = branchData.branch_group;
+
+    const workbook = xlsx.read((req as any).file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rows = xlsx.utils.sheet_to_json<Record<string, any>>(sheet);
+
+    if (rows.length === 0) {
+      res.status(400).json({ success: false, message: 'Empty file' });
+      return;
+    }
+
+    const valid: any[] = [];
+    const duplicates: any[] = [];
+    const seenNames = new Set<string>();
+
+    for (const r of rows) {
+      const getVal = (key: string) => {
+        const matchingKey = Object.keys(r).find(k => k.toLowerCase() === key);
+        return matchingKey ? r[matchingKey] : undefined;
+      };
+      
+      const companyName = getVal('company_name')?.toString().trim();
+      const hrName = getVal('hr_name')?.toString().trim();
+      const email = getVal('email')?.toString().trim();
+      const phone_number = getVal('phone_number')?.toString().trim();
+
+      if (!companyName || !hrName) {
+        duplicates.push({ row: r, reason: 'Missing required company_name or hr_name' });
+        continue;
+      }
+
+      const normalizedName = companyName.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      if (seenNames.has(normalizedName)) {
+        duplicates.push({ companyName, hrName, reason: 'Duplicate in uploaded file' });
+        continue;
+      }
+
+      seenNames.add(normalizedName);
+
+      // Check against Supabase
+      const { data: existingCompany, error: searchError } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('branch_group_key', branchGroup)
+        .eq('status', 'active')
+        .ilike('company_name', companyName)
+        .limit(1)
+        .single();
+
+      if (existingCompany) {
+        duplicates.push({ companyName, hrName, reason: 'Exists in Database' });
+      } else {
+        valid.push({ companyName, hrName, email, phone_number });
+      }
+    }
+
+    res.status(200).json({ success: true, data: { valid, duplicates, total: rows.length } });
+  } catch (error: any) {
+    console.error('Preview CSV error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Internal server error' });
+  }
+};
+
+export const confirmCSV = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const branchId = req.user!.branchId!;
+    const { companies } = req.body;
+
+    if (!companies || !Array.isArray(companies) || companies.length === 0) {
+      res.status(400).json({ success: false, message: 'No companies provided' });
+      return;
+    }
+
+    const docs = companies.map(c => {
+      const normalizedName = c.companyName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      return {
+        companyName: c.companyName,
+        normalizedName,
+        hrName: c.hrName || undefined,
+        phoneNumber: c.phone_number || undefined,
+        hrEmail: c.email || undefined,
+        assignedBranch: branchId,
+        status: CompanyStatus.APPROVED,
+        syncStatus: 'pending',
+        review_status: 'approved',
+        data_source: 'csv_import',
+        reviewed_by: req.user!.userId,
+        reviewed_at: new Date(),
+        confidenceScore: 100,
+        placementScore: 0
+      };
+    });
+
+    try {
+      await Company.insertMany(docs, { ordered: false });
+    } catch (insertError: any) {
+      if (insertError.code !== 11000) {
+        throw insertError; // Ignore duplicate key errors, throw others
+      }
+    }
+
+    res.status(200).json({ success: true, message: 'Companies saved successfully' });
+  } catch (error: any) {
+    console.error('Confirm CSV error:', error);
     res.status(500).json({ success: false, message: error.message || 'Internal server error' });
   }
 };

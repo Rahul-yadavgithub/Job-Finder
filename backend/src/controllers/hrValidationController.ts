@@ -12,30 +12,26 @@ export const hrValidationController = {
     try {
       const { company_id } = req.params;
 
-      const company = await Company.findById(company_id);
-      if (!company) {
+      const { data: company, error } = await supabase
+        .from('companies')
+        .select('id, company_name, branch_id')
+        .eq('id', company_id)
+        .single();
+
+      if (error || !company) {
         return res.status(404).json({ success: false, message: 'Company not found' });
       }
 
-      if (!company.assignedBranch) {
+      if (!company.branch_id) {
         return res.status(400).json({ success: false, message: 'Company is not assigned to a branch' });
       }
 
-      // Resolve branch ID from Supabase
-      const { data: branch } = await supabase
-        .from('branches')
-        .select('id')
-        .eq('name', company.assignedBranch)
-        .single();
-        
-      if (!branch) {
-        return res.status(404).json({ success: false, message: 'Assigned branch not found' });
-      }
-
-      const branchIdStr = branch.id;
+      const branchIdStr = company.branch_id;
 
       // Enforce zero keys check (Requirement #2)
       const activeKeysCount = await BranchApiKey.countDocuments({ branchId: branchIdStr, status: 'active' });
+      console.log('findHrContact -> company.branch_id:', branchIdStr, 'activeKeysCount:', activeKeysCount);
+      
       if (activeKeysCount === 0) {
         return res.status(400).json({ 
           success: false, 
@@ -45,7 +41,7 @@ export const hrValidationController = {
       }
 
       // Waterfall execution via Service with previewOnly: true
-      const result = await EnrichmentService.executeFindHr(company._id.toString(), branchIdStr, company.companyName, true);
+      const result = await EnrichmentService.executeFindHr(company.id, branchIdStr, company.company_name, true);
 
       if (result) {
         // Since previewOnly is true, result is the HRResult object
@@ -57,7 +53,7 @@ export const hrValidationController = {
       }
 
       // If we exit the loop with no contacts, queue it
-      await ApiKeyRotatorService.queueRequest(branchIdStr, company._id.toString(), 'find_hr', {});
+      await ApiKeyRotatorService.queueRequest(branchIdStr, company.id, 'find_hr', {});
 
       return res.status(200).json({
         success: true,
@@ -70,13 +66,28 @@ export const hrValidationController = {
     }
   },
 
+  getHrContact: async (req: Request, res: Response) => {
+    try {
+      const { company_id } = req.params;
+      const contact = await HrContact.findOne({ company_id });
+      res.status(200).json({ success: true, contact });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  },
+
   commitHrContact: async (req: Request, res: Response) => {
     try {
       const { company_id } = req.params;
       const { name, email, mobile, designation, linkedin_url } = req.body;
 
-      const company = await Company.findById(company_id);
-      if (!company) {
+      const { data: company, error } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('id', company_id)
+        .single();
+
+      if (error || !company) {
         return res.status(404).json({ success: false, message: 'Company not found' });
       }
 
@@ -116,10 +127,20 @@ export const hrValidationController = {
         );
       } else {
         updatedContact = await HrContact.create({
-          company_id: company._id,
+          company_id: company.id,
           ...updateData
         });
       }
+
+      // Also update Supabase companies table so the UI reflects the new contact info
+      await supabase
+        .from('companies')
+        .update({
+          hr_name: name || null,
+          email: email || null,
+          phone_number: mobile || null
+        })
+        .eq('id', company.id);
 
       res.status(200).json({
         success: true,

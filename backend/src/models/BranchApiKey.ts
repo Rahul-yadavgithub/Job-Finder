@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IBranchApiKey extends Document {
-  branchId: Types.ObjectId;
+  branchId: string;
   platformId: Types.ObjectId;
   encryptedKey: string;
   keyIv: string;
@@ -23,7 +23,7 @@ export interface IBranchApiKey extends Document {
 
 const BranchApiKeySchema: Schema = new Schema(
   {
-    branchId: { type: Schema.Types.ObjectId, ref: 'Branch', required: true },
+    branchId: { type: String, required: true },
     platformId: { type: Schema.Types.ObjectId, ref: 'ApiPlatform', required: true },
     encryptedKey: { type: String, required: true },
     keyIv: { type: String, required: true },

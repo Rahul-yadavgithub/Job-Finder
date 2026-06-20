@@ -59,8 +59,9 @@ export default function ValidateContactButton({ companyId, branchId }: ValidateC
       setPreviewData(null);
       // Invalidate queries to refresh the UI
       queryClient.invalidateQueries({ queryKey: ['contact-today', branchId] });
-      queryClient.invalidateQueries({ queryKey: ['confirmed', branchId] });
+      queryClient.invalidateQueries({ queryKey: ['interested', branchId] });
       queryClient.invalidateQueries({ queryKey: ['not-confirmed', branchId] });
+      queryClient.invalidateQueries({ queryKey: ['tpr-hr-contact', companyId] });
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Failed to update HR contact');

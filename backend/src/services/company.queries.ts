@@ -43,6 +43,8 @@ export async function getCompaniesByBranch({
   if (status) {
     if (status === 'pending') {
       query = query.or('base_status.eq.not_contacted,base_status.eq.pending,base_status.is.null');
+    } else if (status === 'reverted') {
+      query = query.eq('mid_status', 'revoked');
     } else {
       query = query.eq('base_status', status);
     }
@@ -81,17 +83,17 @@ export async function getDashboardCounts(branchId: string) {
   // Using parallel head-only requests to emulate it efficiently.
   const currentDate = new Date().toISOString().split('T')[0];
 
-  const [totalRes, pendingRes, interestedRes, callAgainRes] = await Promise.all([
+  const [totalRes, pendingRes, revertedRes, callAgainRes] = await Promise.all([
     supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('branch_id', branchId),
     supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('branch_id', branchId).or('base_status.eq.not_contacted,base_status.eq.pending,base_status.is.null'), // "status is either nothing"
-    supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('branch_id', branchId).eq('base_status', 'interested'),
+    supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('branch_id', branchId).eq('mid_status', 'revoked'),
     supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('branch_id', branchId).eq('base_status', 'call_again')
   ]);
 
   return {
     total: totalRes.count || 0,
     not_contacted: pendingRes.count || 0, // Maps to Not Confirmed
-    interested_count: interestedRes.count || 0,
+    reverted_count: revertedRes.count || 0,
     not_confirmed_count: pendingRes.count || 0, // Using same value for Not Confirmed
     followup_due: callAgainRes.count || 0 // Maps to Contact Today
   };

@@ -10,7 +10,7 @@ export interface IHrContactHistory {
 }
 
 export interface IHrContact extends Document {
-  company_id: Types.ObjectId;
+  company_id: string;
   name?: string;
   mobile?: string;
   email?: string;
@@ -40,7 +40,7 @@ const HrContactHistorySchema: Schema = new Schema({
 
 const HrContactSchema: Schema = new Schema(
   {
-    company_id: { type: Schema.Types.ObjectId, ref: 'Company', required: true },
+    company_id: { type: String, required: true },
     name: { type: String },
     mobile: { type: String },
     email: { type: String },

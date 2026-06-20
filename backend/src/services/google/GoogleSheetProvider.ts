@@ -119,6 +119,26 @@ export class GoogleSheetProvider {
     }
   }
 
+  public async appendDataToSheet(spreadsheetId: string, sheetTab: string, rows: any[][]): Promise<boolean> {
+    await this.initialize();
+    if (!this.sheets) throw new Error('Google Sheets Auth not configured');
+    if (!spreadsheetId) throw new Error('Spreadsheet ID is required');
+
+    try {
+      await this.sheets.spreadsheets.values.append({
+        spreadsheetId,
+        range: `${sheetTab}!A:Z`,
+        valueInputOption: 'USER_ENTERED',
+        insertDataOption: 'INSERT_ROWS',
+        requestBody: { values: rows },
+      });
+      return true;
+    } catch (error) {
+      console.error(`Failed to append data to tab ${sheetTab}:`, error);
+      return false;
+    }
+  }
+
   public async deleteRows(spreadsheetId: string, sheetTab: string, rowRefs: string[]): Promise<boolean> {
     await this.initialize();
     if (!this.sheets) throw new Error('Google Sheets Auth not configured');

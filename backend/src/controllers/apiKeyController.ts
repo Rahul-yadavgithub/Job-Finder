@@ -23,14 +23,24 @@ const ADAPTERS: Record<string, PlatformAdapter> = {
   getprospect: new GetProspectAdapter()
 };
 
+import { supabase } from '../config/supabase';
+
 export const apiKeyController = {
   
+  // Helper to resolve branch string to UUID
+  resolveBranchId: async (branch_id: string) => {
+    if (branch_id.length === 36) return branch_id; // already UUID
+    const { data } = await supabase.from('branches').select('id').eq('name', branch_id).single();
+    return data ? data.id : branch_id;
+  },
+
   // GET /api/branches/:branch_id/api-keys
   getApiKeys: async (req: Request, res: Response) => {
     try {
       const { branch_id } = req.params;
+      const actualBranchId = await apiKeyController.resolveBranchId(branch_id as string);
       
-      const keys = await BranchApiKey.find({ branchId: branch_id })
+      const keys = await BranchApiKey.find({ branchId: actualBranchId })
         .populate('platformId', 'name displayName docsUrl')
         .lean();
 
@@ -105,9 +115,11 @@ export const apiKeyController = {
       // 3. Encrypt safely
       const { encryptedKey, iv, tag } = encrypt(api_key_plaintext);
 
+      const actualBranchId = await apiKeyController.resolveBranchId(branch_id as string);
+
       // 4. Save
       const newKey = await BranchApiKey.create({
-        branchId: branch_id,
+        branchId: actualBranchId,
         platformId: platform._id,
         encryptedKey,
         keyIv: iv,
@@ -138,8 +150,9 @@ export const apiKeyController = {
   disableApiKey: async (req: Request, res: Response) => {
     try {
       const { branch_id, key_id } = req.params;
+      const actualBranchId = await apiKeyController.resolveBranchId(branch_id as string);
       
-      const key = await BranchApiKey.findOne({ _id: key_id, branchId: branch_id });
+      const key = await BranchApiKey.findOne({ _id: key_id, branchId: actualBranchId });
       if (!key) return res.status(404).json({ success: false, message: 'Key not found' });
 
       key.status = 'disabled';
@@ -155,13 +168,14 @@ export const apiKeyController = {
   replaceApiKey: async (req: Request, res: Response) => {
     try {
       const { branch_id, key_id } = req.params;
+      const actualBranchId = await apiKeyController.resolveBranchId(branch_id as string);
       const { new_api_key_plaintext } = req.body;
 
       if (!new_api_key_plaintext) {
         return res.status(400).json({ success: false, message: 'Missing new key' });
       }
 
-      const keyRecord = await BranchApiKey.findOne({ _id: key_id, branchId: branch_id }).populate('platformId');
+      const keyRecord = await BranchApiKey.findOne({ _id: key_id, branchId: actualBranchId }).populate('platformId');
       if (!keyRecord) return res.status(404).json({ success: false, message: 'Key not found' });
 
       const platform = keyRecord.platformId as any;

@@ -64,7 +64,7 @@ export default function SourcesPage() {
   const triggerSingleScan = async (sourceId: string, platformName: string) => {
     try {
       toast.info(`Scan started for ${platformName}. Check Scan History for progress.`);
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/scan/trigger/${sourceId}`);
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/scan/trigger/${sourceId}`, {}, { withCredentials: true });
     } catch (error) {
       toast.error(`Failed to trigger scan for ${platformName}`);
     }
@@ -73,7 +73,7 @@ export default function SourcesPage() {
   const triggerScan = useMutation({
     mutationFn: async () => {
       setScanStatus('scanning');
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/scan/trigger`);
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/scan/trigger`, {}, { withCredentials: true });
       return res.data;
     },
     onSuccess: () => {

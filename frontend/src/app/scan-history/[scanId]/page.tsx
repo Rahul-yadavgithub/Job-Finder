@@ -55,7 +55,7 @@ export default function ScanDetailsPage() {
   const { data: record, isLoading } = useQuery<ScanRecord>({
     queryKey: ['scan-history', scanId],
     queryFn: async () => {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/history/${scanId}`);
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/history/${scanId}`, { withCredentials: true });
       return res.data;
     },
     refetchInterval: (query) => {
@@ -67,7 +67,7 @@ export default function ScanDetailsPage() {
   const { data: rawDiscoveries, isLoading: rawLoading } = useQuery<RawDiscovery[]>({
     queryKey: ['raw-discoveries', scanId],
     queryFn: async () => {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/history/${scanId}/raw`);
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/history/${scanId}/raw`, { withCredentials: true });
       return res.data;
     },
     enabled: showRaw,
@@ -75,7 +75,7 @@ export default function ScanDetailsPage() {
 
   const validateMutation = useMutation({
     mutationFn: async (rawId: string) => {
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/history/raw/${rawId}/validate`);
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/history/raw/${rawId}/validate`, {}, { withCredentials: true });
       return res.data;
     },
     onSuccess: () => {

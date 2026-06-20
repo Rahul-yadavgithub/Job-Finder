@@ -62,6 +62,8 @@ export interface ICompany extends Document {
   notes?: string;
 
   // Contact Discovery
+  hrName?: string;
+  phoneNumber?: string;
   hrEmail?: string;
   talentAcquisitionEmail?: string;
   founderEmail?: string;
@@ -157,6 +159,8 @@ const CompanySchema: Schema = new Schema(
     notes: { type: String },
 
     // Contact Discovery
+    hrName: { type: String },
+    phoneNumber: { type: String },
     hrEmail: { type: String },
     talentAcquisitionEmail: { type: String },
     founderEmail: { type: String },

@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IBranchNotification extends Document {
-  branchId: Types.ObjectId;
+  branchId: string;
   type: 'warning' | 'error' | 'info';
   message: string;
   isDismissed: boolean;
@@ -12,7 +12,7 @@ export interface IBranchNotification extends Document {
 
 const BranchNotificationSchema: Schema = new Schema(
   {
-    branchId: { type: Schema.Types.ObjectId, ref: 'Branch', required: true },
+    branchId: { type: String, required: true },
     type: { type: String, enum: ['warning', 'error', 'info'], required: true },
     message: { type: String, required: true },
     isDismissed: { type: Boolean, default: false },

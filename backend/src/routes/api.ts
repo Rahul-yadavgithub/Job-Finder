@@ -215,7 +215,7 @@ router.get('/companies/check-name', async (req, res) => {
       return res.json({ exists: false });
     }
 
-    const hrContact = await HrContact.findOne({ company_id: company._id });
+    const hrContact = await HrContact.findOne({ company_id: company._id.toString() });
 
     return res.json({
       exists: true,
@@ -760,6 +760,7 @@ router.post('/branches/:branch_id/notifications/:id/dismiss', apiKeyController.d
 
 // --- HR VALIDATION ROUTES ---
 router.post('/companies/:company_id/find-hr', hrValidationController.findHrContact);
+router.get('/companies/:company_id/hr-contacts', hrValidationController.getHrContact);
 router.post('/companies/:company_id/hr-contacts/commit', hrValidationController.commitHrContact);
 router.post('/companies/:company_id/hr-contacts/approve-pending', hrValidationController.approvePendingContact);
 router.post('/companies/:company_id/hr-contacts/discard-pending', hrValidationController.discardPendingContact);

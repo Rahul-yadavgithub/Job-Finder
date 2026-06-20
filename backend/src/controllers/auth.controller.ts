@@ -216,7 +216,7 @@ export const me = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { data: user } = await supabase
       .from('users')
-      .select('id, name, role, email, branches(name)')
+      .select('id, name, role, email, branch_id, branches(name)')
       .eq('id', req.user!.userId)
       .single();
 
@@ -232,6 +232,7 @@ export const me = async (req: AuthRequest, res: Response): Promise<void> => {
         name: user.name,
         role: user.role,
         email: user.email,
+        branchId: user.branch_id,
         branchName: (user.branches as any)?.name ?? null
       }
     });
