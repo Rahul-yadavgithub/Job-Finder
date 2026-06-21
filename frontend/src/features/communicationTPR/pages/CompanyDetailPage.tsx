@@ -8,10 +8,8 @@ import { CompanyActivity } from '../types/activity';
 import { DetailedCompany } from '../types/company';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
-import { ActivityForm } from '../components/ActivityForm';
-import { ActivityTimeline } from '../components/ActivityTimeline';
+import { CompanyTimeline } from '../components/CompanyTimeline';
 import { CommWorkflowTracker, CommPhase } from '../components/CommWorkflowTracker';
-import { RequestHistory } from '../components/RequestHistory';
 import { RequestFormModal } from '../components/RequestFormModal';
 import { ScheduleFollowUpModal } from '../components/ScheduleFollowUpModal';
 import { activityApi } from '../services/activity.api';
@@ -184,79 +182,25 @@ export function CompanyDetailPage() {
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden p-6 md:p-8">
             <div className="flex items-center gap-2 mb-8">
               <Activity className="w-5 h-5 text-gray-500" />
-              <h2 className="text-lg font-bold text-gray-900">Activity Timeline</h2>
+              <h2 className="text-lg font-bold text-gray-900">Workflow Progress</h2>
             </div>
             <CommWorkflowTracker currentPhase={currentPhase} />
           </div>
 
-          {!isLocked && <ActivityForm companyId={company.id} onSuccess={fetchActivities} />}
-
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="border-b border-gray-200 px-6 py-4 bg-gray-50">
+             <div className="border-b border-gray-200 px-6 py-4 bg-gray-50 flex justify-between items-center">
               <h3 className="text-base font-semibold leading-6 text-gray-900 flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-blue-500" />
-                Company Overview
+                <Clock className="w-5 h-5 text-blue-500" />
+                Activity Timeline
               </h3>
             </div>
             <div className="p-6">
-              <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-                {company.description || <span className="italic text-gray-400">No description provided for this company.</span>}
-              </p>
+              <CompanyTimeline companyId={company.id} />
             </div>
           </div>
 
-          {/* Communication Requests History */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="border-b border-gray-200 px-6 py-4 bg-gray-50 flex justify-between items-center">
-              <h3 className="text-base font-semibold leading-6 text-gray-900 flex items-center gap-2">
-                <Send className="w-5 h-5 text-blue-500" />
-                Communication Requests
-              </h3>
-            </div>
-            <div className="divide-y divide-gray-100">
-              <RequestHistory companyId={company.id} />
-            </div>
-          </div>
-
-          {/* HR Contacts */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="border-b border-gray-200 px-6 py-4 bg-gray-50 flex justify-between items-center">
-              <h3 className="text-base font-semibold leading-6 text-gray-900 flex items-center gap-2">
-                <Users className="w-5 h-5 text-blue-500" />
-                HR Contacts
-              </h3>
-            </div>
-            <div className="divide-y divide-gray-100">
-              {company.hrContacts && company.hrContacts.length > 0 ? (
-                company.hrContacts.map((contact: any) => (
-                  <div key={contact.id} className="p-6 hover:bg-gray-50 transition-colors">
-                    <h4 className="text-sm font-semibold text-gray-900">{contact.name}</h4>
-                    <p className="text-sm text-gray-500 mb-3">{contact.designation}</p>
-                    <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-                      {contact.email && (
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Mail className="h-4 w-4 mr-2 text-gray-400" />
-                          <a href={`mailto:${contact.email}`} className="hover:text-[#1b4376] hover:underline">{contact.email}</a>
-                        </div>
-                      )}
-                      {contact.phone && (
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                          <a href={`tel:${contact.phone}`} className="hover:text-[#1b4376] hover:underline">{contact.phone}</a>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="p-6 text-center text-sm text-gray-500">
-                  No additional HR contacts recorded. Primary contact info is listed in the sidebar.
-                </div>
-              )}
-            </div>
-          </div>
         </div>
-
+        
         {/* Sidebar Column */}
         <div className="xl:col-span-1 space-y-6">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -314,23 +258,6 @@ export function CompanyDetailPage() {
               </div>
             </div>
           </div>
-
-          {/* Full Activity Timeline */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-             <div className="border-b border-gray-200 px-6 py-4 bg-gray-50 flex justify-between items-center">
-              <h3 className="text-base font-semibold leading-6 text-gray-900 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-blue-500" />
-                Activity Timeline
-              </h3>
-              <span className="inline-flex items-center rounded-md bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-800">
-                {activities.length} entries
-              </span>
-            </div>
-            <div className="p-6">
-              <ActivityTimeline activities={activities} />
-            </div>
-          </div>
-
         </div>
       </div>
 

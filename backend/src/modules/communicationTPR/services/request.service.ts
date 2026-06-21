@@ -97,6 +97,8 @@ export class RequestService {
         email_to: requestDetails.email_to,
         email_subject: requestDetails.email_subject,
         email_body: requestDetails.email_body,
+        attachment_url: requestDetails.email_templates?.attachment_url,
+        attachment_filename: requestDetails.email_templates?.attachment_filename,
         attachment_template_id: requestDetails.template_id,
         status: 'pending_send'
       });

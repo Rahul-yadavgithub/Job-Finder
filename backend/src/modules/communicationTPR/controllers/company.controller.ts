@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { CompanyService } from '../services/company.service';
 import { CommunicationTPRRequest } from '../types';
-import { appendTimeline } from '../../../services/timeline.service';
+import { appendTimeline, getTimeline } from '../../../services/timeline.service';
 
 export class CompanyController {
   private companyService: CompanyService;
@@ -93,6 +93,17 @@ export class CompanyController {
     } catch (error: any) {
       console.error('transferToHead Error:', error);
       res.status(500).json({ success: false, message: 'Failed to transfer company to Head Portal' });
+    }
+  };
+
+  getCompanyTimeline = async (req: CommunicationTPRRequest, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const events = await getTimeline(id as string, 'comm');
+      res.status(200).json({ success: true, data: events });
+    } catch (error: any) {
+      console.error('getCompanyTimeline Error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch company timeline' });
     }
   };
 }

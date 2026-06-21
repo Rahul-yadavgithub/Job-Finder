@@ -18,7 +18,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigation = [
     { name: 'Dashboard', href: '/communication-tpr/dashboard', icon: LayoutDashboard },
     { name: 'Companies', href: '/communication-tpr/companies', icon: Building2 },
-    { name: 'Pipeline', href: '/communication-tpr/pipeline', icon: Network },
     { name: 'Requests Queue', href: '/communication-tpr/requests', icon: Send },
     { name: 'Approvals', href: '/communication-tpr/approvals', icon: MessageSquare },
     { name: 'Calendar', href: '/communication-tpr/follow-ups', icon: Calendar },

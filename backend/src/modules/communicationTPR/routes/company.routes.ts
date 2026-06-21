@@ -12,5 +12,6 @@ router.get('/', companyController.getInterestedCompanies);
 router.get('/:id', companyController.getCompanyDetail);
 router.patch('/:id/stage', companyController.updateStage);
 router.post('/:id/transfer', companyController.transferToHead);
+router.get('/:id/timeline', companyController.getCompanyTimeline);
 
 export default router;
