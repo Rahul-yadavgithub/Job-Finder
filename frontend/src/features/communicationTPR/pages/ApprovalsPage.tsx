@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { requestApi } from '../services/request.api';
 import { CommunicationRequest } from '../types/request';
-import { Layout } from '../components/Layout';
+import { DashboardLayout } from '../components/Layout';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
 import { CheckCircle, XCircle, Search, Mail, Eye } from 'lucide-react';
@@ -68,54 +68,54 @@ export function ApprovalsPage() {
   if (error) return <ErrorState message={error} retry={fetchPendingApprovals} />;
 
   return (
-    <Layout>
+    <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Approvals</h1>
-            <p className="text-sm text-gray-500 mt-1">Review and approve communication requests before they are sent.</p>
+            <h1 className="text-2xl font-bold text-slate-800">Approvals</h1>
+            <p className="text-sm text-slate-500 mt-1">Review and approve communication requests before they are sent.</p>
           </div>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
               placeholder="Search companies or TPRs..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-600 outline-none"
+              className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-600 outline-none"
             />
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-x-auto w-full">
+          <table className="w-full text-left text-sm min-w-max">
+            <thead className="bg-[#f4f6f8] border-b border-slate-200">
               <tr>
-                <th className="px-6 py-3 font-semibold text-gray-900">Company</th>
-                <th className="px-6 py-3 font-semibold text-gray-900">Requested By</th>
-                <th className="px-6 py-3 font-semibold text-gray-900">Type</th>
-                <th className="px-6 py-3 font-semibold text-gray-900">Date</th>
-                <th className="px-6 py-3 font-semibold text-gray-900 text-right">Actions</th>
+                <th className="px-6 py-3 font-semibold text-slate-800">Company</th>
+                <th className="px-6 py-3 font-semibold text-slate-800">Requested By</th>
+                <th className="px-6 py-3 font-semibold text-slate-800">Type</th>
+                <th className="px-6 py-3 font-semibold text-slate-800">Date</th>
+                <th className="px-6 py-3 font-semibold text-slate-800 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-100">
               {filteredRequests.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
                     No pending approvals found.
                   </td>
                 </tr>
               ) : (
                 filteredRequests.map((req) => (
-                  <tr key={req.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900">{req.companyName || 'Unknown'}</td>
-                    <td className="px-6 py-4 text-gray-600">{req.requestedByName || 'Unknown'}</td>
+                  <tr key={req.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-slate-800">{req.companyName || 'Unknown'}</td>
+                    <td className="px-6 py-4 text-slate-600">{req.requestedByName || 'Unknown'}</td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
                         {req.requestType.replace('_', ' ')}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-500">
+                    <td className="px-6 py-4 text-slate-500">
                       {format(new Date(req.createdAt), 'MMM d, yyyy h:mm a')}
                     </td>
                     <td className="px-6 py-4 text-right">
@@ -136,16 +136,16 @@ export function ApprovalsPage() {
       </div>
 
       {selectedRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-[#f4f6f8]">
               <div>
-                <h3 className="font-semibold text-gray-900">Review Request</h3>
-                <p className="text-xs text-gray-500 mt-0.5">For {selectedRequest.companyName}</p>
+                <h3 className="font-semibold text-slate-800">Review Request</h3>
+                <p className="text-xs text-slate-500 mt-0.5">For {selectedRequest.companyName}</p>
               </div>
               <button
                 onClick={() => setSelectedRequest(null)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-slate-400 hover:text-slate-600"
               >
                 &times;
               </button>
@@ -153,21 +153,21 @@ export function ApprovalsPage() {
             
             <div className="p-6 overflow-y-auto flex-1 space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Requested By</label>
-                <div className="text-sm font-medium text-gray-900">{selectedRequest.requestedByName}</div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Requested By</label>
+                <div className="text-sm font-medium text-slate-800">{selectedRequest.requestedByName}</div>
               </div>
               
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">Email Draft Details</span>
+              <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <div className="bg-[#f4f6f8] px-4 py-2 border-b border-slate-200 flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-slate-500" />
+                  <span className="text-sm font-medium text-slate-700">Email Draft Details</span>
                 </div>
                 <div className="p-4 space-y-3">
                   <div className="text-sm">
-                    <span className="text-gray-500">To:</span> <span className="text-gray-900 font-medium">HR Contact</span> (will be resolved by backend)
+                    <span className="text-slate-500">To:</span> <span className="text-slate-800 font-medium">HR Contact</span> (will be resolved by backend)
                   </div>
                   <div className="text-sm">
-                    <span className="text-gray-500">Template Type:</span> <span className="text-gray-900 font-medium">{selectedRequest.requestType}</span>
+                    <span className="text-slate-500">Template Type:</span> <span className="text-slate-800 font-medium">{selectedRequest.requestType}</span>
                   </div>
                 </div>
               </div>
@@ -180,7 +180,7 @@ export function ApprovalsPage() {
               </div>
             </div>
             
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
+            <div className="px-6 py-4 bg-[#f4f6f8] border-t border-slate-100 flex items-center justify-end gap-3">
               <button
                 onClick={() => handleReject(selectedRequest.id)}
                 disabled={isProcessing}
@@ -201,6 +201,6 @@ export function ApprovalsPage() {
           </div>
         </div>
       )}
-    </Layout>
+    </DashboardLayout>
   );
 }

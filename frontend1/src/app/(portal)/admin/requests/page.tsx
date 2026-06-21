@@ -151,7 +151,7 @@ export default function AdminRequestsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Access Requests</h1>
-          <p className="text-gray-500">Review and approve access for co-workers and branch TPRs</p>
+          <p className="text-gray-500">Review and approve access for TPO Staff and Department Representatives</p>
         </div>
         <button 
           onClick={fetchData}
@@ -203,7 +203,7 @@ export default function AdminRequestsPage() {
                 onClick={() => updateTab('coworker-requests')}
                 className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${tab === 'coworker-requests' ? 'bg-white text-indigo-700 shadow border border-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}
               >
-                Co-Worker Requests 
+                TPO Staff Requests 
                 {stats.worker > 0 && <span className="bg-coral-100 text-coral-700 py-0.5 px-2 rounded-full text-[10px]">{stats.worker}</span>}
               </button>
               
@@ -211,7 +211,7 @@ export default function AdminRequestsPage() {
                 onClick={() => updateTab('tpr-requests')}
                 className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${tab === 'tpr-requests' ? 'bg-white text-indigo-700 shadow border border-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}
               >
-                Branch TPR Requests 
+                Department Rep Requests 
                 {stats.tpr > 0 && <span className="bg-amber-100 text-amber-700 py-0.5 px-2 rounded-full text-[10px]">{stats.tpr}</span>}
               </button>
               
@@ -234,7 +234,7 @@ export default function AdminRequestsPage() {
             </div>
           ) : requests.length === 0 ? (
             <div className="p-16 flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-50 to-green-100/50 border border-green-100/50 shadow-sm text-green-500 rounded-full flex items-center justify-center mb-4">
                 <Check size={32} />
               </div>
               <h3 className="text-lg font-bold text-gray-900">All caught up!</h3>
@@ -319,7 +319,7 @@ export default function AdminRequestsPage() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
             <div className="p-6 border-b border-gray-100 bg-gray-50/50">
-              <h3 className="text-xl font-bold text-gray-900">Approve Co-Worker Access</h3>
+              <h3 className="text-xl font-bold text-gray-900">Approve Staff Access</h3>
             </div>
             <div className="p-6 space-y-5">
               <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">

@@ -145,8 +145,8 @@ export default function AdminPeoplePage() {
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Team</h1>
-        <p className="text-gray-500">Co-workers and Branch TPRs overview</p>
+        <h1 className="text-2xl font-bold text-gray-900">Staff Directory</h1>
+        <p className="text-gray-500">TPO Staff and Department Representatives overview</p>
       </div>
 
       {loading && !stats ? (
@@ -160,8 +160,8 @@ export default function AdminPeoplePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             {/* Co-workers Group */}
-            <div className="bg-white rounded-xl border border-purple-100 shadow-sm p-5">
-              <h3 className="font-bold text-purple-900 mb-4 flex items-center gap-2"><Crown size={18} /> Co-Workers</h3>
+            <div className="bg-gradient-to-br from-white to-purple-50/50 rounded-xl border border-purple-100 shadow-sm p-5 transition-transform hover:scale-[1.01]">
+              <h3 className="font-bold text-purple-900 mb-4 flex items-center gap-2"><Crown size={18} /> TPO Staff</h3>
               <div className="grid grid-cols-4 gap-4">
                 <div>
                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total</p>
@@ -183,8 +183,8 @@ export default function AdminPeoplePage() {
             </div>
 
             {/* Branch TPRs Group */}
-            <div className="bg-white rounded-xl border border-blue-100 shadow-sm p-5">
-              <h3 className="font-bold text-blue-900 mb-4 flex items-center gap-2"><Users size={18} /> Branch TPRs</h3>
+            <div className="bg-gradient-to-br from-white to-blue-50/50 rounded-xl border border-blue-100 shadow-sm p-5 transition-transform hover:scale-[1.01]">
+              <h3 className="font-bold text-blue-900 mb-4 flex items-center gap-2"><Users size={18} /> Department Reps</h3>
               <div className="grid grid-cols-4 gap-4">
                 <div>
                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total</p>
@@ -210,15 +210,17 @@ export default function AdminPeoplePage() {
           {/* Main Interface */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
             <div className="p-4 border-b border-gray-200 flex gap-2 bg-gray-50/50">
-              {['coworkers', 'branch-tprs', 'communication-tprs', 'by-branch'].map(t => (
+              {['tpo-staff', 'department-reps', 'communication-tprs', 'by-branch'].map(t => {
+                const isActive = tab === t || (tab === 'coworkers' && t === 'tpo-staff') || (tab === 'branch-tprs' && t === 'department-reps');
+                return (
                 <button
                   key={t}
-                  onClick={() => updateTab(t)}
-                  className={`px-4 py-2 text-sm font-bold rounded-lg capitalize transition-colors ${tab === t ? 'bg-white text-indigo-700 shadow border border-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}
+                  onClick={() => updateTab(t === 'tpo-staff' ? 'coworkers' : t === 'department-reps' ? 'branch-tprs' : t)}
+                  className={`px-4 py-2 text-sm font-bold rounded-lg capitalize transition-all hover:scale-[1.02] ${isActive ? 'bg-white text-indigo-700 shadow border border-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}
                 >
                   {t.replace('-', ' ')}
                 </button>
-              ))}
+              )})}
             </div>
 
             <div className="overflow-x-auto min-h-[400px]">
