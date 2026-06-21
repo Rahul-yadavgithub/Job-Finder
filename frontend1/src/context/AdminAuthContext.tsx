@@ -13,6 +13,8 @@ export interface AdminUser {
   isDesignatedSuccessor: boolean;
   designation: string;
   jumpedIn?: boolean;
+  profilePhotoUrl?: string;
+  displayName?: string;
 }
 
 import { hasPermission, Permission } from '@/lib/admin/permissions';
@@ -48,6 +50,8 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
           isDesignatedSuccessor: response.data.designated_successor,
           designation: response.data.designation,
           jumpedIn: response.data.jumpedIn,
+          profilePhotoUrl: response.data.profile_photo_url,
+          displayName: response.data.display_name,
         });
         setUnreadCount(response.data.unreadNotifications || 0);
       } else {

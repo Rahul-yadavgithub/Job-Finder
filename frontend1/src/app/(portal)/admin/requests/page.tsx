@@ -147,7 +147,7 @@ export default function AdminRequestsPage() {
   const totalPending = stats.worker + stats.tpr;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
+    <div className="w-full max-w-none space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Access Requests</h1>

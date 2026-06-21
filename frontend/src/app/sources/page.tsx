@@ -94,7 +94,7 @@ export default function SourcesPage() {
 
   return (
     <>
-      <div className="p-8 max-w-7xl mx-auto transition-all duration-300">
+      <div className="p-8 w-full max-w-none transition-all duration-300">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
             <h1 className="flex items-center gap-3 text-3xl font-extrabold text-slate-900 tracking-tight mb-2">

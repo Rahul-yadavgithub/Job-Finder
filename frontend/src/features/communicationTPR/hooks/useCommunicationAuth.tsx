@@ -10,6 +10,7 @@ interface AuthContextType {
   loading: boolean;
   login: (token: string, userData: CommunicationTPRUser) => void;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,6 +37,17 @@ export function CommunicationAuthProvider({ children }: { children: React.ReactN
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const res = await commApi.get('/auth/me');
+      if (res.data.success && res.data.user) {
+        setUser(res.data.user);
+      }
+    } catch (error) {
+      console.error('Failed to refresh user', error);
+    }
+  };
+
   const login = (token: string, userData: CommunicationTPRUser) => {
     setUser(userData);
     router.push('/communication-tpr/dashboard');
@@ -55,7 +67,7 @@ export function CommunicationAuthProvider({ children }: { children: React.ReactN
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

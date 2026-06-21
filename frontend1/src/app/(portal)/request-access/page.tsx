@@ -106,7 +106,7 @@ export default function RequestAccess() {
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
             <div className="flex-1 hidden sm:flex flex-col items-end mr-4">
                <h1 className="text-xl sm:text-2xl font-bold text-slate-800">राष्ट्रीय प्रौद्योगिकी संस्थान हमीरपुर</h1>
-               <p className="text-sm font-semibold text-slate-600">हमीरपुर, हिमाचल प्रदेश (भारत)</p>
+               <p className="text-sm font-semibold text-slate-600">हमीरपुर, हिमाचल प्रदेश (भारत) - 177 005</p>
             </div>
             <div className="relative z-20 flex-shrink-0 bg-white rounded-full p-2" style={{ transform: 'translateY(15px)' }}>
               <img 
@@ -117,7 +117,7 @@ export default function RequestAccess() {
             </div>
             <div className="flex-1 flex flex-col items-center sm:items-start sm:ml-4">
                <h1 className="text-xl sm:text-2xl font-bold text-[#1b4376]">National Institute of Technology Hamirpur</h1>
-               <p className="text-sm font-semibold text-slate-600">Hamirpur, Himachal Pradesh (India)</p>
+               <p className="text-sm font-semibold text-slate-600">Hamirpur, Himachal Pradesh (India) - 177 005</p>
             </div>
           </div>
         </div>
@@ -166,7 +166,7 @@ export default function RequestAccess() {
           
           <div className="flex-1 hidden sm:flex flex-col items-end mr-4">
              <h1 className="text-xl sm:text-2xl font-bold text-slate-800">राष्ट्रीय प्रौद्योगिकी संस्थान हमीरपुर</h1>
-             <p className="text-sm font-semibold text-slate-600">हमीरपुर, हिमाचल प्रदेश (भारत)</p>
+             <p className="text-sm font-semibold text-slate-600">हमीरपुर, हिमाचल प्रदेश (भारत) - 177 005</p>
           </div>
 
           <div className="relative z-20 flex-shrink-0 bg-white rounded-full p-2" style={{ transform: 'translateY(15px)' }}>
@@ -179,7 +179,7 @@ export default function RequestAccess() {
 
           <div className="flex-1 flex flex-col items-center sm:items-start sm:ml-4">
              <h1 className="text-xl sm:text-2xl font-bold text-[#1b4376]">National Institute of Technology Hamirpur</h1>
-             <p className="text-sm font-semibold text-slate-600">Hamirpur, Himachal Pradesh (India)</p>
+             <p className="text-sm font-semibold text-slate-600">Hamirpur, Himachal Pradesh (India) - 177 005</p>
           </div>
           
         </div>

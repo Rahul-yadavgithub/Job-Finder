@@ -2,6 +2,7 @@ import { Response, Request } from 'express';
 import { AuthService } from '../services/auth.service';
 import { loginSchema } from '../validators/auth.validator';
 import { CommunicationTPRRequest } from '../types';
+import { supabase } from '../../../config/supabase';
 
 export class AuthController {
   private authService: AuthService;
@@ -52,6 +53,61 @@ export class AuthController {
       res.status(401).json({ success: false, message: 'Unauthorized' });
       return;
     }
-    res.status(200).json({ success: true, user: req.user });
+    
+    try {
+      const { data } = await supabase
+        .from('users')
+        .select('profile_photo_url, display_name, branches(name)')
+        .eq('id', req.user.userId)
+        .single();
+        
+      res.status(200).json({ 
+        success: true, 
+        user: { 
+          ...req.user, 
+          profilePhotoUrl: data?.profile_photo_url, 
+          displayName: data?.display_name,
+          branchName: (data?.branches as any)?.name
+        } 
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to fetch user profile' });
+    }
+  };
+
+  updateProfile = async (req: CommunicationTPRRequest, res: Response): Promise<void> => {
+    if (!req.user) {
+      res.status(401).json({ success: false, message: 'Unauthorized' });
+      return;
+    }
+
+    try {
+      const { profilePhotoUrl, displayName } = req.body;
+      const updates: any = {};
+
+      if (profilePhotoUrl !== undefined) {
+        updates.profile_photo_url = profilePhotoUrl;
+      }
+      if (displayName !== undefined) {
+        updates.display_name = displayName;
+      }
+
+      if (Object.keys(updates).length === 0) {
+        res.status(400).json({ success: false, message: 'No valid fields to update' });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('users')
+        .update(updates)
+        .eq('id', req.user.userId);
+
+      if (error) throw error;
+
+      res.status(200).json({ success: true, message: 'Profile updated successfully' });
+    } catch (error: any) {
+      console.error('TPR Update profile error:', error);
+      res.status(500).json({ success: false, message: 'Failed to update profile' });
+    }
   };
 }

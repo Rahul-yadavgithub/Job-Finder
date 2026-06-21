@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { Loader2, AlertCircle, ShieldCheck, Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { adminPost } from '@/lib/admin/api';
+import { Loader2, AlertCircle, ShieldCheck, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { AxiosError } from 'axios';
 
-export default function ForgotPasswordPage() {
+export default function AdminForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -35,17 +36,17 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/forgot-password`,
-        { email },
-        { withCredentials: true }
+      const res = await adminPost<{ success: boolean; message: string }>(
+        '/auth/forgot-password',
+        { email }
       );
       
-      if (res.data.success) {
+      if (res.success) {
         setSuccess(true);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to process request. Please try again.');
+      const error = err as AxiosError<{ success: boolean; message: string }>;
+      setError(error.response?.data?.message || 'Failed to process request. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -107,7 +108,7 @@ export default function ForgotPasswordPage() {
 
       {/* Forgot Password Section */}
       <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[#f5f7f9] relative z-0">
-        <div className="w-full max-w-[420px] bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+        <div className="w-full max-w-[420px] bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden relative z-10">
           
           <div className="px-8 pt-8 pb-4 text-center">
             <div className="w-16 h-16 bg-[#e6f0ff] rounded-full flex items-center justify-center mx-auto mb-4 relative">
@@ -179,7 +180,7 @@ export default function ForgotPasswordPage() {
 
           </div>
         </div>
-      </div>
+    </div>
     </div>
   );
 }

@@ -143,7 +143,7 @@ export default function AdminPeoplePage() {
   if (!user) return null;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
+    <div className="w-full max-w-none space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Staff Directory</h1>
         <p className="text-gray-500">TPO Staff and Department Representatives overview</p>

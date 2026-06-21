@@ -117,7 +117,7 @@ export default function AdminDashboard() {
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Your workspace is being set up.</h2>
             <p className="text-gray-600 text-lg max-w-2xl leading-relaxed">
-              More features for your specific role will appear here soon. The engineering team is currently expanding the co-worker tools.
+              More features for your specific role will appear here soon. The engineering team is currently expanding the TPO staff tools.
             </p>
           </div>
           <div className="bg-gray-50 border-t border-gray-100 px-8 py-5 flex flex-wrap gap-6 md:gap-12 relative z-10">
@@ -147,7 +147,7 @@ export default function AdminDashboard() {
   const totalPending = reqStats.worker + reqStats.tpr;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
+    <div className="w-full max-w-none space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Platform Overview</h1>
       </div>
@@ -234,7 +234,7 @@ export default function AdminDashboard() {
           </div>
           <div className="p-5 space-y-4 flex-1">
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Co-workers</span>
+              <span className="text-gray-600">TPO Staff</span>
               <span className="font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded">{peopleStats.coworkers}</span>
             </div>
             <div className="flex justify-between items-center">
