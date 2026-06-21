@@ -60,7 +60,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             error.response?.status === 401 && 
             !pathname.startsWith('/login') && 
             !pathname.startsWith('/register') &&
-            !pathname.startsWith('/communication-tpr')
+            !pathname.startsWith('/communication-tpr') &&
+            !pathname.startsWith('/forgot-password') &&
+            !pathname.startsWith('/reset-password')
           ) {
             router.push('/login');
           }

@@ -7,7 +7,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   
   // Define which paths should not display the sidebar
-  const isAuthPage = pathname === '/login' || pathname === '/register' || pathname.startsWith('/communication-tpr');
+  const isAuthPage = pathname === '/login' || pathname === '/register' || pathname.startsWith('/communication-tpr') || pathname.startsWith('/forgot-password') || pathname.startsWith('/reset-password');
 
   if (isAuthPage) {
     return (

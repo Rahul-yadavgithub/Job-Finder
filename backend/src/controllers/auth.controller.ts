@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { supabase } from '../config/supabase';
 import { AuthRequest } from '../types/auth.types';
+import { sendResetEmail } from '../utils/email';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -252,5 +253,89 @@ export const getBranches = async (req: Request, res: Response): Promise<void> =>
   } catch (error) {
     console.error('Supabase getBranches error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch branches' });
+  }
+};
+
+export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      res.status(400).json({ success: false, message: 'Email is required' });
+      return;
+    }
+
+    const { data: user } = await supabase
+      .from('users')
+      .select('id, email, password_hash')
+      .eq('email', email)
+      .single();
+
+    if (!user) {
+      // Changed from silent success to explicit error to help with debugging!
+      res.status(404).json({ success: false, message: 'This email is not registered in the TPR Portal.' });
+      return;
+    }
+
+    const secret = process.env.JWT_SECRET + user.password_hash;
+    const token = jwt.sign({ id: user.id, email: user.email }, secret, { expiresIn: '15m' });
+
+    const frontendUrl = process.env.ADMIN_BASE_URL || 'http://localhost:3000';
+    const resetLink = `${frontendUrl}/reset-password?id=${user.id}&token=${token}`;
+
+    await sendResetEmail(user.email, resetLink);
+
+    res.status(200).json({ success: true, message: 'If the email exists, a reset link has been sent.' });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id, token, newPassword } = req.body;
+
+    if (!id || !token || !newPassword) {
+      res.status(400).json({ success: false, message: 'Missing required parameters' });
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      res.status(400).json({ success: false, message: 'Password must be at least 8 characters long' });
+      return;
+    }
+
+    const { data: user } = await supabase
+      .from('users')
+      .select('id, password_hash')
+      .eq('id', id)
+      .single();
+
+    if (!user) {
+      res.status(400).json({ success: false, message: 'Invalid or expired token' });
+      return;
+    }
+
+    const secret = process.env.JWT_SECRET + user.password_hash;
+    try {
+      jwt.verify(token, secret);
+    } catch (err) {
+      res.status(400).json({ success: false, message: 'Invalid or expired token' });
+      return;
+    }
+
+    const newPasswordHash = await bcrypt.hash(newPassword, 12);
+
+    const { error } = await supabase
+      .from('users')
+      .update({ password_hash: newPasswordHash })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true, message: 'Password has been reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };

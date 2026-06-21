@@ -20,6 +20,12 @@ export default function LoginPage() {
   const [captchaText, setCaptchaText] = useState('');
   const [captchaInput, setCaptchaInput] = useState('');
   
+  // Dynamic Text Swap State
+  const [isHindiLeft, setIsHindiLeft] = useState(true);
+
+  // Date/Time State
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  
   const router = useRouter();
 
   const generateCaptcha = () => {
@@ -33,6 +39,20 @@ export default function LoginPage() {
 
   useEffect(() => {
     generateCaptcha();
+    setCurrentTime(new Date());
+    
+    const interval = setInterval(() => {
+      setIsHindiLeft(prev => !prev);
+    }, 4000);
+    
+    const timeInterval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    
+    return () => {
+      clearInterval(interval);
+      clearInterval(timeInterval);
+    };
   }, []);
 
   const handleEmailBlur = async () => {
@@ -96,16 +116,35 @@ export default function LoginPage() {
     }
   };
 
+  const formattedDate = currentTime ? currentTime.toLocaleDateString('en-US', {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  }) : '';
+
+  const formattedTime = currentTime ? currentTime.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  }) : '';
+
   return (
     <div className="min-h-screen bg-[#eef1f5] flex flex-col font-sans">
       
-      {/* Top Information Bar */}
-      <div className="w-full bg-[#1b4376] text-white py-1 px-4 sm:px-8 flex items-center text-sm">
-        <a href="https://www.nith.ac.in/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-blue-200 transition-colors">
-          <Globe className="w-4 h-4" />
-          NITH Website
-        </a>
+      {/* Top Date/Time Bar */}
+      <div className="w-full bg-[#1b4376] text-white py-1.5 px-4 sm:px-8 flex justify-end items-center text-xs sm:text-sm font-medium tracking-wide">
+        {currentTime ? (
+          <div className="flex items-center gap-3">
+            <span>{formattedDate}</span>
+            <span className="opacity-50">|</span>
+            <span className="font-mono">{formattedTime}</span>
+          </div>
+        ) : (
+          <div className="h-5"></div>
+        )}
       </div>
+
 
       {/* Main Header */}
       <div className="w-full bg-white py-4 px-4 sm:px-8 relative z-10 border-b-2 border-[#1b4376]">
@@ -287,12 +326,12 @@ export default function LoginPage() {
               </div>
               
               <div className="mt-4 pt-1 flex items-center justify-between">
-                <a href="/register" className="text-[13px] font-medium text-[#2e5e9b] hover:text-[#1b4376] transition-colors">
+                <button type="button" onClick={() => router.push('/register')} className="text-[13px] font-medium text-[#2e5e9b] hover:text-[#1b4376] transition-colors">
                   Don't have an account? Register
-                </a>
-                <a href="#" onClick={(e) => e.preventDefault()} className="text-[13px] font-medium text-[#2e5e9b] hover:text-[#1b4376] transition-colors">
+                </button>
+                <button type="button" onClick={() => router.push('/forgot-password')} className="text-[13px] font-medium text-[#2e5e9b] hover:text-[#1b4376] transition-colors">
                   Forgot Password?
-                </a>
+                </button>
               </div>
             </form>
 
