@@ -35,14 +35,27 @@ export class RequestRepository {
   }
 
   async getRequestForEmail(requestId: string) {
-    const { data, error } = await supabase
+    const { data: requestData, error } = await supabase
       .from('communication_requests')
-      .select('*, email_templates(attachment_url, attachment_filename)')
+      .select('*')
       .eq('id', requestId)
       .single();
 
     if (error) throw error;
-    return data;
+
+    if (requestData && requestData.template_id) {
+      const { data: templateData } = await supabase
+        .from('email_templates')
+        .select('attachment_url, attachment_filename')
+        .eq('id', requestData.template_id)
+        .single();
+        
+      if (templateData) {
+        requestData.email_templates = templateData;
+      }
+    }
+
+    return requestData;
   }
 
 

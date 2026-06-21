@@ -21,6 +21,7 @@ import {
 } from '../controllers/adminRequests.controller';
 import { jumpIn, jumpOut } from '../controllers/adminAuth.controller';
 import { getTimeline } from '../services/timeline.service';
+import { getTemplates, uploadTemplate } from '../controllers/adminSettings.controller';
 
 const router = Router();
 
@@ -56,6 +57,10 @@ router.patch('/tasks/:taskId/execute', updateTaskStatus);
 
 // Dashboard
 router.get('/dashboard-stats', getCoworkerDashboardStats);
+
+// Settings
+router.get('/settings/templates', getTemplates);
+router.post('/settings/templates', uploadTemplate);
 
 router.get('/timeline/:companyId', async (req, res) => {
   try {

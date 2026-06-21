@@ -2,14 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Building2, User, Phone, Mail, Calendar, Clock, BookOpen, AlertCircle, Users, Send, Network, Lock } from 'lucide-react';
+import { ArrowLeft, Building2, User, Phone, Mail, Calendar, Clock, BookOpen, AlertCircle, Users, Send, Network, Lock, Activity } from 'lucide-react';
 import { companyApi } from '../services/company.api';
-import { DetailedCompany } from '../types/company';
 import { CompanyActivity } from '../types/activity';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
 import { ActivityForm } from '../components/ActivityForm';
 import { ActivityTimeline } from '../components/ActivityTimeline';
+import { CommWorkflowTracker, CommPhase } from '../components/CommWorkflowTracker';
 import { RequestHistory } from '../components/RequestHistory';
 import { RequestFormModal } from '../components/RequestFormModal';
 import { ScheduleFollowUpModal } from '../components/ScheduleFollowUpModal';
@@ -75,6 +75,22 @@ export function CompanyDetailPage() {
 
   const isLocked = company.currentStatus.editingLocked;
   const isReadyForHead = company.currentStatus.midStatus === 'ready_for_head_review';
+
+  const getLifecyclePhase = (): CommPhase => {
+    const primaryStatus = company.currentStatus;
+    if (primaryStatus.editingLocked || primaryStatus.midStatus === 'transferred_to_head' || primaryStatus.midStatus === 'accepted' || primaryStatus.baseStatus === 'rejected' || primaryStatus.midStatus === 'revoked') {
+      return 'concluded';
+    }
+    if (primaryStatus.midStatus === 'ready_for_head_review' || primaryStatus.midStatus === 'pending_review') {
+      return 'ready_for_head_review';
+    }
+    if (primaryStatus.midStatus === 'under_communication') {
+      return 'under_communication';
+    }
+    return 'new_arrival';
+  };
+
+  const currentPhase = getLifecyclePhase();
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
@@ -152,6 +168,15 @@ export function CompanyDetailPage() {
             </button>
           )}
         </div>
+      </div>
+
+      {/* Activity Timeline Card */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden p-6 md:p-8">
+        <div className="flex items-center gap-2 mb-8">
+          <Activity className="w-5 h-5 text-gray-500" />
+          <h2 className="text-lg font-bold text-gray-900">Activity Timeline</h2>
+        </div>
+        <CommWorkflowTracker currentPhase={currentPhase} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -98,7 +98,7 @@ export class CompanyService {
         baseStatus: status?.base_status,
         midStatus: status?.mid_status,
         locked: status?.locked,
-        editingLocked: status?.editing_locked
+        editingLocked: status?.locked
       },
       hrContacts: row.hr_contacts || [],
       statusHistory,

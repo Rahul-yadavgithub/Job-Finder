@@ -11,7 +11,7 @@ export class FollowupCronJob {
       // 1. Fetch all 'sent' requests where next_followup_date <= TODAY
       const { data: requests, error } = await supabase
         .from('communication_requests')
-        .select('*, email_templates(attachment_url, attachment_filename)')
+        .select('*')
         .eq('status', 'sent')
         .lte('next_followup_date', today);
 
@@ -63,13 +63,27 @@ export class FollowupCronJob {
           // Format text body as HTML (replace \n with <br>)
           bodyHtml = bodyHtml.replace(/\n/g, '<br>');
 
+          // Fetch email template if needed
+          let attachmentUrl, attachmentFilename;
+          if (req.template_id) {
+            const { data: templateData } = await supabase
+              .from('email_templates')
+              .select('attachment_url, attachment_filename')
+              .eq('id', req.template_id)
+              .single();
+            if (templateData) {
+              attachmentUrl = templateData.attachment_url;
+              attachmentFilename = templateData.attachment_filename;
+            }
+          }
+
           // 3. Dispatch the Email
           await sendPlacementEmail({
             toEmail: req.email_to,
             subject: subject,
             bodyHtml: bodyHtml,
-            attachmentUrl: req.email_templates?.attachment_url,
-            attachmentFilename: req.email_templates?.attachment_filename,
+            attachmentUrl: attachmentUrl,
+            attachmentFilename: attachmentFilename,
           });
 
           // 4. Update request record

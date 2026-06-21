@@ -4,13 +4,16 @@ import React, { useEffect, useState } from 'react';
 import { followUpApi } from '../services/followup.api';
 import { FollowUp } from '../types/followup';
 import { FollowUpCalendar } from '../components/FollowUpCalendar';
+import { CreateFollowUpModal } from '../components/CreateFollowUpModal';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
+import { Plus } from 'lucide-react';
 
 export function FollowUpCalendarPage() {
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchFollowUps();
@@ -43,9 +46,25 @@ export function FollowUpCalendarPage() {
             Manage and view all your assigned follow-ups.
           </p>
         </div>
+        <div className="mt-4 sm:ml-4 sm:mt-0">
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="inline-flex items-center gap-x-2 rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          >
+            <Plus className="-ml-0.5 h-5 w-5" aria-hidden="true" />
+            Schedule Follow-up
+          </button>
+        </div>
       </div>
 
       <FollowUpCalendar followUps={followUps} onStatusChange={fetchFollowUps} />
+      
+      <CreateFollowUpModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSuccess={fetchFollowUps} 
+      />
     </div>
   );
 }

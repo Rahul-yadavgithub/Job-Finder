@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Loader2, FileUp } from 'lucide-react';
+import { Loader2, FileUp, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase'; // Assuming there is a supabase client exported
 
 export function TemplateSettings() {
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
+  const [removing, setRemoving] = useState<string | null>(null);
   const [forms, setForms] = useState<Record<string, { subject: string, body_draft: string }>>({});
 
   const { data: templates, isLoading } = useQuery({
@@ -65,6 +66,25 @@ export function TemplateSettings() {
     }
   };
 
+  const handleFileRemove = async (templateType: string) => {
+    setRemoving(templateType);
+    try {
+      const payload = {
+        template_type: templateType,
+        subject: forms[templateType]?.subject || 'Official Communication from NITH',
+        body_draft: forms[templateType]?.body_draft || 'Dear {{hr_name}},\n\nPlease find the attached document.',
+        attachment_filename: null,
+        attachment_url: null
+      };
+      await uploadTemplate.mutateAsync(payload);
+      toast.success('File removed successfully');
+    } catch (err) {
+      toast.error('Failed to remove file');
+    } finally {
+      setRemoving(null);
+    }
+  };
+
   const saveText = (templateType: string) => {
     uploadTemplate.mutate({
       template_type: templateType,
@@ -76,8 +96,7 @@ export function TemplateSettings() {
   if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>;
 
   const sections = [
-    { id: 'institute_brochure', title: 'Institute Brochure' },
-    { id: 'jnf_form', title: 'JNF Form' }
+    { id: 'institute_brochure', title: 'Institute Brochure' }
   ];
 
   return (
@@ -104,8 +123,18 @@ export function TemplateSettings() {
                   <label className="cursor-pointer bg-white px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                     {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileUp className="w-4 h-4" />}
                     Upload New
-                    <input type="file" className="hidden" accept="application/pdf" onChange={(e) => handleFileUpload(e, section.id)} />
+                    <input type="file" className="hidden" accept="application/pdf" onChange={(e) => handleFileUpload(e, section.id)} disabled={uploading} />
                   </label>
+                  {t?.attachment_url && (
+                    <button
+                      onClick={() => handleFileRemove(section.id)}
+                      disabled={uploading || removing === section.id}
+                      className="text-red-500 hover:text-red-700 p-2 rounded-md hover:bg-red-50 transition-colors"
+                      title="Remove attachment"
+                    >
+                      {removing === section.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    </button>
+                  )}
                 </div>
               </div>
               

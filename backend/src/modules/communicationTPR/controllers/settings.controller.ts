@@ -31,18 +31,28 @@ export class SettingsController {
         updated_at: new Date().toISOString()
       };
       
-      if (branch_id) payload.branch_id = branch_id;
-      if (attachment_url) payload.attachment_url = attachment_url;
-      if (attachment_filename) payload.attachment_filename = attachment_filename;
+      if (branch_id !== undefined) payload.branch_id = branch_id;
+      if (attachment_url !== undefined) payload.attachment_url = attachment_url;
+      if (attachment_filename !== undefined) payload.attachment_filename = attachment_filename;
 
-      const { data, error } = await supabase
-        .from('email_templates')
-        .upsert(payload, { onConflict: 'template_type, branch_id' })
-        .select('*')
-        .single();
+      let existing;
+      if (branch_id) {
+        const { data } = await supabase.from('email_templates').select('id').eq('template_type', template_type).eq('branch_id', branch_id).single();
+        existing = data;
+      } else {
+        const { data } = await supabase.from('email_templates').select('id').eq('template_type', template_type).is('branch_id', null).single();
+        existing = data;
+      }
 
-      if (error) throw error;
-      res.status(200).json({ success: true, data });
+      let result;
+      if (existing?.id) {
+        result = await supabase.from('email_templates').update(payload).eq('id', existing.id).select('*').single();
+      } else {
+        result = await supabase.from('email_templates').insert(payload).select('*').single();
+      }
+
+      if (result.error) throw result.error;
+      res.status(200).json({ success: true, data: result.data });
     } catch (error: any) {
       console.error('uploadTemplate Error:', error);
       res.status(500).json({ success: false, message: 'Failed to upload template' });

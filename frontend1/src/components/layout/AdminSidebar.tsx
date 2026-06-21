@@ -208,6 +208,12 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               label="Staff Directory" 
               active={pathname.startsWith('/admin/people')} 
             />
+            <NavItem 
+              href="/admin/settings" 
+              icon={<Settings size={20} />} 
+              label="Settings" 
+              active={pathname.startsWith('/admin/settings')} 
+            />
           </>
         )}
 

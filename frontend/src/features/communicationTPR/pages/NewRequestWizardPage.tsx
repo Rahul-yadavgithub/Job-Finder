@@ -7,6 +7,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import { ChevronRight, ChevronLeft, Send, CheckCircle2, Building2, Loader2, FileText, AlertCircle } from 'lucide-react';
 import { requestApi } from '../services/request.api';
+import { companyApi } from '../services/company.api';
 
 export function NewRequestWizardPage() {
   const router = useRouter();
@@ -37,8 +38,8 @@ export function NewRequestWizardPage() {
   const { data: newArrivals, isLoading: isLoadingCompanies } = useQuery({
     queryKey: ['newArrivals'],
     queryFn: async () => {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/communication-tpr/companies/interested`, { withCredentials: true });
-      return res.data.data;
+      const res = await companyApi.getInterestedCompanies({ limit: 100 });
+      return res.data;
     }
   });
 
@@ -168,7 +169,7 @@ export function NewRequestWizardPage() {
                 >
                   <option value="">-- Choose a company --</option>
                   {newArrivals?.map((c: any) => (
-                    <option key={c.company_id} value={c.company_id}>{c.companies?.company_name}</option>
+                    <option key={c.id} value={c.id}>{c.companyName}</option>
                   ))}
                 </select>
               )}
@@ -302,7 +303,7 @@ export function NewRequestWizardPage() {
                 <div className="sm:col-span-1">
                   <dt className="text-sm font-medium text-gray-500">Company</dt>
                   <dd className="mt-1 text-sm text-gray-900 font-semibold">
-                    {newArrivals?.find((c:any) => c.company_id === formData.companyId)?.companies?.company_name || 'Selected Company'}
+                    {newArrivals?.find((c:any) => c.id === formData.companyId)?.companyName || 'Selected Company'}
                   </dd>
                 </div>
                 <div className="sm:col-span-1">

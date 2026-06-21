@@ -41,7 +41,7 @@ export class CompanyRepository {
       .from('companies')
       .select(`
         id, company_name, hr_name, email, phone_number, description, data_source, created_at,
-        company_status(base_status, mid_status, updated_at, locked, editing_locked),
+        company_status(base_status, mid_status, updated_at, locked),
         branches(id, name),
         users!created_by(name),
         status_history(new_status, changed_at, users!changed_by(name)),
@@ -82,9 +82,9 @@ export class CompanyRepository {
       .from('company_status')
       .update({ 
         mid_status: 'transferred_to_head',
-        editing_locked: true,
-        transferred_by: userId,
-        transferred_at: new Date().toISOString()
+        locked: true,
+        locked_by: userId,
+        locked_at: new Date().toISOString()
       })
       .eq('company_id', companyId)
       .select()
