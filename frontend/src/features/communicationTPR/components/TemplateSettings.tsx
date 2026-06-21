@@ -4,9 +4,11 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import { Loader2, FileUp, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase'; // Assuming there is a supabase client exported
+import { useRouter } from 'next/navigation';
 
 export function TemplateSettings() {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [uploading, setUploading] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
   const [forms, setForms] = useState<Record<string, { subject: string, body_draft: string }>>({});
@@ -27,6 +29,7 @@ export function TemplateSettings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comm-templates'] });
       toast.success('Template saved successfully');
+      router.push('/communication-tpr/dashboard');
     },
     onError: () => toast.error('Failed to save template')
   });
@@ -161,8 +164,10 @@ export function TemplateSettings() {
                 
                 <button 
                   onClick={() => saveText(section.id)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+                  disabled={uploadTemplate.isPending}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
+                  {uploadTemplate.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   Save Text Templates
                 </button>
               </div>

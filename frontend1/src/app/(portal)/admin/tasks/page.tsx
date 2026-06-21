@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { adminGet, adminPatch, adminDelete, adminPost } from '@/lib/admin/api';
-import { CheckSquare, CheckCircle2, Clock, UploadCloud, MessageSquareText, Loader2, ArrowRight, Trash2, Eye } from 'lucide-react';
+import { CheckSquare, CheckCircle2, Clock, UploadCloud, MessageSquareText, Loader2, ArrowRight, Trash2, Eye, Paperclip, FileText } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 
@@ -262,6 +262,16 @@ export default function MyTasksPage() {
                 <p className="text-xs font-bold text-gray-500 mb-1">Subject: {req.email_subject}</p>
                 <div className="text-sm text-gray-700 line-clamp-2" dangerouslySetInnerHTML={{__html: req.email_body}}></div>
               </div>
+              {req.attachment_url && (
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-semibold text-gray-500 flex items-center gap-1">
+                    <Paperclip size={12} /> Attachment:
+                  </span>
+                  <a href={req.attachment_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 bg-blue-50 border border-blue-100 px-2 py-1 rounded transition-colors">
+                    <FileText size={12} /> {req.attachment_filename || 'View PDF Document'}
+                  </a>
+                </div>
+              )}
               {errorState[req.id] && (
                 <p className="text-sm text-red-600 font-medium mt-2">{errorState[req.id]}</p>
               )}
