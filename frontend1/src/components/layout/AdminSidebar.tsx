@@ -212,7 +212,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         )}
 
         {/* Impersonation Controls */}
-        {user.isSuperAdmin && (
+        {(user.isSuperAdmin || user.jumpedIn) && (
           <div className="pt-6 pb-2 border-t border-gray-100 mt-6">
             {!user.jumpedIn ? (
               <button
