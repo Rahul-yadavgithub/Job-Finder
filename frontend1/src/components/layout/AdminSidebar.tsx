@@ -7,11 +7,16 @@ import { useAdminAuth } from '@/context/AdminAuthContext';
 import { adminGet } from '@/lib/admin/api';
 import { 
   LogOut, LayoutDashboard, List, Settings, ShieldAlert, Crown, User, ShieldCheck,
-  Building2, Users, ClipboardList, RefreshCw, Eye, CalendarDays
+  Building2, Users, ClipboardList, RefreshCw, Eye, CalendarDays, X
 } from 'lucide-react';
 import { adminPost } from '@/lib/admin/api';
 
-export function AdminSidebar() {
+interface AdminSidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
   const { user, logout, refreshUser } = useAdminAuth();
   const [pendingRequests, setPendingRequests] = useState(0);
@@ -49,15 +54,37 @@ export function AdminSidebar() {
   const roleBadge = getRoleBadge();
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col hidden md:flex h-screen fixed left-0 top-0 overflow-y-auto z-40">
-      <div className="p-6 border-b border-gray-200">
+    <>
+      {/* Mobile Backdrop */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 z-40 md:hidden backdrop-blur-sm transition-opacity" 
+          onClick={onClose} 
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col z-50 transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
+        
+        {/* Mobile Close Button */}
+        {onClose && (
+          <button onClick={onClose} className="md:hidden absolute top-4 right-4 p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
+            <X className="w-5 h-5" />
+          </button>
+        )}
+
+        <div className="p-6 border-b border-gray-200">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
-            A
+          <div className="relative z-20 flex-shrink-0 bg-white rounded-full p-1 border border-slate-100 shadow-sm">
+            <img 
+              src="https://res.cloudinary.com/dzbliymin/image/upload/v1781725894/logonith_gb3opv.webp" 
+              alt="NITH Logo" 
+              className="w-10 h-10 object-contain"
+            />
           </div>
           <div>
-            <h1 className="font-bold text-gray-900 leading-tight">Admin Portal</h1>
-            <p className="text-xs text-gray-500 font-medium">NITH TPR System</p>
+            <h1 className="font-bold text-slate-800 leading-tight">TPO Head Portal</h1>
+            <p className="text-xs text-slate-500 font-medium">NITH Portal</p>
           </div>
         </div>
         
@@ -103,13 +130,13 @@ export function AdminSidebar() {
             <NavItem 
               href="/admin/people" 
               icon={<Users size={20} />} 
-              label="People" 
+              label="Staff Directory" 
               active={pathname.startsWith('/admin/people')} 
             />
             <NavItem 
               href="/admin/requests" 
               icon={<ClipboardList size={20} />} 
-              label="Requests" 
+              label="Access Requests" 
               active={pathname.startsWith('/admin/requests')} 
               badge={pendingRequests > 0 ? pendingRequests : undefined}
             />
@@ -152,13 +179,13 @@ export function AdminSidebar() {
             <NavItem 
               href="/admin/people" 
               icon={<Users size={20} />} 
-              label="Team" 
+              label="Staff Directory" 
               active={pathname.startsWith('/admin/people')} 
             />
           </>
         )}
 
-        {/* Jump In/Out Controls */}
+        {/* Impersonation Controls */}
         {user.isSuperAdmin && (
           <div className="pt-6 pb-2 border-t border-gray-100 mt-6">
             {!user.jumpedIn ? (
@@ -167,10 +194,10 @@ export function AdminSidebar() {
                   await adminPost('/auth/jump-in');
                   await refreshUser();
                 }}
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold rounded-lg transition-colors border border-indigo-200"
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold rounded-lg transition-all hover:scale-[1.02] border border-indigo-200"
               >
                 <Eye size={16} />
-                Jump In
+                Impersonate Staff
               </button>
             ) : (
               <button
@@ -178,26 +205,27 @@ export function AdminSidebar() {
                   await adminPost('/auth/jump-out');
                   await refreshUser();
                 }}
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-amber-50 hover:bg-amber-100 text-amber-700 text-sm font-semibold rounded-lg transition-colors border border-amber-200"
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-amber-50 hover:bg-amber-100 text-amber-700 text-sm font-semibold rounded-lg transition-all hover:scale-[1.02] border border-amber-200"
               >
                 <LogOut size={16} className="rotate-180" />
-                Jump Out
+                Exit Impersonation
               </button>
             )}
           </div>
         )}
       </nav>
 
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-slate-200 bg-slate-50/50">
         <button
           onClick={logout}
-          className="flex items-center gap-3 px-3 py-2 w-full text-left text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+          className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all focus:outline-none focus:ring-2 focus:ring-slate-200"
         >
-          <LogOut size={20} />
-          Logout
+          <LogOut className="w-4 h-4" />
+          Sign Out
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }
 
@@ -205,7 +233,7 @@ function NavItem({ href, icon, label, active, badge }: { href: string; icon: Rea
   return (
     <Link
       href={href}
-      className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+      className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-[1.02] ${
         active 
           ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
           : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'

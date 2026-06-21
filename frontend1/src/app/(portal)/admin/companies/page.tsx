@@ -178,7 +178,7 @@ export default function AdminCompaniesPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {companies.map(c => (
-                  <tr key={c.id} className="hover:bg-gray-50/50 transition-colors">
+                  <tr key={c.id} className="hover:bg-indigo-50/30 transition-colors border-b border-transparent hover:border-indigo-100/50">
                     <td className="px-6 py-4">
                       <div className="font-bold text-gray-900">{c.company_name}</div>
                       <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">

@@ -30,7 +30,7 @@ export function DashboardPage() {
         <div className="mt-4 flex md:ml-4 md:mt-0">
           <Link
             href="/communication-tpr/requests/new"
-            className="ml-3 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            className="ml-3 inline-flex items-center rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-colors"
           >
             New Communication
           </Link>
@@ -41,7 +41,7 @@ export function DashboardPage() {
         {stats.map((item) => (
           <div
             key={item.id}
-            className="relative overflow-hidden rounded-xl bg-white px-4 pb-12 pt-5 shadow sm:px-6 sm:pt-6 border border-gray-100"
+            className="relative overflow-hidden rounded-xl bg-white px-4 pb-12 pt-5 shadow-sm transition-all hover:scale-[1.02] hover:shadow-md sm:px-6 sm:pt-6 border border-gray-200"
           >
             <dt>
               <div className={`absolute rounded-md ${item.bg} p-3`}>
@@ -50,14 +50,14 @@ export function DashboardPage() {
               <p className="ml-16 truncate text-sm font-medium text-gray-500">{item.name}</p>
             </dt>
             <dd className="ml-16 flex items-baseline pb-6 sm:pb-7">
-              <p className="text-2xl font-semibold text-gray-900">{item.stat}</p>
+              <p className="text-2xl font-bold text-gray-900">{item.stat}</p>
             </dd>
           </div>
         ))}
       </dl>
 
       <div className="mt-8">
-        <h2 className="text-lg font-medium leading-6 text-gray-900 mb-4">Your Follow-ups</h2>
+        <h2 className="text-lg font-bold leading-6 text-gray-900 mb-4">Your Follow-ups</h2>
         <FollowUpWidgets />
       </div>
     </div>

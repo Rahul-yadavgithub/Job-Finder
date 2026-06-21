@@ -48,7 +48,7 @@ export function CommunicationQueuePage() {
       <div className="sm:flex sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight flex items-center gap-3">
-            <Send className="w-8 h-8 text-indigo-500" />
+            <Send className="w-8 h-8 text-indigo-600" />
             Communication Queue
           </h1>
           <p className="mt-1 text-sm text-gray-500">
@@ -74,12 +74,12 @@ export function CommunicationQueuePage() {
                   <div className="flex min-w-0 gap-x-4 items-center">
                     <StatusIcon className={`h-10 w-10 flex-none rounded-full p-2 bg-white ring-1 ring-inset ${config.color} ring-gray-200`} />
                     <div className="min-w-0 flex-auto">
-                      <p className="text-sm font-semibold leading-6 text-gray-900 flex items-center gap-2">
+                      <p className="text-sm font-semibold leading-6 text-gray-900 flex items-center gap-2 flex-wrap">
                         <Link href={`/communication-tpr/companies/${request.companyId}`}>
                           <span className="absolute inset-x-0 -top-px bottom-0" />
                           {request.companyName || 'Unknown Company'}
                         </Link>
-                        <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset capitalize ${config.bg} ${config.color}`}>
+                        <span className={`inline-flex items-center rounded-md px-2 py-1 text-[10px] font-medium ring-1 ring-inset capitalize ${config.bg} ${config.color} whitespace-nowrap`}>
                           {request.status}
                         </span>
                       </p>

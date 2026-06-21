@@ -61,16 +61,16 @@ export function CompanyListPage() {
       <div className="sm:flex sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-            Interested Companies
+            Companies
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            A list of all companies marked as interested by the base TPRs across branches.
+            View all companies that have been contacted.
           </p>
         </div>
       </div>
 
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col sm:flex-row gap-4 justify-between items-center">
-        <div className="w-full sm:max-w-xs relative">
+        <div className="relative flex-1 w-full sm:max-w-xs">
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
             <Search className="h-4 w-4 text-gray-400" />
           </div>
@@ -88,16 +88,16 @@ export function CompanyListPage() {
             <BranchFilter value={branchId} onChange={setBranchId} />
           </div>
           
-          <div className="hidden sm:flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200">
+          <div className="hidden sm:flex items-center bg-gray-50 rounded-lg p-1 border border-gray-200">
             <button
               onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded-md ${viewMode === 'table' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`p-1.5 rounded-md ${viewMode === 'table' ? 'bg-white shadow-sm text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}
             >
               <ListIcon className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-md ${viewMode === 'grid' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`p-1.5 rounded-md ${viewMode === 'grid' ? 'bg-white shadow-sm text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
@@ -131,18 +131,19 @@ export function CompanyListPage() {
           )}
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-xl shadow-sm mt-6">
+            <div className="mt-4 pb-12">
+              <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-xl shadow-sm mt-6">
               <div className="flex flex-1 justify-between sm:hidden">
                 <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  onClick={() => setPage(page > 1 ? page - 1 : 1)}
                   disabled={page === 1}
                   className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                 >
                   Previous
                 </button>
                 <button
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
+                  onClick={() => setPage(page + 1)}
+                  disabled={companies.length < limit}
                   className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                 >
                   Next
@@ -151,22 +152,22 @@ export function CompanyListPage() {
               <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-gray-700">
-                    Showing page <span className="font-medium">{page}</span> of <span className="font-medium">{totalPages}</span>
+                    Page <span className="font-medium">{page}</span> of <span className="font-medium">{totalPages}</span>
                   </p>
                 </div>
                 <div>
                   <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
                     <button
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      onClick={() => setPage(page > 1 ? page - 1 : 1)}
                       disabled={page === 1}
                       className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                     >
                       <span className="sr-only">Previous</span>
-                      &larr;
+                      <ChevronLeft className="h-5 w-5" aria-hidden="true" />
                     </button>
                     <button
-                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                      disabled={page === totalPages}
+                      onClick={() => setPage(page + 1)}
+                      disabled={companies.length < limit}
                       className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                     >
                       <span className="sr-only">Next</span>
@@ -174,6 +175,7 @@ export function CompanyListPage() {
                     </button>
                   </nav>
                 </div>
+              </div>
               </div>
             </div>
           )}

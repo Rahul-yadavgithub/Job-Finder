@@ -6,6 +6,7 @@ import activityRoutes from './activity.routes';
 import requestRoutes from './request.routes';
 import followUpRoutes from './followup.routes';
 import settingsRoutes from './settings.routes';
+import notificationsRoutes from './notifications.routes';
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use('/activities', activityRoutes);
 router.use('/requests', requestRoutes);
 router.use('/follow-ups', followUpRoutes);
 router.use('/settings', settingsRoutes);
+router.use('/notifications', notificationsRoutes);
 
 export default router;
