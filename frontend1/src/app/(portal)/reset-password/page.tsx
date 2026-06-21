@@ -1,16 +1,25 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useRouter } from 'next/navigation';
-import { Loader2, AlertCircle, ShieldCheck, Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { adminPost } from '@/lib/admin/api';
+import { Loader2, AlertCircle, ShieldCheck, ArrowRight, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { AxiosError } from 'axios';
 
-export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('');
+export default function AdminResetPasswordPage() {
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token');
+  const id = searchParams.get('id');
 
   // Date/Time State
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
@@ -23,29 +32,39 @@ export default function ForgotPasswordPage() {
     return () => clearInterval(timeInterval);
   }, []);
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     
-    if (!email || !email.includes('@')) {
-      setError('Please enter a valid email address.');
+    if (!token || !id) {
+      setError('Invalid or missing password reset link.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters long.');
       return;
     }
 
     setLoading(true);
 
     try {
-      const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/forgot-password`,
-        { email },
-        { withCredentials: true }
+      const res = await adminPost<{ success: boolean; message: string }>(
+        '/auth/reset-password',
+        { id, token, newPassword }
       );
       
-      if (res.data.success) {
+      if (res.success) {
         setSuccess(true);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to process request. Please try again.');
+      const error = err as AxiosError<{ success: boolean; message: string }>;
+      setError(error.response?.data?.message || 'Failed to reset password. The link may have expired.');
     } finally {
       setLoading(false);
     }
@@ -105,16 +124,16 @@ export default function ForgotPasswordPage() {
         </div>
       </div>
 
-      {/* Forgot Password Section */}
+      {/* Reset Password Section */}
       <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[#f5f7f9] relative z-0">
-        <div className="w-full max-w-[420px] bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+        <div className="w-full max-w-[420px] bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden relative z-10">
           
           <div className="px-8 pt-8 pb-4 text-center">
             <div className="w-16 h-16 bg-[#e6f0ff] rounded-full flex items-center justify-center mx-auto mb-4 relative">
               <ShieldCheck className="w-8 h-8 text-[#1b4376]" />
             </div>
-            <h2 className="text-[1.35rem] font-bold text-slate-800">Forgot Password</h2>
-            <p className="text-sm text-slate-500 mt-1">Enter your registered email to receive a password reset link.</p>
+            <h2 className="text-[1.35rem] font-bold text-slate-800">Set New Password</h2>
+            <p className="text-sm text-slate-500 mt-1">Please enter your new password below.</p>
           </div>
 
           <div className="px-8 pb-8">
@@ -122,18 +141,25 @@ export default function ForgotPasswordPage() {
               <div className="text-center space-y-4">
                 <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-4 rounded-lg flex flex-col items-center gap-2">
                   <CheckCircle2 className="w-8 h-8 text-green-500" />
-                  <p className="text-sm font-medium">If an account matches that email, a reset link has been sent. Please check your inbox.</p>
+                  <p className="text-sm font-medium">Your password has been successfully reset! You can now login with your new password.</p>
                 </div>
                 <button
                   onClick={() => router.push('/login')}
                   className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-[4px] shadow-sm text-[15px] font-bold text-white bg-[#2e5e9b] hover:bg-[#1b4376] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1b4376] transition-all"
                 >
-                  <ArrowLeft className="w-4 h-4" /> Back to Login
+                  Proceed to Login <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             ) : (
-              <form className="space-y-5" onSubmit={handleForgotPassword}>
+              <form className="space-y-4" onSubmit={handleResetPassword}>
                 
+                {(!token || !id) && (
+                   <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg flex items-start gap-3 mb-2">
+                     <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                     <p className="text-sm font-medium">Invalid link. Please request a new password reset email.</p>
+                   </div>
+                )}
+
                 {error && (
                   <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -144,42 +170,65 @@ export default function ForgotPasswordPage() {
                 <div>
                   <div className="relative">
                     <input
-                      type="email"
+                      type={showPassword ? 'text' : 'password'}
                       required
-                      className="block w-full px-4 py-3 border-none bg-[#f4f6f8] rounded-[4px] text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1b4376] transition-colors text-sm"
-                      placeholder="Enter Registered Email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      disabled={loading}
+                      className="block w-full pl-4 pr-10 py-3 border-none bg-[#f4f6f8] rounded-[4px] text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1b4376] transition-colors text-sm"
+                      placeholder="New Password (min 8 chars)"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      disabled={loading || !token || !id}
                     />
+                    <button 
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      required
+                      className="block w-full pl-4 pr-10 py-3 border-none bg-[#f4f6f8] rounded-[4px] text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1b4376] transition-colors text-sm"
+                      placeholder="Confirm New Password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      disabled={loading || !token || !id}
+                    />
+                    <button 
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
 
                 <div className="pt-3">
                   <button
                     type="submit"
-                    disabled={loading || !email}
+                    disabled={loading || !token || !id || !newPassword || !confirmPassword}
                     className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-[4px] shadow-sm text-[15px] font-bold text-white bg-[#2e5e9b] hover:bg-[#1b4376] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1b4376] disabled:opacity-70 disabled:cursor-not-allowed transition-all"
                   >
                     {loading ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
                     ) : (
-                      <>Send Reset Link</>
+                      <>Reset Password</>
                     )}
                   </button>
                 </div>
                 
-                <div className="mt-4 pt-1 flex items-center justify-center">
-                  <button type="button" onClick={() => router.push('/login')} className="flex items-center gap-1 text-[13px] font-medium text-[#2e5e9b] hover:text-[#1b4376] transition-colors">
-                    <ArrowLeft className="w-4 h-4" /> Back to Login
-                  </button>
-                </div>
               </form>
             )}
 
           </div>
         </div>
-      </div>
+    </div>
     </div>
   );
 }

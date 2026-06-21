@@ -12,12 +12,15 @@ export interface AuthUser {
   branchId: string;
   branchCode: string;
   branchName: string;
+  profilePhotoUrl?: string;
+  displayName?: string;
 }
 
 interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -49,7 +52,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             role: data.role,
             branchId: data.branchId || data.branchName, // Adjust depending on actual response
             branchCode: data.branchName?.toLowerCase() || '',
-            branchName: data.branchName || ''
+            branchName: data.branchName || '',
+            profilePhotoUrl: data.profile_photo_url,
+            displayName: data.display_name
           });
         }
       } catch (error: any) {
@@ -81,6 +86,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [pathname, router]);
 
+  const refreshUser = async () => {
+    try {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+        withCredentials: true
+      });
+      if (res.data.success) {
+        const data = res.data.data;
+        setUser({
+          userId: data.id,
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          branchId: data.branchId || data.branchName,
+          branchCode: data.branchName?.toLowerCase() || '',
+          branchName: data.branchName || '',
+          profilePhotoUrl: data.profile_photo_url,
+          displayName: data.display_name
+        });
+      }
+    } catch (error) {
+      console.error('Failed to refresh user', error);
+    }
+  };
+
   const logout = async () => {
     try {
       await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {}, {
@@ -97,7 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, logout }}>
+    <AuthContext.Provider value={{ user, loading, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

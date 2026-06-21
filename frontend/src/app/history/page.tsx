@@ -89,7 +89,7 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-8 w-full max-w-none space-y-8">
       <div>
         <h1 className="text-3xl font-bold">Scanned History</h1>
         <p className="text-muted-foreground mt-1">

@@ -5,10 +5,14 @@ import { usePathname, useRouter } from 'next/navigation';
 import { AdminAuthProvider, useAdminAuth } from '@/context/AdminAuthContext';
 import { AdminSidebar } from '@/components/layout/AdminSidebar';
 import { NotificationBell } from '@/components/admin/NotificationBell';
+import { ManageProfileModal } from '@/components/admin/ManageProfileModal';
+import { User } from 'lucide-react';
 
 const PUBLIC_ADMIN_ROUTES = [
   '/login',
   '/request-access',
+  '/forgot-password',
+  '/reset-password',
   '/recovery/complete'
 ];
 
@@ -17,6 +21,7 @@ function AdminGuard({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { user, loading } = useAdminAuth();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const isPublicRoute = PUBLIC_ADMIN_ROUTES.some(route => pathname.startsWith(route));
 
@@ -46,7 +51,7 @@ function AdminGuard({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar isOpen={isMobileSidebarOpen} onClose={() => setIsMobileSidebarOpen(false)} />
-      <main className="flex-1 md:ml-64 w-full min-w-0 flex flex-col min-h-screen">
+      <main className="flex-1 md:ml-20 w-full min-w-0 flex flex-col min-h-screen">
         <header className="sticky top-0 z-30 bg-white border-b border-gray-200 px-4 md:px-8 py-3 flex justify-between items-center shadow-sm">
           <button 
             onClick={() => setIsMobileSidebarOpen(true)} 
@@ -57,12 +62,31 @@ function AdminGuard({ children }: { children: ReactNode }) {
             </svg>
           </button>
           <div className="flex-1"></div>
-          <NotificationBell />
+          <div className="flex items-center gap-4">
+            <NotificationBell />
+            {user && (
+              <button 
+                onClick={() => setIsProfileModalOpen(true)}
+                className="relative w-9 h-9 rounded-full overflow-hidden border border-gray-200 hover:ring-2 hover:ring-indigo-500 transition-all flex items-center justify-center bg-indigo-50 shadow-sm"
+              >
+                {user.profilePhotoUrl ? (
+                  <img src={user.profilePhotoUrl} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-5 h-5 text-indigo-600" />
+                )}
+              </button>
+            )}
+          </div>
         </header>
         <div className="p-4 md:p-8 flex-1 w-full max-w-[100vw]">
           {children}
         </div>
       </main>
+      
+      <ManageProfileModal 
+        isOpen={isProfileModalOpen} 
+        onClose={() => setIsProfileModalOpen(false)} 
+      />
     </div>
   );
 }

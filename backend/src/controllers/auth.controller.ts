@@ -217,7 +217,7 @@ export const me = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { data: user } = await supabase
       .from('users')
-      .select('id, name, role, email, branch_id, branches(name)')
+      .select('id, name, role, email, branch_id, branches(name), profile_photo_url, display_name')
       .eq('id', req.user!.userId)
       .single();
 
@@ -234,7 +234,9 @@ export const me = async (req: AuthRequest, res: Response): Promise<void> => {
         role: user.role,
         email: user.email,
         branchId: user.branch_id,
-        branchName: (user.branches as any)?.name ?? null
+        branchName: (user.branches as any)?.name ?? null,
+        profile_photo_url: user.profile_photo_url,
+        display_name: user.display_name
       }
     });
   } catch (error) {
@@ -337,5 +339,36 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
   } catch (error) {
     console.error('Reset password error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const updateProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { profilePhotoUrl, displayName } = req.body;
+    const updates: any = {};
+
+    if (profilePhotoUrl !== undefined) {
+      updates.profile_photo_url = profilePhotoUrl;
+    }
+    if (displayName !== undefined) {
+      updates.display_name = displayName;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      res.status(400).json({ success: false, message: 'No valid fields to update' });
+      return;
+    }
+
+    const { error } = await supabase
+      .from('users')
+      .update(updates)
+      .eq('id', req.user!.userId);
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true, message: 'Profile updated successfully' });
+  } catch (error: any) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update profile' });
   }
 };

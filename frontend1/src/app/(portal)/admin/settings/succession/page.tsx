@@ -153,7 +153,7 @@ export default function SuccessionSettings() {
               <AlertTriangle className="mx-auto h-8 w-8 text-amber-500 mb-2" />
               <p className="font-bold text-amber-900 mb-1">No successor designated</p>
               <p className="text-sm text-amber-700 mb-4 max-w-md mx-auto">
-                Designate a trusted co-worker. If you are unavailable, they will be authorized to execute the emergency recovery protocol.
+                Designate a trusted TPO staff member. If you are unavailable, they will be authorized to execute the emergency recovery protocol.
               </p>
               <button 
                 onClick={() => setShowPicker(true)}
@@ -236,7 +236,7 @@ export default function SuccessionSettings() {
                     placeholder="successor@nith.ac.in"
                   />
                   <p className="text-xs text-gray-500 mt-1.5">
-                    If this person already has a co-worker account, they will be promoted. Otherwise a new account will be created.
+                    If this person already has a TPO staff account, they will be promoted. Otherwise a new account will be created.
                   </p>
                 </div>
                 
@@ -272,13 +272,13 @@ export default function SuccessionSettings() {
           <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[80vh]">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
               <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Users className="text-indigo-600" /> Select Co-Worker
+                <Users className="text-indigo-600" /> Select TPO Staff
               </h3>
               <button onClick={() => setShowPicker(false)} className="text-gray-400 hover:text-gray-600 font-bold">X</button>
             </div>
             <div className="overflow-y-auto p-4 space-y-2 flex-1">
               {workers.length === 0 ? (
-                <p className="text-center py-8 text-gray-500">No active co-workers available.</p>
+                <p className="text-center py-8 text-gray-500">No active TPO staff available.</p>
               ) : (
                 workers.map(w => (
                   <button

@@ -138,7 +138,7 @@ export default function ScanDetailsPage() {
   const duplicateCount = rawDiscoveries?.filter(r => r.status === 'DUPLICATE').length ?? 0;
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+    <div className="p-4 md:p-8 w-full max-w-none">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
         <button 

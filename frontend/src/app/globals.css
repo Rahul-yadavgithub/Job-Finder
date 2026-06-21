@@ -129,9 +129,15 @@
   }
   
   button, 
-  a[role="button"],
+  a,
+  input[type="submit"],
+  input[type="button"],
+  input[type="reset"],
+  select,
+  [role="button"],
   .btn {
-    @apply transition-all duration-200 cursor-pointer active:scale-95;
+    @apply transition-all duration-200 active:scale-95;
+    cursor: pointer !important;
   }
   
   button:hover,

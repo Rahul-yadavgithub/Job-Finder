@@ -64,7 +64,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col z-50 transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
+      <aside className={`group fixed left-0 top-0 h-screen w-64 md:w-20 md:hover:w-64 bg-white border-r border-gray-200 flex flex-col z-50 transition-all duration-300 ease-in-out md:translate-x-0 overflow-x-hidden ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
         
         {/* Mobile Close Button */}
         {onClose && (
@@ -73,38 +73,21 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           </button>
         )}
 
-        <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="relative z-20 flex-shrink-0 bg-white rounded-full p-1 border border-slate-100 shadow-sm">
-            <img 
-              src="https://res.cloudinary.com/dzbliymin/image/upload/v1781725894/logonith_gb3opv.webp" 
-              alt="NITH Logo" 
-              className="w-10 h-10 object-contain"
-            />
-          </div>
-          <div>
-            <h1 className="font-bold text-slate-800 leading-tight">TPO Head Portal</h1>
-            <p className="text-xs text-slate-500 font-medium">NITH Portal</p>
-          </div>
-        </div>
-        
-        <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 mt-4">
-          <p className="text-sm font-semibold text-gray-900 truncate">{user.name}</p>
-          <div className="flex items-center mt-1">
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${roleBadge.color}`}>
-              {roleBadge.text}
-            </span>
-            {user.isSuperAdmin && (
-              <Crown className="w-3.5 h-3.5 text-amber-500 ml-1.5" />
-            )}
-          </div>
-          {user.isSuperAdmin && user.jumpedIn && (
-            <div className="mt-2 bg-amber-100 border border-amber-200 text-amber-800 text-[10px] uppercase tracking-wider font-bold py-1 px-2 rounded-md text-center">
-              Jumped In Mode
+        <div className="px-5 py-6 border-b border-gray-200">
+          <Link href="/admin/dashboard" className="flex items-center gap-3 mb-4 whitespace-nowrap overflow-hidden">
+            <div className="relative z-20 flex-shrink-0 flex items-center justify-center">
+              <img 
+                src="https://res.cloudinary.com/dzbliymin/image/upload/v1781725894/logonith_gb3opv.webp" 
+                alt="NITH Logo" 
+                className="w-10 h-10 object-contain drop-shadow-sm"
+              />
             </div>
-          )}
+            <div className="transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100">
+              <h1 className="font-bold text-slate-800 leading-tight">TPO Head Portal</h1>
+              <p className="text-xs text-slate-500 font-medium">NITH Portal</p>
+            </div>
+          </Link>
         </div>
-      </div>
 
       <nav className="flex-1 px-4 py-6 space-y-1">
         {user.isSuperAdmin && !user.jumpedIn ? (
@@ -140,7 +123,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               active={pathname.startsWith('/admin/requests')} 
               badge={pendingRequests > 0 ? pendingRequests : undefined}
             />
-            <div className="pt-4 pb-2">
+            <div className="pt-4 pb-2 whitespace-nowrap overflow-hidden transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">System</p>
             </div>
             <NavItem 
@@ -194,10 +177,12 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                   await adminPost('/auth/jump-in');
                   await refreshUser();
                 }}
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold rounded-lg transition-all hover:scale-[1.02] border border-indigo-200"
+                className="w-full flex items-center gap-3 py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold rounded-lg transition-all hover:scale-[1.02] border border-indigo-200 overflow-hidden justify-start"
               >
-                <Eye size={16} />
-                Impersonate Staff
+                <Eye size={16} className="flex-shrink-0" />
+                <span className="whitespace-nowrap transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100">
+                  Impersonate Staff
+                </span>
               </button>
             ) : (
               <button
@@ -205,10 +190,12 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                   await adminPost('/auth/jump-out');
                   await refreshUser();
                 }}
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-amber-50 hover:bg-amber-100 text-amber-700 text-sm font-semibold rounded-lg transition-all hover:scale-[1.02] border border-amber-200"
+                className="w-full flex items-center gap-3 py-2 px-3 bg-amber-50 hover:bg-amber-100 text-amber-700 text-sm font-semibold rounded-lg transition-all hover:scale-[1.02] border border-amber-200 overflow-hidden justify-start"
               >
-                <LogOut size={16} className="rotate-180" />
-                Exit Impersonation
+                <LogOut size={16} className="rotate-180 flex-shrink-0" />
+                <span className="whitespace-nowrap transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100">
+                  Exit Impersonation
+                </span>
               </button>
             )}
           </div>
@@ -218,10 +205,12 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       <div className="p-4 border-t border-slate-200 bg-slate-50/50">
         <button
           onClick={logout}
-          className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all focus:outline-none focus:ring-2 focus:ring-slate-200"
+          className="flex items-center gap-3 overflow-hidden w-full px-4 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all focus:outline-none focus:ring-2 focus:ring-slate-200 justify-start"
         >
-          <LogOut className="w-4 h-4" />
-          Sign Out
+          <LogOut className="w-5 h-5 flex-shrink-0" />
+          <span className="whitespace-nowrap transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100">
+            Sign Out
+          </span>
         </button>
       </div>
       </aside>
@@ -233,17 +222,19 @@ function NavItem({ href, icon, label, active, badge }: { href: string; icon: Rea
   return (
     <Link
       href={href}
-      className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-[1.02] ${
+      className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-[1.02] overflow-hidden ${
         active 
           ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
           : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
       }`}
     >
       <div className="flex items-center gap-3">
-        <div className={`${active ? 'text-indigo-600' : 'text-gray-400'}`}>
+        <div className={`flex-shrink-0 ${active ? 'text-indigo-600' : 'text-gray-400'}`}>
           {icon}
         </div>
-        {label}
+        <span className="whitespace-nowrap transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100">
+          {label}
+        </span>
       </div>
       {badge !== undefined && (
         <span className="bg-red-100 text-red-700 py-0.5 px-2 rounded-full text-xs font-bold">

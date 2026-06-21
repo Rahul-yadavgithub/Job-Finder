@@ -1,9 +1,9 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { AdminRequest } from '../types/admin.types';
-
+import { sendResetEmail } from '../utils/email';
 export const adminLogin = async (req: AdminRequest, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
@@ -173,7 +173,7 @@ export const adminMe = async (req: AdminRequest, res: Response): Promise<void> =
     
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, name, email, role, is_super_admin, designated_successor, status, designation')
+      .select('id, name, email, role, is_super_admin, designated_successor, status, designation, profile_photo_url, display_name')
       .eq('id', userId)
       .single();
       
@@ -253,6 +253,123 @@ export const jumpOut = async (req: AdminRequest, res: Response): Promise<void> =
     });
     res.status(200).json({ success: true });
   } catch (error) {
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const updateProfile = async (req: AdminRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.admin!.userId;
+    const { displayName, profilePhotoUrl } = req.body;
+
+    const updates: any = {};
+    if (displayName !== undefined) updates.display_name = displayName;
+    if (profilePhotoUrl !== undefined) updates.profile_photo_url = profilePhotoUrl;
+
+    if (Object.keys(updates).length === 0) {
+      res.status(400).json({ success: false, message: 'No fields to update' });
+      return;
+    }
+
+    const { error } = await supabase
+      .from('users')
+      .update(updates)
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Update profile error:', error);
+      res.status(500).json({ success: false, message: 'Failed to update profile' });
+      return;
+    }
+
+    res.status(200).json({ success: true, message: 'Profile updated successfully' });
+  } catch (error) {
+    console.error('Update Profile Error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const adminForgotPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      res.status(400).json({ success: false, message: 'Email is required' });
+      return;
+    }
+
+    const { data: user } = await supabase
+      .from('users')
+      .select('id, email, password_hash')
+      .eq('email', email)
+      .in('role', ['head', 'caller', 'coordinator'])
+      .single();
+
+    if (!user) {
+      res.status(404).json({ success: false, message: 'This email is not registered in the Admin Portal.' });
+      return;
+    }
+
+    const secret = process.env.ADMIN_JWT_SECRET + user.password_hash;
+    const token = jwt.sign({ id: user.id, email: user.email }, secret, { expiresIn: '15m' });
+
+    const frontendUrl = process.env.TPO_ADMIN_BASE_URL || 'http://localhost:3001';
+    const resetLink = `${frontendUrl}/reset-password?id=${user.id}&token=${token}`;
+
+    await sendResetEmail(user.email, resetLink);
+
+    res.status(200).json({ success: true, message: 'If the email exists, a reset link has been sent.' });
+  } catch (error) {
+    console.error('Admin Forgot password error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const adminResetPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id, token, newPassword } = req.body;
+
+    if (!id || !token || !newPassword) {
+      res.status(400).json({ success: false, message: 'Missing required parameters' });
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      res.status(400).json({ success: false, message: 'Password must be at least 8 characters long' });
+      return;
+    }
+
+    const { data: user } = await supabase
+      .from('users')
+      .select('id, password_hash')
+      .eq('id', id)
+      .in('role', ['head', 'caller', 'coordinator'])
+      .single();
+
+    if (!user) {
+      res.status(400).json({ success: false, message: 'Invalid or expired token' });
+      return;
+    }
+
+    const secret = process.env.ADMIN_JWT_SECRET + user.password_hash;
+    try {
+      jwt.verify(token, secret);
+    } catch (err) {
+      res.status(400).json({ success: false, message: 'Invalid or expired token' });
+      return;
+    }
+
+    const newPasswordHash = await bcrypt.hash(newPassword, 12);
+
+    const { error } = await supabase
+      .from('users')
+      .update({ password_hash: newPasswordHash })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true, message: 'Password has been reset successfully' });
+  } catch (error) {
+    console.error('Admin Reset password error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };

@@ -219,7 +219,7 @@ export default function DashboardPage() {
   if (!user) return null;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-8 w-full max-w-none space-y-8">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>

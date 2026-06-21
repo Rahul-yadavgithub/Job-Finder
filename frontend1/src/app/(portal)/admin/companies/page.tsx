@@ -98,7 +98,7 @@ export default function AdminCompaniesPage() {
   if (!user) return null;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="w-full max-w-none space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Companies Database</h1>
         <p className="text-gray-500">Global overview across all branches</p>
