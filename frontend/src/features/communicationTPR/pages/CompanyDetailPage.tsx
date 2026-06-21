@@ -117,30 +117,39 @@ export function CompanyDetailPage() {
             <button
               onClick={handleTransfer}
               disabled={isTransferring}
-              className="inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 transition-colors disabled:opacity-50"
+              className="inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-700 transition-colors disabled:opacity-50"
             >
               <Network className="w-4 h-4 mr-2" />
               {isTransferring ? 'Transferring...' : 'Transfer to Head Portal'}
             </button>
           )}
 
-          {!isLocked && (
-            <>
-              <button
-                onClick={() => setIsFollowUpModalOpen(true)}
-                className="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-colors"
-              >
-                <Calendar className="w-4 h-4 mr-2" />
-                Schedule Follow-up
-              </button>
-              <button
-                onClick={() => setIsRequestModalOpen(true)}
-                className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-colors"
-              >
-                <Send className="w-4 h-4 mr-2" />
-                Create Request
-              </button>
-            </>
+          {!isLocked && company.currentStatus.midStatus === 'interested' && (
+             <button
+               onClick={() => {
+                 const notes = prompt('Enter reason for reverting back to the branch:');
+                 if (notes) {
+                   companyApi.updateStage(company.id, 'revoked').then(() => {
+                     // In a real app we'd also post the note to history. Let's rely on the backend doing it or do it here.
+                     alert('Reverted to branch.');
+                     router.push('/communication-tpr/companies');
+                   });
+                 }
+               }}
+               className="inline-flex items-center justify-center rounded-lg bg-red-50 text-red-700 px-4 py-2.5 text-sm font-semibold shadow-sm ring-1 ring-inset ring-red-300 hover:bg-red-100 transition-colors"
+             >
+               Revert ↩
+             </button>
+          )}
+
+          {!isLocked && (company.currentStatus.midStatus === 'interested' || company.currentStatus.midStatus === 'under_communication') && (
+            <button
+              onClick={() => router.push(`/communication-tpr/requests/new?company=${company.id}`)}
+              className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
+            >
+              <Send className="w-4 h-4 mr-2" />
+              Start Communication
+            </button>
           )}
         </div>
       </div>

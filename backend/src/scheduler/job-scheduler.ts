@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import { ApiKeyRotatorService } from '../services/api-key-rotator.service';
+import { FollowupCronJob } from './followup.cron';
 
 /**
  * Initializes all background scheduled jobs for the application.
@@ -17,6 +18,17 @@ export function initSchedulers() {
       await ApiKeyRotatorService.processQueue();
     } catch (error) {
       console.error('[Scheduler] Error in processQueue cron job:', error);
+    }
+  });
+
+
+  // Run the follow-up checker every day at 10:00 AM (server time)
+  cron.schedule('0 10 * * *', async () => {
+    console.log(`[Scheduler] Running daily FollowupCronJob at ${new Date().toISOString()}`);
+    try {
+      await FollowupCronJob.processFollowups();
+    } catch (error) {
+      console.error('[Scheduler] Error in FollowupCronJob cron job:', error);
     }
   });
 

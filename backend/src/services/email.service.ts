@@ -7,6 +7,15 @@ interface SendRecoveryEmailParams {
   expiresInHours: number;
 }
 
+interface SendPlacementEmailParams {
+  toEmail: string;
+  subject: string;
+  bodyHtml: string;
+  attachmentUrl?: string;
+  attachmentFilename?: string;
+}
+
+
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.SMTP_PORT || '587'),
@@ -53,6 +62,43 @@ If you did not expect this email, ignore it.`;
     });
   } catch (error) {
     console.error('Failed to send recovery email:', error);
+    throw error;
+  }
+}
+
+export async function sendPlacementEmail({
+  toEmail,
+  subject,
+  bodyHtml,
+  attachmentUrl,
+  attachmentFilename
+}: SendPlacementEmailParams): Promise<void> {
+  try {
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.warn('SMTP credentials not configured. Email would have been sent to:', toEmail);
+      return;
+    }
+
+    const mailOptions: nodemailer.SendMailOptions = {
+      from: `"NITH Placement Cell" <${process.env.SMTP_USER}>`,
+      to: toEmail,
+      subject,
+      html: bodyHtml,
+      // If we want a plain text version, we can strip HTML tags using a basic regex or just leave it out. Nodemailer handles html-only fine.
+    };
+
+    if (attachmentUrl && attachmentFilename) {
+      mailOptions.attachments = [
+        {
+          filename: attachmentFilename,
+          path: attachmentUrl // Nodemailer can fetch attachments from a URL directly
+        }
+      ];
+    }
+
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error('Failed to send placement email:', error);
     throw error;
   }
 }

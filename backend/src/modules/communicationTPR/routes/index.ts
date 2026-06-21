@@ -5,6 +5,7 @@ import companyRoutes from './company.routes';
 import activityRoutes from './activity.routes';
 import requestRoutes from './request.routes';
 import followUpRoutes from './followup.routes';
+import settingsRoutes from './settings.routes';
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use('/companies', companyRoutes);
 router.use('/activities', activityRoutes);
 router.use('/requests', requestRoutes);
 router.use('/follow-ups', followUpRoutes);
+router.use('/settings', settingsRoutes);
 
 export default router;

@@ -8,6 +8,9 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { DashboardLayout } from '@/features/communicationTPR/components/Layout';
 
+import { TemplateSettings } from '@/features/communicationTPR/components/TemplateSettings';
+import { FollowUpRulesSettings } from '@/features/communicationTPR/components/FollowUpRulesSettings';
+
 interface Settings {
   currentAcademicYearSheetId: string;
   pastAcademicYearSheetId: string;
@@ -17,6 +20,7 @@ interface Settings {
 
 export default function SettingsPage() {
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<'templates' | 'rules' | 'sheets'>('templates');
   const [formData, setFormData] = useState({
     currentAcademicYearSheetId: '',
     pastAcademicYearSheetId: '',
@@ -98,21 +102,16 @@ export default function SettingsPage() {
 
   const syncCompanies = useMutation({
     mutationFn: async () => {
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/companies/sync-sheet`);
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/settings/google-sheet/sync`);
       return res.data;
     },
     onSuccess: (data) => {
+      setLastSyncStats(data.stats);
       queryClient.invalidateQueries({ queryKey: ['settings'] });
-      setLastSyncStats({
-        newAdded: data.syncedCount,
-        updated: data.duplicates,
-        errors: data.errors,
-        errorDetails: data.errorDetails
-      });
-      toast.success(`${data.syncedCount} Companies Synced Successfully`);
+      toast.success('Companies synced successfully');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Failed to sync companies');
+      toast.error(error.response?.data?.message || 'Failed to sync companies');
     }
   });
 
@@ -123,26 +122,72 @@ export default function SettingsPage() {
     }
   };
 
+  if (isLoadingSA || isLoadingSettings) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
-      <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] mx-auto pb-24 space-y-8">
-        
-        {/* Page Header */}
+      <div className="max-w-5xl mx-auto space-y-6 pb-12">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Database</h1>
-          <p className="text-base text-slate-500 mt-1">
-            Manage your Google Sheets integration and database connections.
+          <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight flex items-center gap-3">
+            <SettingsIcon className="w-8 h-8 text-blue-600" />
+            System Settings
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Manage templates, follow-up rules, and integrations.
           </p>
         </div>
 
-        {/* Integration Card */}
-        <div className="bg-white border border-slate-200 hover:border-slate-300 transition-colors duration-150 rounded-xl shadow-sm p-6 space-y-6">
-          
-          {/* Section Header */}
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-[10px] flex items-center justify-center shrink-0">
-              <CloudUpload className="w-8 h-8" strokeWidth={1.5} />
-            </div>
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('templates')}
+              className={`${activeTab === 'templates' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              Email Templates
+            </button>
+            <button
+              onClick={() => setActiveTab('rules')}
+              className={`${activeTab === 'rules' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              Follow-up Rules
+            </button>
+            <button
+              onClick={() => setActiveTab('sheets')}
+              className={`${activeTab === 'sheets' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              Google Sheets Sync
+            </button>
+          </nav>
+        </div>
+
+        {activeTab === 'templates' && (
+          <div className="animate-in fade-in duration-300">
+            <TemplateSettings />
+          </div>
+        )}
+
+        {activeTab === 'rules' && (
+          <div className="animate-in fade-in duration-300">
+            <FollowUpRulesSettings />
+          </div>
+        )}
+
+        {activeTab === 'sheets' && (
+          <div className="animate-in fade-in duration-300">
+            <div className="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl overflow-hidden mb-8">
+              <div className="px-4 py-5 sm:p-6 space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-[10px] flex items-center justify-center shrink-0">
+                    <CloudUpload className="w-8 h-8" strokeWidth={1.5} />
+                  </div>
             <div>
               <h2 className="text-[15px] font-medium text-slate-900 leading-tight pt-1">Google Sheets Integration</h2>
               <p className="text-[13px] font-normal text-slate-500 mt-1 leading-relaxed">
@@ -408,7 +453,11 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
-        </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </DashboardLayout>
   );

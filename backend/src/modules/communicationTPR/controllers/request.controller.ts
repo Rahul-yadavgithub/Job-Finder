@@ -30,6 +30,17 @@ export class RequestController {
     }
   };
 
+  getPendingApprovals = async (req: CommunicationTPRRequest, res: Response): Promise<void> => {
+    try {
+      const data = await this.requestService.getPendingApprovals();
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error('getPendingApprovals Error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch pending approvals' });
+    }
+  };
+
+
   createRequest = async (req: CommunicationTPRRequest, res: Response): Promise<void> => {
     try {
       if (!req.user) {
@@ -48,6 +59,28 @@ export class RequestController {
     }
   };
 
+  updateDraft = async (req: CommunicationTPRRequest, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const data = await this.requestService.updateDraft(id as string, req.body);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error('updateDraft Error:', error);
+      res.status(500).json({ success: false, message: 'Failed to update draft' });
+    }
+  };
+
+  submitForApproval = async (req: CommunicationTPRRequest, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const data = await this.requestService.submitForApproval(id as string);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error('submitForApproval Error:', error);
+      res.status(500).json({ success: false, message: 'Failed to submit for approval' });
+    }
+  };
+
   updateRequestStatus = async (req: CommunicationTPRRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
@@ -57,6 +90,28 @@ export class RequestController {
     } catch (error: any) {
       console.error('updateRequestStatus Error:', error);
       res.status(500).json({ success: false, message: 'Failed to update request status' });
+    }
+  };
+
+  approveAndSendRequest = async (req: CommunicationTPRRequest, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const data = await this.requestService.approveAndSendRequest(id as string);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error('approveAndSendRequest Error:', error);
+      res.status(500).json({ success: false, message: error.message || 'Failed to approve and send request' });
+    }
+  };
+
+  rejectRequest = async (req: CommunicationTPRRequest, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const data = await this.requestService.rejectRequest(id as string);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error('rejectRequest Error:', error);
+      res.status(500).json({ success: false, message: 'Failed to reject request' });
     }
   };
 }

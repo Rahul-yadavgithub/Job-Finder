@@ -23,6 +23,29 @@ export class RequestRepository {
     return data;
   }
 
+  async getPendingApprovals() {
+    const { data, error } = await supabase
+      .from('communication_requests')
+      .select('*, users!requested_by(name), companies(company_name)')
+      .eq('status', 'pending_approval')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  }
+
+  async getRequestForEmail(requestId: string) {
+    const { data, error } = await supabase
+      .from('communication_requests')
+      .select('*, email_templates(attachment_url, attachment_filename)')
+      .eq('id', requestId)
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+
   async createRequest(input: CreateRequestInput, userId: string) {
     const { data, error } = await supabase
       .from('communication_requests')
@@ -30,9 +53,53 @@ export class RequestRepository {
         company_id: input.companyId,
         requested_by: userId,
         request_type: input.requestType,
+        template_id: input.templateId,
+        email_to: input.emailTo,
+        email_subject: input.emailSubject,
+        email_body: input.emailBody,
         notes: input.notes,
-        status: 'pending' // default status
+        status: 'draft' // Initializing as draft
       })
+      .select('*, users!requested_by(name)')
+      .single();
+
+    if (error) throw error;
+
+    // Transition mid_status to under_communication if it was interested
+    // using the company_status table
+    await supabase.from('company_status')
+      .update({ mid_status: 'under_communication' })
+      .eq('company_id', input.companyId)
+      .eq('mid_status', 'interested');
+
+    return data;
+  }
+
+  async updateDraft(requestId: string, input: any) {
+    const updateData: any = {};
+    if (input.emailTo !== undefined) updateData.email_to = input.emailTo;
+    if (input.emailSubject !== undefined) updateData.email_subject = input.emailSubject;
+    if (input.emailBody !== undefined) updateData.email_body = input.emailBody;
+    if (input.urgency !== undefined) updateData.urgency = input.urgency;
+
+    const { data, error } = await supabase
+      .from('communication_requests')
+      .update(updateData)
+      .eq('id', requestId)
+      .eq('status', 'draft') // Only allow if it's still a draft
+      .select('*, users!requested_by(name)')
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async submitForApproval(requestId: string) {
+    const { data, error } = await supabase
+      .from('communication_requests')
+      .update({ status: 'pending_approval' })
+      .eq('id', requestId)
+      .eq('status', 'draft')
       .select('*, users!requested_by(name)')
       .single();
 
@@ -51,4 +118,20 @@ export class RequestRepository {
     if (error) throw error;
     return data;
   }
+
+  async approveAndMarkSent(requestId: string, nextFollowupDate: string | null) {
+    const { data, error } = await supabase
+      .from('communication_requests')
+      .update({ 
+        status: 'sent', 
+        next_followup_date: nextFollowupDate 
+      })
+      .eq('id', requestId)
+      .select('*, users!requested_by(name)')
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
 }
+

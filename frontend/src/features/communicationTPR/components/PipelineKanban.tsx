@@ -5,10 +5,10 @@ import { InterestedCompany } from '../types/company';
 import Link from 'next/link';
 
 const STAGES = [
-  { id: 'interested', name: 'Interested', color: 'border-blue-200 bg-blue-50' },
+  { id: 'interested', name: 'New Arrival', color: 'border-blue-200 bg-blue-50' },
   { id: 'under_communication', name: 'Under Communication', color: 'border-amber-200 bg-amber-50' },
   { id: 'ready_for_head_review', name: 'Ready for Head Review', color: 'border-purple-200 bg-purple-50' },
-  { id: 'transferred_to_head', name: 'Transferred', color: 'border-gray-200 bg-gray-50' }
+  { id: 'transferred_to_head', name: 'Concluded', color: 'border-gray-200 bg-gray-50' }
 ];
 
 export function PipelineKanban() {
@@ -30,15 +30,6 @@ export function PipelineKanban() {
     fetchPipeline();
   }, []);
 
-  const handleStageChange = async (companyId: string, newStage: string) => {
-    try {
-      await companyApi.updateStage(companyId, newStage);
-      fetchPipeline();
-    } catch (e) {
-      console.error('Failed to change stage', e);
-    }
-  };
-
   if (loading) return <div className="animate-pulse h-96 bg-gray-100 rounded-xl w-full"></div>;
 
   return (
@@ -59,36 +50,16 @@ export function PipelineKanban() {
               {columnCompanies.map((company) => (
                 <div key={company.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow relative group">
                   <div className="flex justify-between items-start mb-2">
-                    <Link href={`/communication-tpr/companies/${company.id}`} className="font-semibold text-sm text-gray-900 hover:text-indigo-600 truncate block pr-6">
+                    <Link href={`/communication-tpr/companies/${company.id}`} className="font-semibold text-sm text-gray-900 hover:text-indigo-600 truncate block">
                       {company.companyName}
                     </Link>
-                    
-                    {/* Stage Dropdown */}
-                    {stage.id !== 'transferred_to_head' && (
-                      <div className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <select 
-                          className="text-xs bg-gray-50 border-gray-200 rounded py-1 pl-2 pr-6 cursor-pointer focus:ring-indigo-500"
-                          value={stage.id}
-                          onChange={(e) => handleStageChange(company.id, e.target.value)}
-                        >
-                          <option value="interested" disabled>Move to...</option>
-                          {STAGES.map(s => {
-                            // Don't allow moving directly to transferred from here, they must use the detail page transfer button
-                            if (s.id === 'transferred_to_head') return null;
-                            return (
-                              <option key={s.id} value={s.id} disabled={s.id === stage.id}>{s.name}</option>
-                            );
-                          })}
-                        </select>
-                      </div>
-                    )}
                   </div>
 
                   <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
                     <Building2 className="w-3.5 h-3.5" /> {company.branch}
                   </div>
 
-                  <div className="flex items-center justify-between text-xs pt-3 border-t border-gray-100">
+                  <div className="flex items-center justify-between text-xs pt-3 border-t border-gray-100 mb-3">
                     <span className="text-gray-500">{company.assignedTPR || 'Unassigned'}</span>
                     {stage.id === 'transferred_to_head' ? (
                       <span className="flex items-center text-gray-400 font-medium">
@@ -96,6 +67,26 @@ export function PipelineKanban() {
                       </span>
                     ) : (
                       <span className="text-gray-400">{new Date(company.interestDate).toLocaleDateString()}</span>
+                    )}
+                  </div>
+
+                  {/* Actions depending on stage */}
+                  <div className="pt-2">
+                    {stage.id === 'interested' && (
+                      <Link 
+                        href={`/communication-tpr/requests/new?company=${company.id}`}
+                        className="w-full flex items-center justify-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 py-1.5 rounded text-xs font-medium transition-colors border border-blue-200"
+                      >
+                        <Send className="w-3.5 h-3.5" /> Start Communication
+                      </Link>
+                    )}
+                    {stage.id === 'under_communication' && (
+                      <Link 
+                        href={`/communication-tpr/requests/new?company=${company.id}`}
+                        className="w-full flex items-center justify-center gap-2 bg-amber-50 text-amber-700 hover:bg-amber-100 py-1.5 rounded text-xs font-medium transition-colors border border-amber-200"
+                      >
+                        <Send className="w-3.5 h-3.5" /> Send Follow-up
+                      </Link>
                     )}
                   </div>
                 </div>

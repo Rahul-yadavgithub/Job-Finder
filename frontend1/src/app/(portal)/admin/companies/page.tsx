@@ -75,8 +75,12 @@ export default function AdminCompaniesPage() {
     setDrawerOpen(true);
     setTimelineLoading(true);
     try {
-      const res = await adminGet<{ data: any[] }>(`/companies/${company.id}`);
-      if (res.data) setTimeline(res.data);
+      const res = await adminGet<{ data: any }>(`/companies/${company.id}`);
+      if (res.data && Array.isArray(res.data.status_history)) {
+        setTimeline(res.data.status_history);
+      } else {
+        setTimeline([]);
+      }
     } catch (error) {
       console.error('Failed to fetch timeline');
     } finally {

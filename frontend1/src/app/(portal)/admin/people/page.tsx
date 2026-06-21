@@ -56,7 +56,7 @@ export default function AdminPeoplePage() {
       if (tprsRes.data) setTprs(tprsRes.data);
       if (commTprsRes.data) setCommTprs(commTprsRes.data);
     } catch (error) {
-      console.error('Failed to fetch people data');
+      console.error('Failed to fetch people data:', error);
     } finally {
       setLoading(false);
     }
