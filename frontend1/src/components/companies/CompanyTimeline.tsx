@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { adminGet } from '@/lib/admin/api';
 import { format } from 'date-fns';
 import {
-  History, Building2, Mail, FileText, CheckCircle2, XCircle, User,
-  ArrowRightCircle, ShieldCheck, MailWarning, FileSearch, MessageSquare, PhoneCall, ChevronDown, ChevronUp
+  History, Building2, FileText, CheckCircle2,
+  ArrowRightCircle, ShieldCheck, MessageSquare, PhoneCall, ChevronDown, ChevronUp, Layers
 } from 'lucide-react';
+import { CustomActivityForm } from './CustomActivityForm';
 
 interface TimelineEvent {
   id: string;
@@ -21,36 +22,68 @@ interface TimelineEvent {
   users?: { name: string };
 }
 
+interface Workflow {
+  workflow_type: string;
+  display_name: string;
+  status: string;
+  allowed_states: string[];
+  updated_at: string;
+}
+
 interface Props {
   companyId: string;
 }
 
 export function CompanyTimeline({ companyId }: Props) {
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
+  const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Accordion states
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    base: false,
+    comm: true,
+    head: true,
+    custom: true
+  });
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [assignmentId, setAssignmentId] = useState<string | null>(null);
 
   useEffect(() => {
     if (companyId) {
-      fetchTimeline();
+      fetchData();
     }
   }, [companyId]);
 
-  const fetchTimeline = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await adminGet<{ data: TimelineEvent[] }>(`/timeline/${companyId}`);
-      if (res.data && Array.isArray(res.data)) {
-        setTimeline(res.data);
+      const [tlRes, wfRes] = await Promise.all([
+        adminGet<{ data: TimelineEvent[] }>(`/timeline/${companyId}`),
+        adminGet<{ data: Workflow[] }>(`/companies/${companyId}/workflows`)
+      ]);
+      
+      if (tlRes.data && Array.isArray(tlRes.data)) {
+        setTimeline(tlRes.data);
+        if (tlRes.data.length > 0) {
+          setAssignmentId(tlRes.data[0].assignment_id);
+        }
+      }
+      if (wfRes.data && Array.isArray(wfRes.data)) {
+        setWorkflows(wfRes.data);
       }
     } catch (error) {
-      console.error('Failed to fetch timeline', error);
+      console.error('Failed to fetch timeline data', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleExpand = (id: string) => {
+  const toggleSection = (section: string) => {
+    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const toggleItemExpand = (id: string) => {
     setExpandedItems(prev => {
       const newSet = new Set(prev);
       if (newSet.has(id)) newSet.delete(id);
@@ -59,139 +92,124 @@ export function CompanyTimeline({ companyId }: Props) {
     });
   };
 
-  const getEventIcon = (eventType: string) => {
-    if (eventType === 'company_created') return <Building2 size={16} />;
-    if (eventType === 'initial_call' || eventType === 'call_not_picked' || eventType === 'callback_requested') return <PhoneCall size={16} />;
-    if (eventType === 'interested') return <CheckCircle2 size={16} />;
-    if (eventType === 'note_added') return <MessageSquare size={16} />;
-    if (eventType.includes('brochure') || eventType.includes('document')) return <FileText size={16} />;
-    if (eventType.includes('followup')) return <History size={16} />;
-    if (eventType.includes('transferred') || eventType.includes('assigned')) return <ArrowRightCircle size={16} />;
-    if (eventType.includes('review') || eventType.includes('completed')) return <ShieldCheck size={16} />;
-    return <History size={16} />;
-  };
+  // Group events
+  const baseEvents = timeline.filter(e => e.performed_by_layer === 'base' || e.event_type === 'company_created');
+  const commEvents = timeline.filter(e => e.performed_by_layer === 'comm');
+  // Anything from admin or system goes to Head unless it's explicitly a custom note
+  const adminEvents = timeline.filter(e => e.performed_by_layer === 'admin' && e.event_type !== 'note_added');
+  const customEvents = timeline.filter(e => e.performed_by_layer === 'admin' && e.event_type === 'note_added');
 
-  const getEventColor = (eventType: string) => {
-    if (eventType === 'company_created' || eventType.includes('completed') || eventType === 'interested') 
-      return 'text-green-600 bg-green-100 border-green-200';
-    if (eventType === 'call_not_picked' || eventType.includes('reject')) 
-      return 'text-red-600 bg-red-100 border-red-200';
-    if (eventType.includes('brochure') || eventType.includes('document')) 
-      return 'text-purple-600 bg-purple-100 border-purple-200';
-    if (eventType.includes('followup') || eventType.includes('callback') || eventType === 'initial_call') 
-      return 'text-orange-600 bg-orange-100 border-orange-200';
-    if (eventType.includes('transferred') || eventType.includes('assigned') || eventType.includes('review')) 
-      return 'text-blue-600 bg-blue-100 border-blue-200';
-    return 'text-indigo-600 bg-indigo-100 border-indigo-200';
-  };
+  const getWorkflowByType = (type: string) => workflows.find(w => w.workflow_type === type);
 
-  if (loading) {
+  // Reusable Timeline List Component
+  const renderEventList = (events: TimelineEvent[]) => {
+    if (events.length === 0) return <div className="text-sm text-gray-400 italic p-4">No activities logged yet.</div>;
+    
     return (
-      <div className="space-y-6">
-        {[1,2,3].map(i => (
-          <div key={i} className="flex gap-4 animate-pulse">
-            <div className="w-10 h-10 rounded-full bg-gray-200 shrink-0"></div>
-            <div className="flex-1 space-y-2 py-2">
-              <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-              <div className="h-3 bg-gray-100 rounded w-1/2"></div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (timeline.length === 0) {
-    return <div className="text-center text-gray-500 py-12">No timeline events found.</div>;
-  }
-
-  return (
-    <div className="relative border-l-2 border-gray-100 ml-4 space-y-6 pb-4">
-      {timeline.map((event, index) => {
-        const isExpanded = expandedItems.has(event.id);
-        const hasNotes = !!event.conversation_notes || !!event.description;
-        const metadataKeys = event.metadata ? Object.keys(event.metadata).filter(k => event.metadata[k]) : [];
-        const hasMetadata = metadataKeys.length > 0;
-
-        return (
-          <div key={event.id} className="relative pl-8">
-            {/* Timeline Dot */}
-            <div className={`absolute -left-[21px] top-1 flex items-center justify-center w-10 h-10 rounded-full border-2 bg-white ${getEventColor(event.event_type)} shadow-sm z-10`}>
-              {getEventIcon(event.event_type)}
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-              <div className="p-4 sm:p-5">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-3 border-b border-gray-50 pb-3">
+      <div className="relative border-l-2 border-gray-100 ml-4 space-y-4 pb-4 mt-4">
+        {events.map((event) => {
+          const isExpanded = expandedItems.has(event.id);
+          const hasNotes = !!event.conversation_notes || !!event.description;
+          const metadataKeys = event.metadata ? Object.keys(event.metadata).filter(k => event.metadata[k]) : [];
+          
+          return (
+            <div key={event.id} className="relative pl-6">
+              <div className="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full border-2 border-white bg-indigo-500 shadow-sm z-10" />
+              <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4">
+                <div className="flex justify-between items-start gap-2 mb-2">
                   <div>
-                    <h3 className="font-bold text-gray-900 text-base">{event.title}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-sm font-semibold text-gray-700">
-                        {event.users?.name || 'System Auto'}
-                      </span>
-                      {event.performed_by_layer && (
-                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md capitalize">
-                          {event.performed_by_layer} TPR
-                        </span>
-                      )}
+                    <h3 className="font-bold text-gray-900 text-sm">{event.title}</h3>
+                    <div className="text-xs text-gray-500 mt-1">
+                      <span className="font-semibold text-gray-700">{event.users?.name || 'System'}</span>
                     </div>
                   </div>
-                  
-                  <time className="text-xs font-semibold text-gray-500 whitespace-nowrap pt-1">
+                  <time className="text-xs text-gray-400 whitespace-nowrap pt-0.5">
                     {format(new Date(event.created_at), 'dd MMM yyyy, h:mm a')}
                   </time>
                 </div>
 
-                {/* Metadata details (Outcome, Reason, Assigned To, etc) */}
-                {hasMetadata && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 mb-3">
+                {metadataKeys.length > 0 && (
+                  <div className="grid grid-cols-2 gap-2 mb-2">
                     {metadataKeys.map(key => (
                       <div key={key} className="flex flex-col">
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{key.replace(/_/g, ' ')}</span>
-                        <span className="text-sm text-gray-800 font-medium">{String(event.metadata[key])}</span>
+                        <span className="text-xs text-gray-800 font-medium">{String(event.metadata[key])}</span>
                       </div>
                     ))}
                   </div>
                 )}
 
-                {/* Expandable Conversation Notes */}
                 {hasNotes && (
-                  <div className="mt-2 pt-2">
+                  <div className="mt-2">
                     <button 
-                      onClick={() => toggleExpand(event.id)}
-                      className="flex items-center gap-1.5 text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
+                      onClick={() => toggleItemExpand(event.id)}
+                      className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800"
                     >
-                      <MessageSquare size={16} /> 
-                      {isExpanded ? 'Hide Conversation' : 'View Conversation'}
-                      {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      <MessageSquare size={14} /> 
+                      {isExpanded ? 'Hide Details' : 'View Details'}
                     </button>
-
                     {isExpanded && (
-                      <div className="mt-3 bg-indigo-50/50 border border-indigo-100/50 rounded-lg p-4 animate-in slide-in-from-top-2 duration-200">
-                        {event.description && (
-                          <div className="mb-3">
-                            <p className="text-xs font-bold text-indigo-800 uppercase tracking-wider mb-1">Activity Context</p>
-                            <p className="text-sm text-gray-800">{event.description}</p>
-                          </div>
-                        )}
-                        {event.conversation_notes && (
-                          <div>
-                            <p className="text-xs font-bold text-indigo-800 uppercase tracking-wider mb-1">Conversation Summary</p>
-                            <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed font-medium">
-                              {event.conversation_notes}
-                            </p>
-                          </div>
-                        )}
+                      <div className="mt-2 bg-gray-50 rounded-lg p-3 border border-gray-100">
+                        {event.description && <p className="text-sm text-gray-700 mb-2">{event.description}</p>}
+                        {event.conversation_notes && <p className="text-sm text-gray-700 whitespace-pre-wrap">{event.conversation_notes}</p>}
                       </div>
                     )}
                   </div>
                 )}
               </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
+    );
+  };
+
+  const SectionAccordion = ({ id, title, children }: { id: string, title: string, children: React.ReactNode }) => (
+    <div className="bg-gray-50 border border-gray-200 rounded-xl mb-4 overflow-hidden">
+      <button 
+        onClick={() => toggleSection(id)}
+        className="w-full flex justify-between items-center p-4 bg-white hover:bg-gray-50 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Layers size={18} className="text-indigo-600" />
+          <h3 className="font-bold text-gray-900 uppercase tracking-wider text-sm">{title}</h3>
+        </div>
+        {openSections[id] ? <ChevronUp size={20} className="text-gray-400" /> : <ChevronDown size={20} className="text-gray-400" />}
+      </button>
+      {openSections[id] && (
+        <div className="p-4 border-t border-gray-100 bg-white">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+
+  if (loading) {
+    return <div className="animate-pulse space-y-4">
+      {[1,2,3].map(i => <div key={i} className="h-16 bg-gray-100 rounded-xl"></div>)}
+    </div>;
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto py-2">
+      <SectionAccordion id="base" title="Base TPR Phase">
+        {renderEventList(baseEvents)}
+      </SectionAccordion>
+
+      <SectionAccordion id="comm" title="Communication Phase">
+        {renderEventList(commEvents)}
+      </SectionAccordion>
+
+      <SectionAccordion id="head" title="Head Review Phase">
+        {renderEventList(adminEvents)}
+      </SectionAccordion>
+
+      <SectionAccordion id="custom" title="Custom Activities">
+        <div className="mb-6">
+          <CustomActivityForm companyId={companyId} onSuccess={fetchData} />
+        </div>
+        {renderEventList(customEvents)}
+      </SectionAccordion>
     </div>
   );
 }

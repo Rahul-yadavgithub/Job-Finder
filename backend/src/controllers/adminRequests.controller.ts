@@ -434,3 +434,366 @@ export const getAllDrives = async (req: AdminRequest, res: Response): Promise<vo
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
+
+export const getWorkflowTemplates = async (req: AdminRequest, res: Response): Promise<void> => {
+  try {
+    const { data, error } = await supabase
+      .from('company_workflow_templates')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    res.status(200).json({ success: true, data });
+  } catch (error: any) {
+    console.error('getWorkflowTemplates Error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const getCompanyWorkflows = async (req: AdminRequest, res: Response): Promise<void> => {
+  try {
+    const { companyId } = req.params;
+    
+    // First find the active assignment
+    const { data: statusData, error: statusError } = await supabase
+      .from('company_status')
+      .select('id')
+      .eq('company_id', companyId)
+      .single();
+      
+    if (statusError || !statusData) {
+      res.status(200).json({ success: true, data: [] });
+      return;
+    }
+
+    const { data: instances, error } = await supabase
+      .from('company_workflows')
+      .select('*')
+      .eq('assignment_id', statusData.id);
+
+    if (error) throw error;
+
+    // Fetch all templates to guarantee UI buttons exist even if untouched
+    const { data: templates, error: templatesError } = await supabase
+      .from('company_workflow_templates')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: true });
+
+    if (templatesError) throw templatesError;
+
+    const formatted = templates?.map(template => {
+      const existing = instances?.find(i => i.workflow_type === template.workflow_type);
+      return {
+        workflow_type: template.workflow_type,
+        display_name: template.display_name,
+        status: existing?.status || template.allowed_states[0], // Default to first state if never touched
+        allowed_states: template.allowed_states,
+        updated_at: existing?.updated_at || new Date().toISOString()
+      };
+    }) || [];
+
+    res.status(200).json({ success: true, data: formatted });
+  } catch (error: any) {
+    console.error('getCompanyWorkflows Error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const transitionWorkflowState = async (req: AdminRequest, res: Response): Promise<void> => {
+  try {
+    const { assignmentId, workflowType } = req.params;
+    const { new_status, notes } = req.body;
+
+    const { data: statusData, error: statusError } = await supabase
+      .from('company_status')
+      .select('company_id')
+      .eq('id', assignmentId)
+      .single();
+      
+    if (statusError || !statusData) {
+      res.status(404).json({ success: false, message: 'Assignment not found' });
+      return;
+    }
+
+    // Upsert the workflow state
+    const { error: upsertError } = await supabase
+      .from('company_workflows')
+      .upsert({
+        assignment_id: assignmentId,
+        workflow_type: workflowType,
+        status: new_status,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'assignment_id, workflow_type' });
+
+    if (upsertError) throw upsertError;
+
+    const { data: template } = await supabase
+      .from('company_workflow_templates')
+      .select('display_name')
+      .eq('workflow_type', workflowType)
+      .single();
+
+    const displayName = template?.display_name || workflowType;
+
+    await appendTimeline({
+      companyId: statusData.company_id,
+      assignmentId: assignmentId as string,
+      eventType: 'status_updated',
+      title: `${displayName} updated to ${new_status}`,
+      description: notes || '',
+      performedBy: req.admin?.userId,
+      performedByLayer: 'admin',
+      visibilityScope: 'all_roles'
+    });
+
+    res.status(200).json({ success: true, message: 'Workflow transitioned' });
+  } catch (error: any) {
+    console.error('transitionWorkflowState Error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const addCustomTimelineEvent = async (req: AdminRequest, res: Response): Promise<void> => {
+  try {
+    const { companyId } = req.params;
+    const { title, description, notes } = req.body;
+
+    const { data: statusData } = await supabase
+      .from('company_status')
+      .select('id')
+      .eq('company_id', companyId)
+      .single();
+
+    if (!statusData) {
+      res.status(404).json({ success: false, message: 'No active assignment found for company' });
+      return;
+    }
+
+    await appendTimeline({
+      companyId: companyId as string,
+      assignmentId: statusData.id,
+      eventType: 'note_added',
+      title: title,
+      description: description,
+      conversationNotes: notes,
+      performedBy: req.admin?.userId,
+      performedByLayer: 'admin',
+      visibilityScope: 'all_roles'
+    });
+
+    res.status(200).json({ success: true, message: 'Event added' });
+  } catch (error: any) {
+    console.error('addCustomTimelineEvent Error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const delegateTask = async (req: AdminRequest, res: Response): Promise<void> => {
+  try {
+    const { companyId, assignmentId, workflowType, taskName, assignedTo } = req.body;
+    
+    // Create the task
+    const { error } = await supabase
+      .from('workflow_tasks')
+      .insert({
+        company_id: companyId,
+        assignment_id: assignmentId,
+        workflow_type: workflowType,
+        task_name: taskName,
+        assigned_to: assignedTo,
+        created_by: req.admin?.userId
+      });
+
+    if (error) throw error;
+
+    // Fetch assignee name for timeline
+    const { data: user } = await supabase.from('users').select('name').eq('id', assignedTo).single();
+    const assigneeName = user?.name || 'a team member';
+
+    // Drop timeline event
+    await appendTimeline({
+      companyId,
+      assignmentId,
+      eventType: 'status_updated',
+      title: `Task Delegated: ${taskName}`,
+      description: `Assigned to ${assigneeName}`,
+      performedBy: req.admin?.userId,
+      performedByLayer: 'admin',
+      visibilityScope: 'all_roles'
+    });
+
+    res.status(200).json({ success: true, message: 'Task delegated successfully' });
+  } catch (error: any) {
+    console.error('delegateTask Error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const getMyTasks = async (req: AdminRequest, res: Response): Promise<void> => {
+  try {
+    let query = supabase
+      .from('workflow_tasks')
+      .select('*, companies(company_name), users!workflow_tasks_assigned_to_fkey(name)')
+      .eq('assigned_to', req.admin?.userId)
+      .neq('status', 'completed')
+      .order('created_at', { ascending: false });
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    const formatted = data.map(t => ({
+      ...t,
+      company_name: t.companies?.company_name,
+      assigned_to_name: t.users?.name || 'Unknown'
+    }));
+
+    res.status(200).json({ success: true, data: formatted });
+  } catch (error: any) {
+    console.error('getMyTasks Error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const updateTaskStatus = async (req: AdminRequest, res: Response): Promise<void> => {
+  try {
+    const { taskId } = req.params;
+    const { status, notes } = req.body; // status can be 'in_progress', 'waiting_response', 'completed', 'cancelled'
+
+    const { data: task, error: taskError } = await supabase
+      .from('workflow_tasks')
+      .select('*')
+      .eq('id', taskId)
+      .single();
+
+    if (taskError || !task) throw taskError || new Error('Task not found');
+
+    const updateData: any = { status };
+    if (status === 'completed') {
+      updateData.completed_at = new Date().toISOString();
+    }
+
+    const { error: updateError } = await supabase
+      .from('workflow_tasks')
+      .update(updateData)
+      .eq('id', taskId);
+
+    if (updateError) throw updateError;
+
+    // Update the parent workflow automatically if it's completed or waiting response
+    let newWorkflowStatus = null;
+    if (status === 'completed') {
+      newWorkflowStatus = 'acknowledged'; // generic mapping, ideally front-end or mapping logic determines this
+      if (task.workflow_type === 'jnf') newWorkflowStatus = 'received';
+      if (task.workflow_type === 'database') newWorkflowStatus = 'received';
+      if (task.workflow_type === 'brochure') newWorkflowStatus = 'acknowledged';
+    } else if (status === 'waiting_response') {
+      newWorkflowStatus = 'waiting_response';
+    } else if (status === 'in_progress') {
+       // if task is in progress, maybe the workflow is 'sent'
+       newWorkflowStatus = 'sent';
+    }
+
+    if (newWorkflowStatus) {
+      await supabase
+        .from('company_workflows')
+        .upsert({
+          assignment_id: task.assignment_id,
+          workflow_type: task.workflow_type,
+          status: newWorkflowStatus,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'assignment_id, workflow_type' });
+    }
+
+    await appendTimeline({
+      companyId: task.company_id,
+      assignmentId: task.assignment_id,
+      eventType: status === 'completed' ? 'status_changed' : 'status_updated',
+      title: `Task Update: ${task.task_name} marked as ${status.replace('_', ' ')}`,
+      description: notes || '',
+      performedBy: req.admin?.userId,
+      performedByLayer: 'admin',
+      visibilityScope: 'all_roles'
+    });
+
+    res.status(200).json({ success: true, message: 'Task updated successfully' });
+  } catch (error: any) {
+    console.error('updateTaskStatus Error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const getCoworkerDashboardStats = async (req: AdminRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.admin?.userId;
+    
+    // 1. My Task Breakdown
+    const { data: tasks, error: taskError } = await supabase
+      .from('workflow_tasks')
+      .select('status, workflow_type')
+      .eq('assigned_to', userId);
+
+    if (taskError) throw taskError;
+
+    const taskStats = {
+      pending: 0,
+      inProgress: 0,
+      waitingResponse: 0,
+      completed: 0,
+      byType: {
+        brochure: 0,
+        jnf: 0,
+        database: 0,
+        drive: 0
+      }
+    };
+
+    tasks.forEach(t => {
+      if (t.status === 'pending') taskStats.pending++;
+      else if (t.status === 'in_progress') taskStats.inProgress++;
+      else if (t.status === 'waiting_response') taskStats.waitingResponse++;
+      else if (t.status === 'completed') {
+        taskStats.completed++;
+        if (t.workflow_type) {
+          taskStats.byType[t.workflow_type as keyof typeof taskStats.byType] = 
+            (taskStats.byType[t.workflow_type as keyof typeof taskStats.byType] || 0) + 1;
+        }
+      }
+    });
+
+    // 2. Platform Pulse (Global company stats)
+    const { data: companies, error: compError } = await supabase
+      .from('company_status')
+      .select('base_status');
+
+    if (compError) throw compError;
+
+    const pipelineStats = {
+      interested: 0,
+      under_communication: 0,
+      head_review: 0,
+      transferred_to_head: 0,
+      recruitment_in_progress: 0,
+      completed: 0
+    };
+
+    companies.forEach(c => {
+      if (c.base_status && pipelineStats[c.base_status as keyof typeof pipelineStats] !== undefined) {
+        pipelineStats[c.base_status as keyof typeof pipelineStats]++;
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        taskStats,
+        pipelineStats
+      }
+    });
+  } catch (error) {
+    console.error('getCoworkerDashboardStats Error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};

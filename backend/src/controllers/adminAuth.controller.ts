@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { AdminRequest } from '../types/admin.types';
+import { AdminRequest, AdminJWTPayload } from '../types/admin.types';
 import { sendResetEmail } from '../utils/email';
 export const adminLogin = async (req: AdminRequest, res: Response): Promise<void> => {
   try {
@@ -209,13 +209,34 @@ export const jumpIn = async (req: AdminRequest, res: Response): Promise<void> =>
       return;
     }
     
-    const payload = {
-      ...req.admin,
-      jumpedIn: true
+    const { targetUserId } = req.body;
+    if (!targetUserId) {
+      res.status(400).json({ success: false, message: 'Target user ID is required' });
+      return;
+    }
+
+    const { data: targetUser, error } = await supabase
+      .from('users')
+      .select('id, name, email, role, token_version, status, designated_successor')
+      .eq('id', targetUserId)
+      .single();
+
+    if (error || !targetUser) {
+      res.status(404).json({ success: false, message: 'Target user not found' });
+      return;
+    }
+
+    const payload: AdminJWTPayload = {
+      userId: targetUser.id,
+      email: targetUser.email,
+      role: targetUser.role as any,
+      name: targetUser.name,
+      isSuperAdmin: false, // Drop super admin privileges for the impersonated token
+      isDesignatedSuccessor: targetUser.designated_successor || false,
+      tokenVersion: targetUser.token_version,
+      jumpedIn: true,
+      originalUserId: req.admin.userId // Store original ID to jump back out
     };
-    // remove exp/iat if present
-    delete (payload as any).iat;
-    delete (payload as any).exp;
 
     const token = jwt.sign(payload, process.env.ADMIN_JWT_SECRET as string, { expiresIn: '12h' });
     res.cookie('admin_token', token, {
@@ -226,23 +247,49 @@ export const jumpIn = async (req: AdminRequest, res: Response): Promise<void> =>
     });
     res.status(200).json({ success: true });
   } catch (error) {
+    console.error('JumpIn Error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
 export const jumpOut = async (req: AdminRequest, res: Response): Promise<void> => {
   try {
-    if (!req.admin) {
-      res.status(401).json({ success: false, message: 'Unauthorized' });
+    if (!req.admin || !req.admin.jumpedIn) {
+      res.status(401).json({ success: false, message: 'Not in Jump In mode' });
       return;
     }
     
-    const payload = {
-      ...req.admin,
+    // We need originalUserId to restore the Head TPO's session
+    const originalUserId = (req.admin as any).originalUserId;
+    if (!originalUserId) {
+      // Fallback: simply clear the cookie and force a hard re-login if the tether is lost
+      res.clearCookie('admin_token');
+      res.status(401).json({ success: false, message: 'Lost original identity tether, please log in again.' });
+      return;
+    }
+
+    const { data: originalUser, error } = await supabase
+      .from('users')
+      .select('id, name, email, role, token_version, status, is_super_admin, designated_successor')
+      .eq('id', originalUserId)
+      .single();
+
+    if (error || !originalUser) {
+      res.clearCookie('admin_token');
+      res.status(401).json({ success: false, message: 'Original user not found, please log in again.' });
+      return;
+    }
+
+    const payload: AdminJWTPayload = {
+      userId: originalUser.id,
+      email: originalUser.email,
+      role: originalUser.role as any,
+      name: originalUser.name,
+      isSuperAdmin: originalUser.is_super_admin,
+      isDesignatedSuccessor: originalUser.designated_successor || false,
+      tokenVersion: originalUser.token_version,
       jumpedIn: false
     };
-    delete (payload as any).iat;
-    delete (payload as any).exp;
 
     const token = jwt.sign(payload, process.env.ADMIN_JWT_SECRET as string, { expiresIn: '12h' });
     res.cookie('admin_token', token, {
@@ -253,6 +300,7 @@ export const jumpOut = async (req: AdminRequest, res: Response): Promise<void> =
     });
     res.status(200).json({ success: true });
   } catch (error) {
+    console.error('JumpOut Error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };

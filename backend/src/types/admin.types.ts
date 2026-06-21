@@ -9,6 +9,7 @@ export interface AdminJWTPayload {
   isDesignatedSuccessor: boolean;
   tokenVersion: number;
   jumpedIn?: boolean;
+  originalUserId?: string;
 }
 
 export interface AdminRequest extends Request {

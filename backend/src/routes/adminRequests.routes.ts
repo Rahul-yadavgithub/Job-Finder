@@ -9,7 +9,15 @@ import {
   confirmDrive,
   openRegistration,
   getDriveDetails,
-  getAllDrives
+  getAllDrives,
+  getWorkflowTemplates,
+  getCompanyWorkflows,
+  transitionWorkflowState,
+  addCustomTimelineEvent,
+  delegateTask,
+  getMyTasks,
+  updateTaskStatus,
+  getCoworkerDashboardStats
 } from '../controllers/adminRequests.controller';
 import { jumpIn, jumpOut } from '../controllers/adminAuth.controller';
 import { getTimeline } from '../services/timeline.service';
@@ -35,7 +43,20 @@ router.post('/drives/:id/open-registration', requireJumpedIn, openRegistration);
 router.get('/drives/all', getAllDrives);
 router.get('/drives/:assignmentId', getDriveDetails);
 
-// Timeline
+// Timeline & Workflows
+router.get('/workflow-templates', getWorkflowTemplates);
+router.get('/companies/:companyId/workflows', getCompanyWorkflows);
+router.patch('/workflow/:assignmentId/:workflowType', transitionWorkflowState);
+router.post('/timeline/:companyId/custom', addCustomTimelineEvent);
+
+// Tasks
+router.post('/tasks', delegateTask);
+router.get('/tasks/my-tasks', getMyTasks);
+router.patch('/tasks/:taskId/execute', updateTaskStatus);
+
+// Dashboard
+router.get('/dashboard-stats', getCoworkerDashboardStats);
+
 router.get('/timeline/:companyId', async (req, res) => {
   try {
     const events = await getTimeline(req.params.companyId, 'admin');

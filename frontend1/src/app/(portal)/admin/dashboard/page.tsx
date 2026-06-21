@@ -6,7 +6,7 @@ import { useAdminAuth } from '@/context/AdminAuthContext';
 import { adminGet } from '@/lib/admin/api';
 import { 
   Users, Building2, Activity, UserPlus, Star, AlertTriangle, ArrowRight, ShieldCheck, ClipboardList,
-  Compass, Briefcase, MapPin, Calendar, LayoutDashboard
+  Compass, Briefcase, MapPin, Calendar, LayoutDashboard, Globe, Target, CheckCircle2, Clock
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -22,8 +22,9 @@ export default function AdminDashboard() {
   const [auditToday, setAuditToday] = useState(0);
   const [successor, setSuccessor] = useState<{ name: string; designation: string } | null>(null);
 
-  // Worker Profile
+  // Worker Profile & Stats
   const [profile, setProfile] = useState<any>(null);
+  const [workerStats, setWorkerStats] = useState<any>(null);
 
   useEffect(() => {
     if (user) {
@@ -63,10 +64,13 @@ export default function AdminDashboard() {
   const fetchWorkerData = async () => {
     setLoading(true);
     try {
-      const response = await adminGet<{ success: boolean; data: any }>('/auth/me');
-      if (response.success) {
-        setProfile(response.data);
-      }
+      const [profileRes, statsRes] = await Promise.all([
+        adminGet<{ success: boolean; data: any }>('/auth/me'),
+        adminGet<{ success: boolean; data: any }>('/dashboard-stats')
+      ]);
+
+      if (profileRes.success) setProfile(profileRes.data);
+      if (statsRes.success) setWorkerStats(statsRes.data);
     } catch (error) {
       console.error(error);
     } finally {
@@ -93,8 +97,13 @@ export default function AdminDashboard() {
   // --- WORKER / JUMPED-IN VIEW ---
   if (!user.isSuperAdmin || user.jumpedIn) {
     const roleColor = user.role === 'coordinator' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800';
+    
+    // Safely destructure stats, providing defaults if they haven't loaded yet
+    const ts = workerStats?.taskStats || { pending: 0, inProgress: 0, waitingResponse: 0, completed: 0, byType: { brochure: 0, jnf: 0, database: 0, drive: 0 } };
+    const ps = workerStats?.pipelineStats || { interested: 0, under_communication: 0, head_review: 0, transferred_to_head: 0, recruitment_in_progress: 0, completed: 0 };
+    
     return (
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto space-y-8">
         <div>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Welcome, {user.name}</h1>
           <div className="mt-3 flex items-center gap-2">
@@ -107,37 +116,117 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden relative">
-          <div className="absolute top-0 right-0 p-8 opacity-5">
-            <Compass size={200} />
+        {/* Section 1: Action Items */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+            <h2 className="font-bold text-gray-900 flex items-center gap-2">
+              <Activity className="text-indigo-600" /> My Action Items
+            </h2>
+            <Link href="/admin/tasks" className="text-sm font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group">
+              Execute Tasks <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+            </Link>
           </div>
-          <div className="p-8 md:p-12 relative z-10">
-            <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-indigo-100">
-              <LayoutDashboard size={32} />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Your workspace is being set up.</h2>
-            <p className="text-gray-600 text-lg max-w-2xl leading-relaxed">
-              More features for your specific role will appear here soon. The engineering team is currently expanding the TPO staff tools.
-            </p>
-          </div>
-          <div className="bg-gray-50 border-t border-gray-100 px-8 py-5 flex flex-wrap gap-6 md:gap-12 relative z-10">
-            <div className="flex items-center gap-2 text-gray-600">
-              <Briefcase size={18} className="text-gray-400" />
-              <span className="text-sm font-medium capitalize">{user.designation?.replace('_', ' ')}</span>
-            </div>
-            {profile?.branches?.name && (
-              <div className="flex items-center gap-2 text-gray-600">
-                <MapPin size={18} className="text-gray-400" />
-                <span className="text-sm font-medium">{profile.branches.name} Branch</span>
+          <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-amber-50 rounded-xl p-5 border border-amber-100 flex items-center justify-between relative overflow-hidden">
+              <div className="relative z-10">
+                <p className="text-sm font-bold text-amber-800 mb-1">Pending Assignments</p>
+                <p className="text-4xl font-black text-amber-600">{ts.pending}</p>
               </div>
-            )}
-            {profile?.created_at && (
-              <div className="flex items-center gap-2 text-gray-600">
-                <Calendar size={18} className="text-gray-400" />
-                <span className="text-sm font-medium">Active since {new Date(profile.created_at).toLocaleDateString()}</span>
+              <AlertTriangle className="text-amber-200 w-16 h-16 absolute right-[-10px] bottom-[-10px]" />
+            </div>
+            
+            <div className="bg-indigo-50 rounded-xl p-5 border border-indigo-100 flex items-center justify-between relative overflow-hidden">
+              <div className="relative z-10">
+                <p className="text-sm font-bold text-indigo-800 mb-1">In Progress</p>
+                <p className="text-4xl font-black text-indigo-600">{ts.inProgress}</p>
               </div>
-            )}
+              <Compass className="text-indigo-200 w-16 h-16 absolute right-[-10px] bottom-[-10px]" />
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-5 border border-slate-200 flex items-center justify-between relative overflow-hidden">
+              <div className="relative z-10">
+                <p className="text-sm font-bold text-slate-700 mb-1">Waiting on Company</p>
+                <p className="text-4xl font-black text-slate-500">{ts.waitingResponse}</p>
+              </div>
+              <Clock className="text-slate-200 w-16 h-16 absolute right-[-10px] bottom-[-10px]" />
+            </div>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          
+          {/* Section 2: Platform Pulse */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+              <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                <Globe className="text-blue-600" /> Platform Pulse
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">Global view of all active companies</p>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+                  <span className="text-gray-600 font-medium">Interested</span>
+                  <span className="font-bold bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">{ps.interested}</span>
+                </div>
+                <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+                  <span className="text-gray-600 font-medium">Under Communication</span>
+                  <span className="font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm">{ps.under_communication}</span>
+                </div>
+                <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+                  <span className="text-gray-600 font-medium">Head Review</span>
+                  <span className="font-bold bg-purple-50 text-purple-700 px-3 py-1 rounded-full text-sm">{ps.head_review}</span>
+                </div>
+                <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+                  <span className="text-gray-600 font-medium">Recruitment In Progress</span>
+                  <span className="font-bold bg-amber-50 text-amber-700 px-3 py-1 rounded-full text-sm">{ps.recruitment_in_progress}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 font-medium">Successfully Completed</span>
+                  <span className="font-bold bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm">{ps.completed}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Operational Impact */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+              <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                <Target className="text-emerald-600" /> My Operational Impact
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">Historical operations completed by you</p>
+            </div>
+            <div className="p-6 flex-1 flex flex-col">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Tasks Completed</p>
+                  <p className="text-5xl font-black text-emerald-600 mt-1">{ts.completed}</p>
+                </div>
+                <CheckCircle2 className="text-emerald-100 w-20 h-20" />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 mt-auto">
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-center">
+                  <p className="text-2xl font-bold text-gray-900">{ts.byType.brochure}</p>
+                  <p className="text-xs font-bold text-gray-500 uppercase mt-1">Brochures Sent</p>
+                </div>
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-center">
+                  <p className="text-2xl font-bold text-gray-900">{ts.byType.jnf}</p>
+                  <p className="text-xs font-bold text-gray-500 uppercase mt-1">JNFs Sent</p>
+                </div>
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-center">
+                  <p className="text-2xl font-bold text-gray-900">{ts.byType.database}</p>
+                  <p className="text-xs font-bold text-gray-500 uppercase mt-1">DBs Prepared</p>
+                </div>
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-center">
+                  <p className="text-2xl font-bold text-gray-900">{ts.byType.drive}</p>
+                  <p className="text-xs font-bold text-gray-500 uppercase mt-1">Drives Setup</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     );

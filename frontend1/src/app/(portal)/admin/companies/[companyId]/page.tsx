@@ -6,11 +6,16 @@ import { useParams, useRouter } from 'next/navigation';
 import { Building2, MapPin, Mail, Phone, Calendar, ArrowLeft, Clock, History, ExternalLink, Activity, CheckCircle2 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { CompanyTimeline } from '@/components/companies/CompanyTimeline';
+import { WorkflowProgressTracker } from '@/components/companies/WorkflowProgressTracker';
+import { WorkflowSidebarSummary } from '@/components/companies/WorkflowSidebarSummary';
+import { WorkflowActionCenter } from '@/components/companies/WorkflowActionCenter';
+import { useAdminAuth } from '@/context/AdminAuthContext';
 import Link from 'next/link';
 
 export default function CompanyDetailPage() {
   const { companyId } = useParams();
   const router = useRouter();
+  const { user } = useAdminAuth();
   const [company, setCompany] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,43 +75,15 @@ export default function CompanyDetailPage() {
 
   const primaryStatus = company.company_status?.[0];
 
-  const renderTopStatus = () => {
-    if (!primaryStatus) return null;
-    const stages = [
-      { id: 'interested', label: 'Interested', active: primaryStatus.base_status === 'interested' && !primaryStatus.locked },
-      { id: 'under_comm', label: 'Under Communication', active: primaryStatus.locked && primaryStatus.mid_status === 'in_process' },
-      { id: 'ready_review', label: 'Ready For Head Review', active: primaryStatus.mid_status === 'pending_review' },
-      { id: 'transferred_head', label: 'Transferred To Head', active: primaryStatus.mid_status === 'accepted' },
-      { id: 'completed', label: 'Completed', active: primaryStatus.top_status === 'completed' }
-    ];
-
-    const currentStageIndex = stages.findLastIndex(s => s.active) !== -1 
-      ? stages.findLastIndex(s => s.active) 
-      : 0;
-
-    return (
-      <div className="w-full mb-6">
-        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Current Stage</p>
-        <div className="flex items-center gap-2">
-          {stages.map((stage, idx) => (
-            <React.Fragment key={stage.id}>
-              <div className={`px-4 py-2 rounded-lg text-sm font-bold ${
-                idx === currentStageIndex 
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' 
-                  : idx < currentStageIndex
-                    ? 'bg-indigo-50 text-indigo-700 border border-indigo-100'
-                    : 'bg-gray-50 text-gray-400 border border-gray-100'
-              }`}>
-                {stage.label}
-              </div>
-              {idx < stages.length - 1 && (
-                <div className={`h-0.5 w-6 ${idx < currentStageIndex ? 'bg-indigo-200' : 'bg-gray-100'}`}></div>
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
-    );
+  const getLifecyclePhase = () => {
+    if (!primaryStatus) return 'interested';
+    if (primaryStatus.top_status === 'dropped' || primaryStatus.mid_status === 'revoked' || primaryStatus.base_status === 'rejected') return 'closed';
+    if (primaryStatus.top_status === 'completed') return 'completed';
+    if (primaryStatus.top_status === 'confirmed' || primaryStatus.top_status === 'jnf_sent' || primaryStatus.top_status === 'visit_scheduled') return 'recruitment_in_progress';
+    if (primaryStatus.mid_status === 'accepted') return 'transferred_to_head';
+    if (primaryStatus.mid_status === 'pending_review') return 'ready_for_head_review';
+    if (primaryStatus.locked && primaryStatus.mid_status === 'in_process') return 'under_communication';
+    return 'interested';
   };
 
   return (
@@ -160,13 +137,24 @@ export default function CompanyDetailPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="col-span-1 md:col-span-2 space-y-6">
+          
+          {primaryStatus && user?.isSuperAdmin && (
+            <WorkflowActionCenter 
+              companyId={company.id} 
+              assignmentId={primaryStatus.id} 
+              onTaskDelegated={() => fetchCompanyDetails()} 
+            />
+          )}
+
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
               <Activity size={18} className="text-gray-500" />
               <h2 className="text-lg font-bold text-gray-900">Activity Timeline</h2>
             </div>
             <div className="p-6">
-              {renderTopStatus()}
+              <div className="mb-6">
+                <WorkflowProgressTracker currentPhase={getLifecyclePhase() as any} />
+              </div>
               {primaryStatus ? (
                 <CompanyTimeline companyId={company.id} />
               ) : (
@@ -178,6 +166,8 @@ export default function CompanyDetailPage() {
 
         {/* Sidebar Info */}
         <div className="col-span-1 space-y-6">
+          <WorkflowSidebarSummary companyId={company.id} />
+          
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
               <Building2 size={18} className="text-gray-500" />
