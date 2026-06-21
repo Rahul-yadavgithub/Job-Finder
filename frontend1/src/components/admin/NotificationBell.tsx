@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bell, Building2, User, ClipboardList, Settings, Check } from 'lucide-react';
 import { adminGet, adminPatch } from '@/lib/admin/api';
+import { io } from 'socket.io-client';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Notification {
@@ -27,8 +28,17 @@ export function NotificationBell() {
   useEffect(() => {
     fetchUnreadCount();
     
-    const interval = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(interval);
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
+    const socket = io(baseUrl, { withCredentials: true });
+
+    socket.on('new_notification', (newNotif: Notification) => {
+      setUnreadCount(prev => prev + 1);
+      setNotifications(prev => [newNotif, ...prev]);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   useEffect(() => {

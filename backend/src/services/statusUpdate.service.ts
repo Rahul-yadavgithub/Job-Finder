@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase';
+import { notifyRole } from './notification.service';
 
 export interface StatusUpdateParams {
   companyId: string;
@@ -66,6 +67,15 @@ export async function applyStatusUpdate({
       if (!current.original_marked_by) {
         payload.original_marked_by = userId;
       }
+      
+      // Trigger Notification to Mid TPR
+      await notifyRole(
+        'communication_tpr',
+        'New Company Arrival',
+        `A Base TPR marked a new company as interested.`,
+        '/communication-tpr/companies',
+        'company'
+      );
     }
   } else if (layer === 'mid') {
     payload.mid_status = newStatus;

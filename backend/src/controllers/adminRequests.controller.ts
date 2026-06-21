@@ -3,6 +3,7 @@ import { supabase } from '../config/supabase';
 import { AdminRequest } from '../types/admin.types';
 import { appendTimeline, getTimeline } from '../services/timeline.service';
 import { sendPlacementEmail } from '../services/email.service';
+import { notifyUser, notifyRole } from '../services/notification.service';
 
 export const getRequests = async (req: AdminRequest, res: Response): Promise<void> => {
   try {
@@ -167,13 +168,13 @@ export const actionRequest = async (req: AdminRequest, res: Response): Promise<v
         .eq('id', request.assignment_id);
 
       if (request.raised_by) {
-        await supabase.from('admin_notifications').insert({
-          recipient_id: request.raised_by,
-          type: 'request_actioned',
-          title: 'Request Actioned',
-          message: `Your request to send ${request.request_type.replace('send_', '')} has been processed.`,
-          notification_category: 'request'
-        });
+        await notifyUser(
+          request.raised_by,
+          'Request Actioned',
+          `Your request to send ${request.request_type.replace('send_', '')} has been processed.`,
+          '/communication-tpr/tasks',
+          'request'
+        );
       }
     } else if (action === 'reject') {
       if (!rejectionReason) {
@@ -191,13 +192,13 @@ export const actionRequest = async (req: AdminRequest, res: Response): Promise<v
         .eq('id', id);
 
       if (request.raised_by) {
-        await supabase.from('admin_notifications').insert({
-          recipient_id: request.raised_by,
-          type: 'request_rejected',
-          title: 'Request Rejected',
-          message: `Your request was rejected: ${rejectionReason}`,
-          notification_category: 'request'
-        });
+        await notifyUser(
+          request.raised_by,
+          'Request Rejected',
+          `Your request was rejected: ${rejectionReason}`,
+          '/communication-tpr/tasks',
+          'request'
+        );
       }
     }
 
@@ -625,17 +626,13 @@ export const delegateTask = async (req: AdminRequest, res: Response): Promise<vo
     });
 
     // Notify the assigned staff member
-    const { error: notifError } = await supabase.from('admin_notifications').insert({
-      recipient_id: assignedTo,
-      type: 'new_registration_request', // Using an allowed enum value since type is invisible in UI
-      title: 'New Task Assigned',
-      message: `You have been assigned a new task: ${taskName}`,
-      notification_category: 'request',
-      action_url: '/admin/tasks'
-    });
-    if (notifError) {
-      console.error('Failed to insert notification:', notifError);
-    }
+    await notifyUser(
+      assignedTo,
+      'New Task Assigned',
+      `You have been assigned a new task: ${taskName}`,
+      '/admin/tasks',
+      'request'
+    );
 
     res.status(200).json({ success: true, message: 'Task delegated successfully' });
   } catch (error: any) {

@@ -15,6 +15,7 @@ import xlsx from 'xlsx';
 import Settings from '../models/Settings';
 import Company, { CompanyStatus } from '../models/Company';
 import SyncJob from '../models/SyncJob';
+import BranchNotification from '../models/BranchNotification';
 import { googleSheetService } from '../services/google/GoogleSheetProvider';
 
 export const getDashboard = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -656,6 +657,76 @@ export const confirmCSV = async (req: AuthRequest, res: Response): Promise<void>
     res.status(200).json({ success: true, message: 'Companies saved successfully' });
   } catch (error: any) {
     console.error('Confirm CSV error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Internal server error' });
+  }
+};
+
+// Notifications for Base TPR
+export const getNotifications = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const branchId = req.user!.branchId!;
+    const notifications = await BranchNotification.find({ branchId })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean();
+
+    // Map to frontend Notification format
+    const mapped = notifications.map(n => ({
+      id: n._id.toString(),
+      type: n.type,
+      title: n.type.toUpperCase(),
+      message: n.message,
+      is_read: n.isDismissed,
+      created_at: n.createdAt,
+      action_url: n.metadata?.actionUrl || null,
+      notification_category: n.metadata?.category || 'system'
+    }));
+
+    const unreadCount = await BranchNotification.countDocuments({ branchId, isDismissed: false });
+
+    res.status(200).json({ success: true, data: { notifications: mapped, unreadCount } });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || 'Internal server error' });
+  }
+};
+
+export const getUnreadCount = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const branchId = req.user!.branchId!;
+    const count = await BranchNotification.countDocuments({ branchId, isDismissed: false });
+    res.status(200).json({ success: true, count });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || 'Internal server error' });
+  }
+};
+
+export const markNotificationsRead = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const branchId = req.user!.branchId!;
+    const { notificationIds } = req.body;
+    
+    if (notificationIds && Array.isArray(notificationIds)) {
+      await BranchNotification.updateMany(
+        { branchId, _id: { $in: notificationIds } },
+        { $set: { isDismissed: true } }
+      );
+    }
+    
+    res.status(200).json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || 'Internal server error' });
+  }
+};
+
+export const markAllNotificationsRead = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const branchId = req.user!.branchId!;
+    await BranchNotification.updateMany(
+      { branchId, isDismissed: false },
+      { $set: { isDismissed: true } }
+    );
+    res.status(200).json({ success: true });
+  } catch (error: any) {
     res.status(500).json({ success: false, message: error.message || 'Internal server error' });
   }
 };
