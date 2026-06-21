@@ -192,11 +192,67 @@ export const adminMe = async (req: AdminRequest, res: Response): Promise<void> =
       success: true,
       data: {
         ...user,
+        jumpedIn: req.admin?.jumpedIn,
         unreadNotifications: unreadCount || 0
       }
     });
   } catch (error) {
     console.error('Admin Me Error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const jumpIn = async (req: AdminRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.admin?.isSuperAdmin) {
+      res.status(403).json({ success: false, message: 'Only Super Admin can jump in' });
+      return;
+    }
+    
+    const payload = {
+      ...req.admin,
+      jumpedIn: true
+    };
+    // remove exp/iat if present
+    delete (payload as any).iat;
+    delete (payload as any).exp;
+
+    const token = jwt.sign(payload, process.env.ADMIN_JWT_SECRET as string, { expiresIn: '12h' });
+    res.cookie('admin_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 12 * 60 * 60 * 1000
+    });
+    res.status(200).json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const jumpOut = async (req: AdminRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.admin) {
+      res.status(401).json({ success: false, message: 'Unauthorized' });
+      return;
+    }
+    
+    const payload = {
+      ...req.admin,
+      jumpedIn: false
+    };
+    delete (payload as any).iat;
+    delete (payload as any).exp;
+
+    const token = jwt.sign(payload, process.env.ADMIN_JWT_SECRET as string, { expiresIn: '12h' });
+    res.cookie('admin_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 12 * 60 * 60 * 1000
+    });
+    res.status(200).json({ success: true });
+  } catch (error) {
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };

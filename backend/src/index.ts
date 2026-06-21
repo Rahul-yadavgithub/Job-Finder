@@ -39,6 +39,7 @@ import notificationsRoutes from './routes/notifications.routes';
 import adminCompanyRoutes from './routes/adminCompany.routes';
 import adminPeopleRoutes from './routes/adminPeople.routes';
 import adminRequestsRoutes from './routes/adminRequests.routes';
+import adminUserRequestsRoutes from './routes/adminUserRequests.routes';
 import communicationTPRRoutes from './modules/communicationTPR/routes';
 import companyImportRoutes from './modules/companyImport/companyImport.routes';
 
@@ -61,6 +62,7 @@ app.use('/api/admin', notificationsRoutes);
 app.use('/api/admin', adminCompanyRoutes);
 app.use('/api/admin', adminPeopleRoutes);
 app.use('/api/admin', adminRequestsRoutes);
+app.use('/api/admin', adminUserRequestsRoutes);
 app.use('/api/caller', callerRoutes);
 app.use('/api/communication-tpr', communicationTPRRoutes);
 app.use('/api/tpr/import', companyImportRoutes);

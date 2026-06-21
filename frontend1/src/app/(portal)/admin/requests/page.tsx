@@ -6,9 +6,10 @@ import { useAdminAuth } from '@/context/AdminAuthContext';
 import { adminGet, adminPost } from '@/lib/admin/api';
 import { toast } from 'sonner';
 import { 
-  ClipboardList, Check, X, ShieldAlert, UserCheck, RefreshCw 
+  ClipboardList, Check, X, ShieldAlert, UserCheck, RefreshCw, Briefcase
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { AdminRequestsList } from '@/components/requests/AdminRequestsList';
 
 export default function AdminRequestsPage() {
   const { user } = useAdminAuth();
@@ -47,8 +48,8 @@ export default function AdminRequestsPage() {
       const typeFilter = tab === 'coworker-requests' ? 'worker' : tab === 'tpr-requests' ? 'branch_tpr' : 'all';
 
       const [statsRes, reqsRes] = await Promise.all([
-        adminGet<{ data: { pending_worker_requests: number, pending_tpr_requests: number } }>('/requests/stats'),
-        adminGet<{ data: { combined: any[] } }>(`/requests`, { type: typeFilter, status: statusFilter })
+        adminGet<{ data: { pending_worker_requests: number, pending_tpr_requests: number } }>('/user-requests/stats'),
+        adminGet<{ data: { combined: any[] } }>(`/user-requests`, { type: typeFilter, status: statusFilter })
       ]);
       
       if (statsRes.data) {
@@ -78,7 +79,7 @@ export default function AdminRequestsPage() {
     if (!approveWorkerModal.request) return;
     setActionLoading(true);
     try {
-      await adminPost(`/requests/workers/${approveWorkerModal.request.id}/approve`, { role: approveRole });
+      await adminPost(`/user-requests/workers/${approveWorkerModal.request.id}/approve`, { role: approveRole });
       toast.success('Worker account created successfully');
       setApproveWorkerModal({ isOpen: false, request: null });
       fetchData();
@@ -93,7 +94,7 @@ export default function AdminRequestsPage() {
     if (!rejectWorkerModal.request || rejectReason.length < 10) return;
     setActionLoading(true);
     try {
-      await adminPost(`/requests/workers/${rejectWorkerModal.request.id}/reject`, { reason: rejectReason });
+      await adminPost(`/user-requests/workers/${rejectWorkerModal.request.id}/reject`, { reason: rejectReason });
       toast.success('Worker request rejected');
       setRejectWorkerModal({ isOpen: false, request: null });
       setRejectReason('');
@@ -111,7 +112,7 @@ export default function AdminRequestsPage() {
   const handleApproveTpr = async (tprId: string) => {
     if (!confirm('Approve this TPR account?')) return;
     try {
-      await adminPost(`/requests/tprs/${tprId}/approve`);
+      await adminPost(`/user-requests/tprs/${tprId}/approve`);
       toast.success('TPR approved successfully');
       fetchData();
     } catch (error: any) {
@@ -126,7 +127,7 @@ export default function AdminRequestsPage() {
       return;
     }
     try {
-      await adminPost(`/requests/tprs/${tprId}/reject`, { reason });
+      await adminPost(`/user-requests/tprs/${tprId}/reject`, { reason });
       toast.success('TPR request rejected');
       fetchData();
     } catch (error: any) {
@@ -134,7 +135,14 @@ export default function AdminRequestsPage() {
     }
   };
 
-  if (!user?.isSuperAdmin) return null;
+  // Co-workers are allowed to see the page, but ONLY the Company Requests tab.
+  useEffect(() => {
+    if (user && !user.isSuperAdmin && tab !== 'company-requests') {
+      updateTab('company-requests');
+    }
+  }, [user, tab]);
+
+  if (!user) return null;
 
   const totalPending = stats.worker + stats.tpr;
 
@@ -154,58 +162,73 @@ export default function AdminRequestsPage() {
         </button>
       </div>
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl p-6 border border-coral-100 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-sm font-bold text-coral-600 uppercase tracking-wider mb-1">Worker Requests</p>
-            <p className="text-3xl font-bold text-gray-900">{stats.worker}</p>
+      {/* Stats Row - Only visible for Super Admins */}
+      {user.isSuperAdmin && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white rounded-xl p-6 border border-coral-100 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-coral-600 uppercase tracking-wider mb-1">Worker Requests</p>
+              <p className="text-3xl font-bold text-gray-900">{stats.worker}</p>
+            </div>
+            <div className={`p-4 rounded-full ${stats.worker > 0 ? 'bg-coral-50' : 'bg-gray-50'}`}>
+              <UserCheck size={32} className={stats.worker > 0 ? 'text-coral-500' : 'text-gray-300'} />
+            </div>
           </div>
-          <div className={`p-4 rounded-full ${stats.worker > 0 ? 'bg-coral-50' : 'bg-gray-50'}`}>
-            <UserCheck size={32} className={stats.worker > 0 ? 'text-coral-500' : 'text-gray-300'} />
-          </div>
-        </div>
 
-        <div className="bg-white rounded-xl p-6 border border-amber-100 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-sm font-bold text-amber-600 uppercase tracking-wider mb-1">TPR Requests</p>
-            <p className="text-3xl font-bold text-gray-900">{stats.tpr}</p>
-          </div>
-          <div className={`p-4 rounded-full ${stats.tpr > 0 ? 'bg-amber-50' : 'bg-gray-50'}`}>
-            <ClipboardList size={32} className={stats.tpr > 0 ? 'text-amber-500' : 'text-gray-300'} />
+          <div className="bg-white rounded-xl p-6 border border-amber-100 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-amber-600 uppercase tracking-wider mb-1">TPR Requests</p>
+              <p className="text-3xl font-bold text-gray-900">{stats.tpr}</p>
+            </div>
+            <div className={`p-4 rounded-full ${stats.tpr > 0 ? 'bg-amber-50' : 'bg-gray-50'}`}>
+              <ClipboardList size={32} className={stats.tpr > 0 ? 'text-amber-500' : 'text-gray-300'} />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Main Interface */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
         <div className="p-4 border-b border-gray-200 flex gap-2 overflow-x-auto bg-gray-50/50">
           <button
-            onClick={() => updateTab('coworker-requests')}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${tab === 'coworker-requests' ? 'bg-white text-indigo-700 shadow border border-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}
+            onClick={() => updateTab('company-requests')}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${tab === 'company-requests' ? 'bg-white text-indigo-700 shadow border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'}`}
           >
-            Co-Worker Requests 
-            {stats.worker > 0 && <span className="bg-coral-100 text-coral-700 py-0.5 px-2 rounded-full text-[10px]">{stats.worker}</span>}
+            <Briefcase size={16} /> Company Requests
           </button>
           
-          <button
-            onClick={() => updateTab('tpr-requests')}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${tab === 'tpr-requests' ? 'bg-white text-indigo-700 shadow border border-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}
-          >
-            Branch TPR Requests 
-            {stats.tpr > 0 && <span className="bg-amber-100 text-amber-700 py-0.5 px-2 rounded-full text-[10px]">{stats.tpr}</span>}
-          </button>
-          
-          <button
-            onClick={() => updateTab('all-history')}
-            className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${tab === 'all-history' ? 'bg-white text-indigo-700 shadow border border-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}
-          >
-            All Requests (History)
-          </button>
+          {user.isSuperAdmin && (
+            <>
+              <button
+                onClick={() => updateTab('coworker-requests')}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${tab === 'coworker-requests' ? 'bg-white text-indigo-700 shadow border border-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}
+              >
+                Co-Worker Requests 
+                {stats.worker > 0 && <span className="bg-coral-100 text-coral-700 py-0.5 px-2 rounded-full text-[10px]">{stats.worker}</span>}
+              </button>
+              
+              <button
+                onClick={() => updateTab('tpr-requests')}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${tab === 'tpr-requests' ? 'bg-white text-indigo-700 shadow border border-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}
+              >
+                Branch TPR Requests 
+                {stats.tpr > 0 && <span className="bg-amber-100 text-amber-700 py-0.5 px-2 rounded-full text-[10px]">{stats.tpr}</span>}
+              </button>
+              
+              <button
+                onClick={() => updateTab('all-history')}
+                className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${tab === 'all-history' ? 'bg-white text-indigo-700 shadow border border-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}
+              >
+                All Requests (History)
+              </button>
+            </>
+          )}
         </div>
 
         <div className="overflow-x-auto min-h-[400px]">
-          {loading ? (
+          {tab === 'company-requests' ? (
+            <AdminRequestsList />
+          ) : loading ? (
             <div className="p-8 space-y-4 animate-pulse">
               {[1,2,3].map(i => <div key={i} className="h-16 bg-gray-100 rounded-lg"></div>)}
             </div>

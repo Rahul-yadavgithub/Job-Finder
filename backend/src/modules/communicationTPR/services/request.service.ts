@@ -58,6 +58,38 @@ export class RequestService {
 
   async submitForApproval(requestId: string): Promise<CommunicationRequest> {
     const data = await this.requestRepository.submitForApproval(requestId);
+    
+    // Fetch assignment_id from company_status
+    const { data: statusData } = await supabase
+      .from('company_status')
+      .select('id')
+      .eq('company_id', data.company_id)
+      .single();
+
+    if (statusData) {
+      const requiresHeadTPO = data.request_type === 'jnf_form' || data.request_type === 'database';
+      let adminReqType = data.request_type;
+      if (adminReqType === 'brochure' || adminReqType === 'institute_brochure') adminReqType = 'send_brochure';
+      else if (adminReqType === 'jnf_form') adminReqType = 'send_jnf';
+      else if (adminReqType === 'database') adminReqType = 'send_database';
+
+      await supabase.from('admin_requests').insert({
+        company_id: data.company_id,
+        assignment_id: statusData.id,
+        request_source: 'comm_tpr',
+        request_type: adminReqType,
+        requires_head_tpo: requiresHeadTPO,
+        raised_by: data.requested_by,
+        email_to: data.email_to,
+        email_subject: data.email_subject,
+        email_body: data.email_body,
+        attachment_template_id: data.template_id,
+        status: 'pending',
+        urgency: data.urgency || 'normal',
+        notes: data.notes
+      });
+    }
+
     return this.formatRequest(data);
   }
 

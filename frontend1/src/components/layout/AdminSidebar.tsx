@@ -7,12 +7,13 @@ import { useAdminAuth } from '@/context/AdminAuthContext';
 import { adminGet } from '@/lib/admin/api';
 import { 
   LogOut, LayoutDashboard, List, Settings, ShieldAlert, Crown, User, ShieldCheck,
-  Building2, Users, ClipboardList
+  Building2, Users, ClipboardList, RefreshCw, Eye, CalendarDays
 } from 'lucide-react';
+import { adminPost } from '@/lib/admin/api';
 
 export function AdminSidebar() {
   const pathname = usePathname();
-  const { user, logout } = useAdminAuth();
+  const { user, logout, refreshUser } = useAdminAuth();
   const [pendingRequests, setPendingRequests] = useState(0);
 
   useEffect(() => {
@@ -25,7 +26,7 @@ export function AdminSidebar() {
 
   const fetchRequestStats = async () => {
     try {
-      const res = await adminGet<{ success: boolean; data: { pending_worker_requests: number; pending_tpr_requests: number } }>('/requests/stats');
+      const res = await adminGet<{ success: boolean; data: { pending_worker_requests: number; pending_tpr_requests: number } }>('/user-requests/stats');
       if (res.success && res.data) {
         setPendingRequests(res.data.pending_worker_requests + res.data.pending_tpr_requests);
       }
@@ -70,11 +71,16 @@ export function AdminSidebar() {
               <Crown className="w-3.5 h-3.5 text-amber-500 ml-1.5" />
             )}
           </div>
+          {user.isSuperAdmin && user.jumpedIn && (
+            <div className="mt-2 bg-amber-100 border border-amber-200 text-amber-800 text-[10px] uppercase tracking-wider font-bold py-1 px-2 rounded-md text-center">
+              Jumped In Mode
+            </div>
+          )}
         </div>
       </div>
 
       <nav className="flex-1 px-4 py-6 space-y-1">
-        {user.isSuperAdmin ? (
+        {user.isSuperAdmin && !user.jumpedIn ? (
           <>
             <NavItem 
               href="/admin/dashboard" 
@@ -87,6 +93,12 @@ export function AdminSidebar() {
               icon={<Building2 size={20} />} 
               label="Companies" 
               active={pathname.startsWith('/admin/companies')} 
+            />
+            <NavItem 
+              href="/admin/drives" 
+              icon={<CalendarDays size={20} />} 
+              label="Drives" 
+              active={pathname.startsWith('/admin/drives')} 
             />
             <NavItem 
               href="/admin/people" 
@@ -132,12 +144,47 @@ export function AdminSidebar() {
               active={pathname.startsWith('/admin/companies')} 
             />
             <NavItem 
+              href="/admin/drives" 
+              icon={<CalendarDays size={20} />} 
+              label="Drives" 
+              active={pathname.startsWith('/admin/drives')} 
+            />
+            <NavItem 
               href="/admin/people" 
               icon={<Users size={20} />} 
               label="Team" 
               active={pathname.startsWith('/admin/people')} 
             />
           </>
+        )}
+
+        {/* Jump In/Out Controls */}
+        {user.isSuperAdmin && (
+          <div className="pt-6 pb-2 border-t border-gray-100 mt-6">
+            {!user.jumpedIn ? (
+              <button
+                onClick={async () => {
+                  await adminPost('/auth/jump-in');
+                  await refreshUser();
+                }}
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold rounded-lg transition-colors border border-indigo-200"
+              >
+                <Eye size={16} />
+                Jump In
+              </button>
+            ) : (
+              <button
+                onClick={async () => {
+                  await adminPost('/auth/jump-out');
+                  await refreshUser();
+                }}
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-amber-50 hover:bg-amber-100 text-amber-700 text-sm font-semibold rounded-lg transition-colors border border-amber-200"
+              >
+                <LogOut size={16} className="rotate-180" />
+                Jump Out
+              </button>
+            )}
+          </div>
         )}
       </nav>
 

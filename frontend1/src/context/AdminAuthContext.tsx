@@ -12,7 +12,10 @@ export interface AdminUser {
   isSuperAdmin: boolean;
   isDesignatedSuccessor: boolean;
   designation: string;
+  jumpedIn?: boolean;
 }
+
+import { hasPermission, Permission } from '@/lib/admin/permissions';
 
 interface AdminAuthContextType {
   user: AdminUser | null;
@@ -20,6 +23,7 @@ interface AdminAuthContextType {
   unreadCount: number;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  checkPermission: (permission: Permission) => boolean;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
@@ -43,6 +47,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
           isSuperAdmin: response.data.is_super_admin,
           isDesignatedSuccessor: response.data.designated_successor,
           designation: response.data.designation,
+          jumpedIn: response.data.jumpedIn,
         });
         setUnreadCount(response.data.unreadNotifications || 0);
       } else {
@@ -72,8 +77,12 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const checkPermission = (permission: Permission) => {
+    return hasPermission(user, permission);
+  };
+
   return (
-    <AdminAuthContext.Provider value={{ user, loading, unreadCount, logout, refreshUser: fetchUser }}>
+    <AdminAuthContext.Provider value={{ user, loading, unreadCount, logout, refreshUser: fetchUser, checkPermission }}>
       {children}
     </AdminAuthContext.Provider>
   );

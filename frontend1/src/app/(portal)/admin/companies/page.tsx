@@ -5,9 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 import { adminGet } from '@/lib/admin/api';
 import { 
-  Building2, Search, Filter, History, X, ChevronRight, CheckCircle2, AlertCircle, Clock, User
+  Building2, Search, Filter, History, X, ChevronRight, CheckCircle2, AlertCircle, Clock, User, ExternalLink
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
+import { CompanyTimeline } from '@/components/companies/CompanyTimeline';
+import Link from 'next/link';
 
 export default function AdminCompaniesPage() {
   const { user } = useAdminAuth();
@@ -73,19 +75,6 @@ export default function AdminCompaniesPage() {
   const openTimeline = async (company: any) => {
     setSelectedCompany(company);
     setDrawerOpen(true);
-    setTimelineLoading(true);
-    try {
-      const res = await adminGet<{ data: any }>(`/companies/${company.id}`);
-      if (res.data && Array.isArray(res.data.status_history)) {
-        setTimeline(res.data.status_history);
-      } else {
-        setTimeline([]);
-      }
-    } catch (error) {
-      console.error('Failed to fetch timeline');
-    } finally {
-      setTimelineLoading(false);
-    }
   };
 
   const updateTab = (newTab: string) => {
@@ -191,29 +180,29 @@ export default function AdminCompaniesPage() {
                 {companies.map(c => (
                   <tr key={c.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="font-bold text-gray-900">{c.name}</div>
+                      <div className="font-bold text-gray-900">{c.company_name}</div>
                       <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
                         <Clock size={12} /> {formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      {c.branches ? (
+                      {c.branch_name ? (
                         <span className="font-medium text-indigo-700 bg-indigo-50 px-2 py-1 rounded text-xs border border-indigo-100">
-                          {c.branches.code}
+                          {c.branch_name}
                         </span>
                       ) : <span className="text-gray-400 text-xs italic">Unknown</span>}
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-medium text-gray-900">{c.hr_name || 'N/A'}</div>
-                      <div className="text-xs text-gray-500">{c.hr_email || 'N/A'}</div>
+                      <div className="text-xs text-gray-500">{c.email || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4">
                       {renderStatusBadge(c)}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{c.users?.name || 'Unknown'}</div>
+                      <div className="text-sm text-gray-900">{c.added_by_name || 'Unknown'}</div>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
                       <button 
                         onClick={() => openTimeline(c)}
                         className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100"
@@ -221,6 +210,13 @@ export default function AdminCompaniesPage() {
                       >
                         <History size={18} />
                       </button>
+                      <Link 
+                        href={`/admin/companies/${c.id}`}
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-100"
+                        title="View Details"
+                      >
+                        <ExternalLink size={18} />
+                      </Link>
                     </td>
                   </tr>
                 ))}
@@ -246,49 +242,8 @@ export default function AdminCompaniesPage() {
             </div>
             
             <div className="flex-1 overflow-y-auto p-6">
-              {timelineLoading ? (
-                <div className="space-y-6">
-                  {[1,2,3].map(i => (
-                    <div key={i} className="flex gap-4 animate-pulse">
-                      <div className="w-10 h-10 rounded-full bg-gray-200"></div>
-                      <div className="flex-1 space-y-2">
-                        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                        <div className="h-3 bg-gray-100 rounded w-full"></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : timeline.length === 0 ? (
-                <div className="text-center text-gray-500 py-12">No timeline events found.</div>
-              ) : (
-                <div className="space-y-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
-                  {timeline.map((event, i) => (
-                    <div key={i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-indigo-100 text-indigo-600 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
-                        <History size={16} />
-                      </div>
-                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="font-bold text-slate-900 text-sm">
-                            {event.layer.toUpperCase()} Layer
-                          </div>
-                          <time className="text-xs font-medium text-slate-500">{format(new Date(event.changed_at), 'MMM d, h:mm a')}</time>
-                        </div>
-                        <div className="text-sm text-slate-600 mb-2">
-                          Status changed from <span className="font-semibold text-gray-800">{event.old_status || 'null'}</span> to <span className="font-semibold text-indigo-600">{event.new_status}</span>
-                        </div>
-                        <div className="text-xs text-gray-500 flex items-center gap-1">
-                          <User size={12} /> {event.users?.name || 'System'}
-                        </div>
-                        {event.notes && (
-                          <div className="mt-2 text-xs bg-gray-50 p-2 rounded text-gray-600 italic">
-                            "{event.notes}"
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              {selectedCompany && (
+                <CompanyTimeline companyId={selectedCompany.id} />
               )}
             </div>
           </div>

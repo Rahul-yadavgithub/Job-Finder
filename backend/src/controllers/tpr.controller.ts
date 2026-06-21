@@ -9,6 +9,7 @@ import {
   CompanyInsert
 } from '../services/company.queries';
 import { applyStatusUpdate } from '../services/statusUpdate.service';
+import { appendTimeline } from '../services/timeline.service';
 import { AuthRequest } from '../types/auth.types';
 import xlsx from 'xlsx';
 import Settings from '../models/Settings';
@@ -67,6 +68,19 @@ export const updateStatus = async (req: AuthRequest, res: Response): Promise<voi
       notes,
       nextFollowupDate: next_followup_date,
       branchId: req.user!.branchId!
+    });
+
+    await appendTimeline({
+      companyId: req.params.id as string,
+      assignmentId: result.updated.id,
+      eventType: base_status === 'interested' ? 'marked_interested' : 'status_updated',
+      performedBy: req.user!.userId,
+      performedByLayer: 'base',
+      title: `Base status updated to ${base_status}`,
+      description: notes,
+      isVisibleToBase: true,
+      isVisibleToComm: true,
+      isVisibleToAdmin: true
     });
 
     res.status(200).json(result);

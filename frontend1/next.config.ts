@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
         destination: '/admin/dashboard',
         permanent: true,
       },
+      {
+        source: '/worker-dashboard',
+        destination: '/admin/dashboard',
+        permanent: true,
+      },
     ];
   },
 };

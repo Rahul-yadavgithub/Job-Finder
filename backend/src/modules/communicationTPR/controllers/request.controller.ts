@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { RequestService } from '../services/request.service';
 import { CommunicationTPRRequest } from '../types';
+import { appendTimeline } from '../../../services/timeline.service';
 
 export class RequestController {
   private requestService: RequestService;
@@ -97,6 +98,21 @@ export class RequestController {
     try {
       const { id } = req.params;
       const data = await this.requestService.approveAndSendRequest(id as string);
+      
+      let eventType = 'custom_document_sent';
+      if (data.requestType === 'brochure' || data.requestType === 'institute_brochure' || data.requestType === 'branch_brochure') eventType = 'brochure_sent';
+      else if (data.requestType === 'jnf_form') eventType = 'jnf_sent';
+
+      await appendTimeline({
+        companyId: data.companyId,
+        eventType,
+        performedBy: req.user?.userId,
+        performedByLayer: 'comm',
+        title: `Sent ${data.requestType} to company`,
+        isVisibleToComm: true,
+        isVisibleToAdmin: true
+      });
+
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error('approveAndSendRequest Error:', error);

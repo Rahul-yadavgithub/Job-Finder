@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { FollowUpService } from '../services/followup.service';
 import { CommunicationTPRRequest } from '../types';
+import { appendTimeline } from '../../../services/timeline.service';
 
 export class FollowUpController {
   private followUpService: FollowUpService;
@@ -55,6 +56,19 @@ export class FollowUpController {
       const { id } = req.params;
       const { status } = req.body;
       const data = await this.followUpService.updateFollowUpStatus(id as string, { status });
+      
+      if (status === 'completed') {
+        await appendTimeline({
+          companyId: data.companyId,
+          eventType: 'followup_sent',
+          performedBy: req.user?.userId,
+          performedByLayer: 'comm',
+          title: `Follow-up completed`,
+          isVisibleToComm: true,
+          isVisibleToAdmin: true
+        });
+      }
+
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error('updateFollowUpStatus Error:', error);
