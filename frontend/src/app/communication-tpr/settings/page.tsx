@@ -185,7 +185,7 @@ export default function SettingsPage() {
             <div className="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl overflow-hidden mb-8">
               <div className="px-4 py-5 sm:p-6 space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-[10px] flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 bg-blue-50 text-[#1b4376] rounded-[10px] flex items-center justify-center shrink-0">
                     <CloudUpload className="w-8 h-8" strokeWidth={1.5} />
                   </div>
             <div>
@@ -197,8 +197,8 @@ export default function SettingsPage() {
           </div>
 
           {/* Service Account Banner */}
-          <div className="bg-indigo-50 border border-indigo-100 border-l-[3px] border-l-indigo-600 rounded-xl p-4 flex gap-3 items-start">
-            <AlertCircle className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+          <div className="bg-blue-50 border border-blue-100 border-l-[3px] border-l-[#1b4376] rounded-xl p-4 flex gap-3 items-start">
+            <AlertCircle className="w-5 h-5 text-[#1b4376] shrink-0 mt-0.5" />
             <div className="text-sm font-normal text-indigo-900 w-full space-y-3">
               <div className="space-y-1">
                 <p className="font-medium">Service Account Required</p>
@@ -214,7 +214,7 @@ export default function SettingsPage() {
                 <button 
                   type="button"
                   onClick={copyEmail}
-                  className="flex-shrink-0 flex justify-center items-center gap-2 h-9 px-4 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors duration-150"
+                  className="flex-shrink-0 flex justify-center items-center gap-2 h-9 px-4 text-sm font-medium text-white bg-[#1b4376] hover:bg-[#15335b] rounded-lg transition-colors duration-150"
                 >
                   <Copy className="w-4 h-4" />
                   <span className="hidden sm:inline">Copy Email</span>
@@ -236,7 +236,7 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
                     Current Academic Year
                   </label>
                   {formData.currentAcademicYearSheetId && (
@@ -244,7 +244,7 @@ export default function SettingsPage() {
                       href={`https://docs.google.com/spreadsheets/d/${formData.currentAcademicYearSheetId}/edit`} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-[13px] text-indigo-600 hover:text-indigo-700 flex items-center gap-1 font-medium transition-colors"
+                      className="text-[13px] text-[#1b4376] hover:text-[#15335b] flex items-center gap-1 font-medium transition-colors"
                     >
                       <ExternalLink className="w-3.5 h-3.5" /> Open
                     </a>
@@ -253,7 +253,7 @@ export default function SettingsPage() {
                 <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Master Database Sheet ID</p>
                 <input 
                   type="text" 
-                  className="w-full h-9 bg-white border border-slate-300 rounded-lg px-3 text-base sm:text-sm text-slate-900 focus:ring-2 focus:ring-indigo-600/30 focus:border-indigo-600 transition-all outline-none"
+                  className="w-full h-9 bg-white border border-slate-300 rounded-lg px-3 text-base sm:text-sm text-slate-900 focus:ring-2 focus:ring-[#1b4376]/30 focus:border-[#1b4376] transition-all outline-none"
                   placeholder="e.g. 1BxiMVs..."
                   value={formData.currentAcademicYearSheetId || ''}
                   onChange={(e) => {
@@ -277,7 +277,7 @@ export default function SettingsPage() {
                       href={`https://docs.google.com/spreadsheets/d/${formData.pastAcademicYearSheetId}/edit`} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-[13px] text-indigo-600 hover:text-indigo-700 flex items-center gap-1 font-medium transition-colors"
+                      className="text-[13px] text-[#1b4376] hover:text-[#15335b] flex items-center gap-1 font-medium transition-colors"
                     >
                       <ExternalLink className="w-3.5 h-3.5" /> Open
                     </a>
@@ -286,7 +286,7 @@ export default function SettingsPage() {
                 <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Master Database Sheet ID</p>
                 <input 
                   type="text" 
-                  className="w-full h-9 bg-white border border-slate-300 rounded-lg px-3 text-base sm:text-sm text-slate-900 focus:ring-2 focus:ring-indigo-600/30 focus:border-indigo-600 transition-all outline-none"
+                  className="w-full h-9 bg-white border border-slate-300 rounded-lg px-3 text-base sm:text-sm text-slate-900 focus:ring-2 focus:ring-[#1b4376]/30 focus:border-[#1b4376] transition-all outline-none"
                   placeholder="e.g. 1BxiMVs..."
                   value={formData.pastAcademicYearSheetId || ''}
                   onChange={(e) => {
@@ -337,7 +337,7 @@ export default function SettingsPage() {
               <button 
                 type="submit" 
                 disabled={saveSettings.isPending || (testStatus !== 'success' && !isSaved)}
-                className="w-full sm:w-auto h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex justify-center items-center gap-2 text-sm font-medium transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto h-9 px-4 bg-[#1b4376] hover:bg-[#15335b] text-white rounded-lg flex justify-center items-center gap-2 text-sm font-medium transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saveSettings.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Save Settings
@@ -395,7 +395,7 @@ export default function SettingsPage() {
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
             <div className="bg-slate-50 rounded-xl p-4 flex gap-3">
-              <div className="text-indigo-600 mt-0.5"><Database className="w-5 h-5" /></div>
+              <div className="text-[#1b4376] mt-0.5"><Database className="w-5 h-5" /></div>
               <div>
                 <p className="text-xs font-medium text-slate-500 mb-1">Total Companies</p>
                 <p className="text-[28px] font-semibold text-slate-900 leading-none">

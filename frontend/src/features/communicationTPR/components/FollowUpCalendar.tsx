@@ -51,7 +51,7 @@ export function FollowUpCalendar({ followUps, onStatusChange }: FollowUpCalendar
       return (
         <div key={`day-${day}`} className={`bg-white border-r border-b border-gray-100 min-h-[120px] p-2 transition-colors hover:bg-gray-50`}>
           <div className="flex justify-between items-center mb-1">
-            <span className={`text-sm font-medium ${isTodayStr ? 'bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center' : 'text-gray-700'}`}>
+            <span className={`text-sm font-medium ${isTodayStr ? 'bg-[#1b4376] text-white w-6 h-6 rounded-full flex items-center justify-center' : 'text-gray-700'}`}>
               {day}
             </span>
           </div>
@@ -60,7 +60,7 @@ export function FollowUpCalendar({ followUps, onStatusChange }: FollowUpCalendar
               <div key={f.id} className={`text-xs p-1.5 rounded truncate border ${
                 f.status === 'completed' ? 'bg-green-50 border-green-200 text-green-700' : 
                 f.priority === 'High' ? 'bg-red-50 border-red-200 text-red-700' : 
-                'bg-indigo-50 border-indigo-200 text-indigo-700'
+                'bg-blue-50 border-indigo-200 text-[#15335b]'
               }`}>
                 <div className="flex justify-between items-center">
                   <Link href={`/communication-tpr/companies/${f.companyId}`} className="font-semibold hover:underline truncate mr-2">
@@ -126,7 +126,7 @@ export function FollowUpCalendar({ followUps, onStatusChange }: FollowUpCalendar
                       )}
                     </div>
                     <div className="min-w-0">
-                      <Link href={`/communication-tpr/companies/${f.companyId}`} className="text-sm font-semibold text-indigo-600 hover:underline block truncate">
+                      <Link href={`/communication-tpr/companies/${f.companyId}`} className="text-sm font-semibold text-[#1b4376] hover:underline block truncate">
                         {f.companyName}
                       </Link>
                       <p className="text-sm text-gray-900 mt-0.5">{f.reason}</p>

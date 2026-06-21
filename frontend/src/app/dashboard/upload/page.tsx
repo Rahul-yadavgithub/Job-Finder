@@ -146,7 +146,7 @@ export default function BulkImportPage() {
             <button 
               onClick={handleConfirmImport}
               disabled={isConfirming || report.validRows === 0}
-              className="w-full sm:w-auto h-9 px-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex justify-center items-center gap-2 text-sm font-medium transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto h-9 px-6 bg-[#1b4376] hover:bg-[#15335b] text-white rounded-lg flex justify-center items-center gap-2 text-sm font-medium transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isConfirming ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Importing...</>

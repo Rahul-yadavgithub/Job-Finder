@@ -624,6 +624,19 @@ export const delegateTask = async (req: AdminRequest, res: Response): Promise<vo
       visibilityScope: 'all_roles'
     });
 
+    // Notify the assigned staff member
+    const { error: notifError } = await supabase.from('admin_notifications').insert({
+      recipient_id: assignedTo,
+      type: 'new_registration_request', // Using an allowed enum value since type is invisible in UI
+      title: 'New Task Assigned',
+      message: `You have been assigned a new task: ${taskName}`,
+      notification_category: 'request',
+      action_url: '/admin/tasks'
+    });
+    if (notifError) {
+      console.error('Failed to insert notification:', notifError);
+    }
+
     res.status(200).json({ success: true, message: 'Task delegated successfully' });
   } catch (error: any) {
     console.error('delegateTask Error:', error);
@@ -794,6 +807,51 @@ export const getCoworkerDashboardStats = async (req: AdminRequest, res: Response
     });
   } catch (error) {
     console.error('getCoworkerDashboardStats Error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const deleteTask = async (req: AdminRequest, res: Response): Promise<void> => {
+  try {
+    const { taskId } = req.params;
+
+    if (req.admin?.role !== 'head' && !req.admin?.isSuperAdmin && !req.admin?.jumpedIn) {
+      res.status(403).json({ success: false, message: 'Only TPO Head can delete tasks.' });
+      return;
+    }
+
+    const { data: task, error: fetchError } = await supabase
+      .from('workflow_tasks')
+      .select('company_id, assignment_id, task_name')
+      .eq('id', taskId)
+      .single();
+
+    if (fetchError || !task) {
+      res.status(404).json({ success: false, message: 'Task not found' });
+      return;
+    }
+
+    const { error: deleteError } = await supabase
+      .from('workflow_tasks')
+      .delete()
+      .eq('id', taskId);
+
+    if (deleteError) throw deleteError;
+
+    await appendTimeline({
+      companyId: task.company_id,
+      assignmentId: task.assignment_id,
+      eventType: 'status_updated',
+      title: `Task Deleted: ${task.task_name}`,
+      description: 'Task was deleted by TPO Head',
+      performedBy: req.admin?.userId,
+      performedByLayer: 'admin',
+      visibilityScope: 'all_roles'
+    });
+
+    res.status(200).json({ success: true, message: 'Task deleted successfully' });
+  } catch (error: any) {
+    console.error('deleteTask Error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };

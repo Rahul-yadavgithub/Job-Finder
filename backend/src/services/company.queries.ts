@@ -338,7 +338,7 @@ export async function getAdminCompanyList({
   page = 1,
   limit = 20
 }: {
-  filter?: 'confirmed' | 'pending' | 'newly_added' | 'all';
+  filter?: 'confirmed' | 'pending' | 'newly_added' | 'new' | 'all';
   search?: string;
   branchId?: string;
   page?: number;
@@ -364,13 +364,14 @@ export async function getAdminCompanyList({
   }
 
   if (filter === 'confirmed') {
-    query = query.eq('company_status.mid_status', 'accepted');
+    query = query.eq('company_status.top_status', 'completed');
   } else if (filter === 'pending') {
+    // mid_status is accepted (meaning it passed head review), but top_status is not completed
+    query = query.eq('company_status.mid_status', 'accepted')
+                 .neq('company_status.top_status', 'completed');
+  } else if (filter === 'new' || filter === 'newly_added') {
+    // waiting for head review
     query = query.eq('company_status.mid_status', 'pending_review');
-  } else if (filter === 'newly_added') {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    query = query.gte('created_at', sevenDaysAgo.toISOString());
   }
 
   const from = (page - 1) * limit;
@@ -415,11 +416,13 @@ export async function getAdminCompanyList({
   });
 
   // Since PostgREST inner joins on relationship filtering are sometimes finicky in JS client depending on version, 
-  // filtering out rows where the relationship is null handles cases where `.eq('company_status.mid_status', ...)` returned empty arrays for company_status.
+  // filtering out rows where the relationship is null handles cases where `.eq('company_status.top_status', ...)` returned empty arrays for company_status.
   let filteredRows = rows;
   if (filter === 'confirmed') {
-    filteredRows = rows.filter(r => r.mid_status === 'accepted');
+    filteredRows = rows.filter(r => r.top_status === 'completed');
   } else if (filter === 'pending') {
+    filteredRows = rows.filter(r => r.mid_status === 'accepted' && r.top_status !== 'completed');
+  } else if (filter === 'new' || filter === 'newly_added') {
     filteredRows = rows.filter(r => r.mid_status === 'pending_review');
   }
 

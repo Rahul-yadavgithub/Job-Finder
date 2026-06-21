@@ -164,7 +164,7 @@ export function ManageProfileModal({ isOpen, onClose }: ManageProfileModalProps)
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Enter display name"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
               />
               <p className="mt-1 text-xs text-gray-500">
                 This name will be visible to other users. Original Name: {user.name}
@@ -184,7 +184,7 @@ export function ManageProfileModal({ isOpen, onClose }: ManageProfileModalProps)
           <button
             onClick={handleSave}
             disabled={isSaving || isUploading || !displayName.trim()}
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-sm font-medium text-white bg-[#1b4376] hover:bg-[#15335b] rounded-lg transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? (
               <>

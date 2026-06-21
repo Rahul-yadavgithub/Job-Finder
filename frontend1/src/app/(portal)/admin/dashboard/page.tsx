@@ -120,9 +120,9 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
             <h2 className="font-bold text-gray-900 flex items-center gap-2">
-              <Activity className="text-indigo-600" /> My Action Items
+              <Activity className="text-[#1b4376]" /> My Action Items
             </h2>
-            <Link href="/admin/tasks" className="text-sm font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group">
+            <Link href="/admin/tasks" className="text-sm font-bold text-[#1b4376] hover:text-[#15335b] flex items-center gap-1 group">
               Execute Tasks <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
@@ -135,10 +135,10 @@ export default function AdminDashboard() {
               <AlertTriangle className="text-amber-200 w-16 h-16 absolute right-[-10px] bottom-[-10px]" />
             </div>
             
-            <div className="bg-indigo-50 rounded-xl p-5 border border-indigo-100 flex items-center justify-between relative overflow-hidden">
+            <div className="bg-blue-50 rounded-xl p-5 border border-blue-100 flex items-center justify-between relative overflow-hidden">
               <div className="relative z-10">
                 <p className="text-sm font-bold text-indigo-800 mb-1">In Progress</p>
-                <p className="text-4xl font-black text-indigo-600">{ts.inProgress}</p>
+                <p className="text-4xl font-black text-[#1b4376]">{ts.inProgress}</p>
               </div>
               <Compass className="text-indigo-200 w-16 h-16 absolute right-[-10px] bottom-[-10px]" />
             </div>
@@ -252,7 +252,7 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
-          <div className={`p-3 rounded-lg transition-colors ${totalPending > 0 ? 'bg-red-50 text-red-600 group-hover:bg-red-100' : 'bg-gray-50 text-gray-400 group-hover:text-indigo-500'}`}>
+          <div className={`p-3 rounded-lg transition-colors ${totalPending > 0 ? 'bg-red-50 text-red-600 group-hover:bg-red-100' : 'bg-gray-50 text-gray-400 group-hover:text-blue-500'}`}>
             <UserPlus size={24} />
           </div>
         </Link>
@@ -262,7 +262,7 @@ export default function AdminDashboard() {
             <p className="text-sm font-medium text-gray-500 mb-1">Active Workers</p>
             <p className="text-2xl font-bold text-gray-900">{peopleStats.activeCoworkers}</p>
           </div>
-          <div className="p-3 rounded-lg bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 transition-colors">
+          <div className="p-3 rounded-lg bg-blue-50 text-[#1b4376] group-hover:bg-blue-100 transition-colors">
             <Users size={24} />
           </div>
         </Link>
@@ -310,7 +310,7 @@ export default function AdminDashboard() {
               <span className="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{compStats.addedToday}</span>
             </div>
           </div>
-          <Link href="/admin/companies" className="p-4 border-t border-gray-100 text-sm font-bold text-indigo-600 hover:bg-indigo-50 transition-colors flex items-center justify-center gap-1 group">
+          <Link href="/admin/companies" className="p-4 border-t border-gray-100 text-sm font-bold text-[#1b4376] hover:bg-blue-50 transition-colors flex items-center justify-center gap-1 group">
             View all companies <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
@@ -318,7 +318,7 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
           <div className="p-5 border-b border-gray-100 bg-gray-50/50">
             <h2 className="font-bold text-gray-900 flex items-center gap-2">
-              <Users size={18} className="text-indigo-600" /> Team
+              <Users size={18} className="text-[#1b4376]" /> Team
             </h2>
           </div>
           <div className="p-5 space-y-4 flex-1">
@@ -335,7 +335,7 @@ export default function AdminDashboard() {
               <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">{totalPending}</span>
             </div>
           </div>
-          <Link href="/admin/people" className="p-4 border-t border-gray-100 text-sm font-bold text-indigo-600 hover:bg-indigo-50 transition-colors flex items-center justify-center gap-1 group">
+          <Link href="/admin/people" className="p-4 border-t border-gray-100 text-sm font-bold text-[#1b4376] hover:bg-blue-50 transition-colors flex items-center justify-center gap-1 group">
             View team <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
@@ -360,7 +360,7 @@ export default function AdminDashboard() {
               </span>
             </div>
           </div>
-          <Link href="/admin/requests" className={`p-4 border-t text-sm font-bold flex items-center justify-center gap-1 transition-colors group ${totalPending > 0 ? 'border-amber-100 text-amber-700 hover:bg-amber-100' : 'border-gray-100 text-indigo-600 hover:bg-indigo-50'}`}>
+          <Link href="/admin/requests" className={`p-4 border-t text-sm font-bold flex items-center justify-center gap-1 transition-colors group ${totalPending > 0 ? 'border-amber-100 text-amber-700 hover:bg-amber-100' : 'border-gray-100 text-[#1b4376] hover:bg-blue-50'}`}>
             Review requests <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
@@ -368,10 +368,10 @@ export default function AdminDashboard() {
       </div>
 
       <div className={`rounded-xl p-4 border flex items-center justify-between ${
-        successor ? 'bg-indigo-50 border-indigo-100' : 'bg-amber-50 border-amber-200 shadow-sm'
+        successor ? 'bg-blue-50 border-blue-100' : 'bg-amber-50 border-amber-200 shadow-sm'
       }`}>
         <div className="flex items-center gap-3">
-          {successor ? <ShieldCheck className="text-indigo-600 w-6 h-6" /> : <AlertTriangle className="text-amber-600 w-6 h-6" />}
+          {successor ? <ShieldCheck className="text-[#1b4376] w-6 h-6" /> : <AlertTriangle className="text-amber-600 w-6 h-6" />}
           <div>
             {successor ? (
               <p className="text-sm font-medium text-indigo-900">
@@ -387,7 +387,7 @@ export default function AdminDashboard() {
         <Link 
           href="/admin/settings/succession"
           className={`text-sm font-bold px-4 py-2 rounded-lg transition-colors whitespace-nowrap ml-4 ${
-            successor ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-amber-600 text-white hover:bg-amber-700'
+            successor ? 'bg-[#1b4376] text-white hover:bg-[#15335b]' : 'bg-amber-600 text-white hover:bg-amber-700'
           }`}
         >
           {successor ? 'Manage Settings' : 'Set Successor Now'}

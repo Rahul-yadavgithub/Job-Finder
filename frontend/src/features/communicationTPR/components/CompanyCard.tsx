@@ -10,7 +10,7 @@ export function CompanyCard({ company }: { company: InterestedCompany }) {
         <div className="p-5">
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100 flex-shrink-0">
+              <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center text-[#1b4376] border border-blue-100 flex-shrink-0">
                 <Building2 className="h-5 w-5" />
               </div>
               <div>
@@ -50,7 +50,7 @@ export function CompanyCard({ company }: { company: InterestedCompany }) {
             <Calendar className="h-3.5 w-3.5 mr-1" />
             {new Date(company.interestDate).toLocaleDateString()}
           </div>
-          <span className="font-medium text-indigo-600 capitalize">
+          <span className="font-medium text-[#1b4376] capitalize">
             {company.currentStatus.baseStatus.replace('_', ' ')}
           </span>
         </div>

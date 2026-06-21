@@ -126,7 +126,7 @@ export function NotificationBell() {
             {unreadCount > 0 && (
               <button 
                 onClick={handleMarkAllRead}
-                className="text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1"
+                className="text-xs font-medium text-[#1b4376] hover:text-indigo-800 transition-colors flex items-center gap-1"
               >
                 <Check size={14} /> Mark all read
               </button>
@@ -148,7 +148,7 @@ export function NotificationBell() {
                   <div 
                     key={notif.id}
                     onClick={() => handleNotificationClick(notif)}
-                    className={`p-4 flex gap-3 cursor-pointer hover:bg-gray-50 transition-colors ${!notif.is_read ? 'bg-indigo-50/30' : ''}`}
+                    className={`p-4 flex gap-3 cursor-pointer hover:bg-gray-50 transition-colors ${!notif.is_read ? 'bg-blue-50/30' : ''}`}
                   >
                     <div className="flex-shrink-0">
                       {getCategoryIcon(notif.notification_category)}
@@ -166,7 +166,7 @@ export function NotificationBell() {
                     </div>
                     {!notif.is_read && (
                       <div className="flex-shrink-0 flex items-center justify-center pt-1.5">
-                        <div className="w-2 h-2 bg-indigo-600 rounded-full"></div>
+                        <div className="w-2 h-2 bg-[#1b4376] rounded-full"></div>
                       </div>
                     )}
                   </div>

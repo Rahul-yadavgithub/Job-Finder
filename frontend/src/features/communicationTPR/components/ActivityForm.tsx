@@ -66,12 +66,12 @@ export function ActivityForm({ companyId, onSuccess }: ActivityFormProps) {
                 className={`
                   flex items-center gap-2 px-3 py-3 text-sm font-medium border-b-2 transition-colors
                   ${isActive 
-                    ? 'border-indigo-500 text-indigo-600' 
+                    ? 'border-blue-500 text-[#1b4376]' 
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }
                 `}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-500' : 'text-gray-400'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-blue-500' : 'text-gray-400'}`} />
                 {tab.name}
               </button>
             );
@@ -85,7 +85,7 @@ export function ActivityForm({ companyId, onSuccess }: ActivityFormProps) {
           <div className="mb-3">
             <textarea
               rows={3}
-              className="block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 resize-none"
+              className="block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#1b4376] sm:text-sm sm:leading-6 resize-none"
               placeholder={activeTab === 'note' ? 'Write a quick note...' : `Describe the ${activeTab} details...`}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -99,7 +99,7 @@ export function ActivityForm({ companyId, onSuccess }: ActivityFormProps) {
               <select
                 value={outcome}
                 onChange={(e) => setOutcome(e.target.value)}
-                className="block w-full max-w-xs rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                className="block w-full max-w-xs rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-[#1b4376] sm:text-sm sm:leading-6"
                 required
               >
                 <option value="">Select outcome...</option>
@@ -122,7 +122,7 @@ export function ActivityForm({ companyId, onSuccess }: ActivityFormProps) {
             <button
               type="submit"
               disabled={isSubmitting || !notes.trim() || (['call', 'email', 'linkedin'].includes(activeTab) && !outcome)}
-              className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex items-center justify-center rounded-lg bg-[#1b4376] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#15335b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1b4376] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               {activeTab === 'note' ? 'Save Note' : 'Log Activity'}

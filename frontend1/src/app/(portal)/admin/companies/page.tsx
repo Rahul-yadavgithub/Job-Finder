@@ -91,13 +91,16 @@ export default function AdminCompaniesPage() {
 
   const renderStatusBadge = (company: any) => {
     if (company.top_status) {
-      return <span className="px-2 py-1 rounded text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">Top: {company.top_status}</span>;
+      const formatted = company.top_status.replace(/_/g, ' ');
+      return <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">{formatted}</span>;
     }
     if (company.mid_status) {
+      const formatted = company.mid_status.replace(/_/g, ' ');
       const isConfirmed = company.mid_status === 'accepted';
-      return <span className={`px-2 py-1 rounded text-xs font-bold border ${isConfirmed ? 'bg-green-100 text-green-800 border-green-200' : 'bg-blue-100 text-blue-800 border-blue-200'}`}>Mid: {company.mid_status}</span>;
+      return <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border ${isConfirmed ? 'bg-green-100 text-green-800 border-green-200' : 'bg-blue-100 text-blue-800 border-blue-200'}`}>{formatted}</span>;
     }
-    return <span className="px-2 py-1 rounded text-xs font-bold bg-gray-100 text-gray-800 border border-gray-200">Base: {company.base_status}</span>;
+    const formatted = (company.base_status || 'not contacted').replace(/_/g, ' ');
+    return <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-gray-100 text-gray-800 border border-gray-200">{formatted}</span>;
   };
 
   if (!user) return null;
@@ -112,7 +115,7 @@ export default function AdminCompaniesPage() {
       {/* Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Companies', value: stats.total, color: 'bg-indigo-50 text-indigo-700' },
+          { label: 'Total Companies', value: stats.total, color: 'bg-blue-50 text-[#15335b]' },
           { label: 'Confirmed (Mid)', value: stats.confirmed, color: 'bg-green-50 text-green-700' },
           { label: 'Pending Review', value: stats.pending_mid_review, color: 'bg-amber-50 text-amber-700' },
           { label: 'Added Today', value: stats.added_today, color: 'bg-blue-50 text-blue-700' }
@@ -151,7 +154,7 @@ export default function AdminCompaniesPage() {
                 placeholder="Search companies..." 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               />
             </div>
             {/* Optional Branch Filter Dropdown would go here */}
@@ -183,7 +186,7 @@ export default function AdminCompaniesPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {companies.map(c => (
-                  <tr key={c.id} className="hover:bg-indigo-50/30 transition-colors border-b border-transparent hover:border-indigo-100/50">
+                  <tr key={c.id} className="hover:bg-blue-50/30 transition-colors border-b border-transparent hover:border-blue-100/50">
                     <td className="px-6 py-4">
                       <div className="font-bold text-gray-900">{c.company_name}</div>
                       <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
@@ -192,7 +195,7 @@ export default function AdminCompaniesPage() {
                     </td>
                     <td className="px-6 py-4">
                       {c.branch_name ? (
-                        <span className="font-medium text-indigo-700 bg-indigo-50 px-2 py-1 rounded text-xs border border-indigo-100">
+                        <span className="font-medium text-[#15335b] bg-blue-50 px-2 py-1 rounded text-xs border border-blue-100">
                           {c.branch_name}
                         </span>
                       ) : <span className="text-gray-400 text-xs italic">Unknown</span>}
@@ -205,22 +208,23 @@ export default function AdminCompaniesPage() {
                       {renderStatusBadge(c)}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{c.added_by_name || 'Unknown'}</div>
+                      <div className="text-sm font-medium text-gray-900">{c.added_by_name || 'System / Scraper'}</div>
+                      <div className="text-xs text-gray-500 capitalize">{c.data_source ? c.data_source.replace(/_/g, ' ') : 'Manual'}</div>
                     </td>
                     <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
                       <button 
                         onClick={() => openTimeline(c)}
-                        className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100"
+                        className="px-3 py-1.5 text-xs font-medium text-[#1b4376] bg-blue-50 hover:bg-blue-100 rounded-md transition-colors border border-indigo-200 flex items-center gap-1.5"
                         title="View Timeline"
                       >
-                        <History size={18} />
+                        <History size={14} /> Timeline
                       </button>
                       <Link 
                         href={`/admin/companies/${c.id}`}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-100"
+                        className="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors border border-blue-200 flex items-center gap-1.5"
                         title="View Details"
                       >
-                        <ExternalLink size={18} />
+                        <ExternalLink size={14} /> View Details
                       </Link>
                     </td>
                   </tr>

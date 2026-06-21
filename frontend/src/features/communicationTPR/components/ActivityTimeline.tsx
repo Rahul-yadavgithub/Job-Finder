@@ -8,7 +8,7 @@ const activityIconMap: Record<string, { icon: React.ElementType, bg: string, col
   linkedin: { icon: Globe, bg: 'bg-sky-100 border-sky-200', color: 'text-sky-600' },
   note: { icon: StickyNote, bg: 'bg-yellow-100 border-yellow-200', color: 'text-yellow-600' },
   status_change: { icon: RefreshCw, bg: 'bg-purple-100 border-purple-200', color: 'text-purple-600' },
-  follow_up: { icon: CalendarCheck, bg: 'bg-indigo-100 border-indigo-200', color: 'text-indigo-600' },
+  follow_up: { icon: CalendarCheck, bg: 'bg-blue-100 border-indigo-200', color: 'text-[#1b4376]' },
   brochure: { icon: FileText, bg: 'bg-rose-100 border-rose-200', color: 'text-rose-600' },
   transfer: { icon: Send, bg: 'bg-orange-100 border-orange-200', color: 'text-orange-600' },
   communication_request: { icon: Send, bg: 'bg-teal-100 border-teal-200', color: 'text-teal-600' },
@@ -52,6 +52,7 @@ export function ActivityTimeline({ activities }: { activities: CompanyActivity[]
                           <>
                             <User className="h-4 w-4 text-gray-400" />
                             {activity.userName}
+                            {activity.userBranch && <span className="text-[#1b4376] font-medium">({activity.userBranch})</span>}
                           </>
                         ) : (
                           <span className="text-gray-500 italic">System</span>

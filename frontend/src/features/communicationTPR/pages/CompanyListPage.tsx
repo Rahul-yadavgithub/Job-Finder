@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, LayoutGrid, List as ListIcon } from 'lucide-react';
+import { Search, LayoutGrid, List as ListIcon, ChevronLeft } from 'lucide-react';
 import { companyApi } from '../services/company.api';
 import { InterestedCompany } from '../types/company';
 import { CompanyCard } from '../components/CompanyCard';
@@ -10,6 +10,8 @@ import { BranchFilter } from '../components/BranchFilter';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
 import { EmptyState } from '../components/EmptyState';
+
+const limit = 12;
 
 export function CompanyListPage() {
   const [companies, setCompanies] = useState<InterestedCompany[]>([]);
@@ -76,7 +78,7 @@ export function CompanyListPage() {
           </div>
           <input
             type="text"
-            className="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+            className="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#1b4376] sm:text-sm sm:leading-6"
             placeholder="Search companies..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -91,13 +93,13 @@ export function CompanyListPage() {
           <div className="hidden sm:flex items-center bg-gray-50 rounded-lg p-1 border border-gray-200">
             <button
               onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded-md ${viewMode === 'table' ? 'bg-white shadow-sm text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`p-1.5 rounded-md ${viewMode === 'table' ? 'bg-white shadow-sm text-[#15335b]' : 'text-gray-500 hover:text-gray-700'}`}
             >
               <ListIcon className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-md ${viewMode === 'grid' ? 'bg-white shadow-sm text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`p-1.5 rounded-md ${viewMode === 'grid' ? 'bg-white shadow-sm text-[#15335b]' : 'text-gray-500 hover:text-gray-700'}`}
             >
               <LayoutGrid className="w-4 h-4" />
             </button>

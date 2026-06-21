@@ -54,7 +54,7 @@ export function WorkflowCard({ assignmentId, workflow, onUpdate }: Props) {
             <span className={`text-xs font-bold px-2 py-0.5 rounded ${
               currentIndex === workflow.allowed_states.length - 1 
                 ? 'bg-green-100 text-green-700' 
-                : 'bg-indigo-100 text-indigo-700'
+                : 'bg-blue-100 text-[#15335b]'
             }`}>
               {formatState(workflow.status)}
             </span>
@@ -65,7 +65,7 @@ export function WorkflowCard({ assignmentId, workflow, onUpdate }: Props) {
             <CheckCircle2 size={20} />
           </div>
         ) : (
-          <div className="text-indigo-400 bg-indigo-50 p-2 rounded-full">
+          <div className="text-indigo-400 bg-blue-50 p-2 rounded-full">
             <CircleDashed size={20} />
           </div>
         )}
@@ -87,14 +87,14 @@ export function WorkflowCard({ assignmentId, workflow, onUpdate }: Props) {
           <input 
             type="text" 
             placeholder="Optional notes for timeline..."
-            className="w-full text-sm p-2 mb-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none"
+            className="w-full text-sm p-2 mb-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-indigo-400 outline-none"
             value={notes}
             onChange={e => setNotes(e.target.value)}
           />
           <button 
             onClick={handleTransition}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-sm py-2 rounded-lg transition-colors disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-[#15335b] font-bold text-sm py-2 rounded-lg transition-colors disabled:opacity-50"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <Play size={14} />}
             Mark as {formatState(nextState)}

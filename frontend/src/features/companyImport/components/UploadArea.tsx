@@ -53,7 +53,7 @@ export function UploadArea({ onFileSelect, isLoading }: UploadAreaProps) {
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       <div className="p-6 border-b border-slate-100">
         <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-          <FileSpreadsheet className="w-5 h-5 text-indigo-600" />
+          <FileSpreadsheet className="w-5 h-5 text-[#1b4376]" />
           Upload Data File
         </h2>
         <p className="text-sm text-slate-500 mt-1">
@@ -65,7 +65,7 @@ export function UploadArea({ onFileSelect, isLoading }: UploadAreaProps) {
         <div
           className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center text-center transition-colors cursor-pointer ${
             isDragging 
-              ? 'border-indigo-500 bg-indigo-50' 
+              ? 'border-blue-500 bg-blue-50' 
               : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50'
           } ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}
           onDragOver={handleDragOver}
@@ -81,7 +81,7 @@ export function UploadArea({ onFileSelect, isLoading }: UploadAreaProps) {
             className="hidden"
           />
           
-          <div className="w-16 h-16 bg-white shadow-sm border border-slate-100 rounded-2xl flex items-center justify-center mb-4 text-indigo-600">
+          <div className="w-16 h-16 bg-white shadow-sm border border-slate-100 rounded-2xl flex items-center justify-center mb-4 text-[#1b4376]">
             {isLoading ? <Loader2 className="w-8 h-8 animate-spin" /> : <UploadCloud className="w-8 h-8" />}
           </div>
           

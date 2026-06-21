@@ -12,7 +12,7 @@ export function DashboardPage() {
   const stats = [
     { id: 1, name: 'Active Communications', stat: '0', icon: MessageSquare, color: 'text-blue-600', bg: 'bg-blue-100' },
     { id: 2, name: 'Pending Follow-ups', stat: '0', icon: Bell, color: 'text-amber-600', bg: 'bg-amber-100' },
-    { id: 3, name: 'Companies Contacted', stat: '0', icon: Building2, color: 'text-indigo-600', bg: 'bg-indigo-100' },
+    { id: 3, name: 'Companies Contacted', stat: '0', icon: Building2, color: 'text-[#1b4376]', bg: 'bg-blue-100' },
     { id: 4, name: 'Team Members', stat: '0', icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-100' },
   ];
 
@@ -30,7 +30,7 @@ export function DashboardPage() {
         <div className="mt-4 flex md:ml-4 md:mt-0">
           <Link
             href="/communication-tpr/requests/new"
-            className="ml-3 inline-flex items-center rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-colors"
+            className="ml-3 inline-flex items-center rounded-md bg-[#1b4376] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#15335b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1b4376] transition-colors"
           >
             New Communication
           </Link>

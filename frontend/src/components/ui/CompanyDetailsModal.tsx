@@ -212,7 +212,7 @@ export function CompanyDetailsModal({ isOpen, onClose, company, onUpdate }: Comp
               </section>
 
               {/* AI Intelligence */}
-              <section className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 shadow-sm">
+              <section className="bg-blue-50 border border-blue-100 rounded-2xl p-6 shadow-sm">
                 <h3 className="text-xs font-bold text-indigo-800 uppercase tracking-wider mb-4 flex items-center gap-2">
                   <BarChart3 className="w-4 h-4" /> AI Intelligence
                 </h3>
@@ -223,7 +223,7 @@ export function CompanyDetailsModal({ isOpen, onClose, company, onUpdate }: Comp
                       <span className="text-xs font-bold text-indigo-900">{company.placementScore || 'Not Scored'}/100</span>
                     </div>
                     <div className="w-full bg-indigo-200/50 rounded-full h-1.5">
-                      <div className="bg-indigo-600 h-1.5 rounded-full" style={{ width: `${company.placementScore || 0}%` }}></div>
+                      <div className="bg-[#1b4376] h-1.5 rounded-full" style={{ width: `${company.placementScore || 0}%` }}></div>
                     </div>
                   </div>
                   
@@ -233,7 +233,7 @@ export function CompanyDetailsModal({ isOpen, onClose, company, onUpdate }: Comp
                       <span className="text-xs font-bold text-indigo-900">{company.confidenceScore || 0}%</span>
                     </div>
                     <div className="w-full bg-indigo-200/50 rounded-full h-1.5">
-                      <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${company.confidenceScore || 0}%` }}></div>
+                      <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${company.confidenceScore || 0}%` }}></div>
                     </div>
                   </div>
                 </div>

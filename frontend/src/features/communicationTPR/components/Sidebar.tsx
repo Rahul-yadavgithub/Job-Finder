@@ -64,7 +64,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <div className="flex flex-col items-center mt-6 transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100 whitespace-nowrap md:pointer-events-none md:group-hover:pointer-events-auto overflow-hidden">
               <h2 className="text-base font-bold text-slate-800">{user.displayName || user.name}</h2>
               <div className="flex flex-wrap items-center justify-center gap-1.5 mt-1.5">
-                <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-indigo-50 border border-indigo-100 text-indigo-700 text-[11px] font-bold tracking-wide uppercase shadow-sm">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-blue-50 border border-blue-100 text-[#15335b] text-[11px] font-bold tracking-wide uppercase shadow-sm">
                   Communication TPR
                 </span>
                 {user.branchName && (
@@ -87,11 +87,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-[1.02] overflow-hidden ${
                   isActive
-                    ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100'
+                    ? 'bg-blue-50 text-[#15335b] shadow-sm border border-blue-100'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`}
               >
-                <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-indigo-600' : 'text-gray-400'}`} />
+                <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#1b4376]' : 'text-gray-400'}`} />
                 <span className="whitespace-nowrap transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100">
                   {item.name}
                 </span>

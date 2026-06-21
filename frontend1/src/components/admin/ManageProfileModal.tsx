@@ -160,7 +160,7 @@ export function ManageProfileModal({ isOpen, onClose }: ManageProfileModalProps)
               type="text" 
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder={user.name}
             />
           </div>
@@ -176,7 +176,7 @@ export function ManageProfileModal({ isOpen, onClose }: ManageProfileModalProps)
           <button 
             onClick={handleSave}
             disabled={isSaving}
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-70"
+            className="px-4 py-2 text-sm font-medium text-white bg-[#1b4376] hover:bg-[#15335b] rounded-lg transition-colors flex items-center gap-2 disabled:opacity-70"
           >
             {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
             Save Changes

@@ -50,7 +50,7 @@ export function PipelineKanban() {
               {columnCompanies.map((company) => (
                 <div key={company.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow relative group">
                   <div className="flex justify-between items-start mb-2">
-                    <Link href={`/communication-tpr/companies/${company.id}`} className="font-semibold text-sm text-gray-900 hover:text-indigo-600 truncate block">
+                    <Link href={`/communication-tpr/companies/${company.id}`} className="font-semibold text-sm text-gray-900 hover:text-[#1b4376] truncate block">
                       {company.companyName}
                     </Link>
                   </div>

@@ -126,7 +126,7 @@ export function NotificationBell() {
             {unreadCount > 0 && (
               <button 
                 onClick={handleMarkAllRead}
-                className="text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors flex items-center gap-1"
+                className="text-xs font-medium text-[#1b4376] hover:text-[#15335b] transition-colors flex items-center gap-1"
               >
                 <Check className="w-3 h-3" /> Mark all as read
               </button>
@@ -166,7 +166,7 @@ export function NotificationBell() {
                     </div>
                     {!notif.is_read && (
                       <div className="flex-shrink-0 flex items-center justify-center pt-1.5">
-                        <div className="w-2 h-2 bg-indigo-600 rounded-full"></div>
+                        <div className="w-2 h-2 bg-[#1b4376] rounded-full"></div>
                       </div>
                     )}
                   </div>

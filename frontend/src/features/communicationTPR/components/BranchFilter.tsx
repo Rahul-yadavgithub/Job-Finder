@@ -23,7 +23,7 @@ export function BranchFilter({ value, onChange }: BranchFilterProps) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+        className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-[#1b4376] sm:text-sm sm:leading-6"
       >
         <option value="">All Branches</option>
         {branches.map(branch => (

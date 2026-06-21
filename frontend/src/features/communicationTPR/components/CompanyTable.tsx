@@ -34,7 +34,7 @@ export function CompanyTable({ companies }: { companies: InterestedCompany[] }) 
             <tr key={company.id} className="hover:bg-gray-50 transition-colors">
               <td className="whitespace-nowrap py-4 pl-4 pr-3 sm:pl-6">
                 <div className="flex items-center">
-                  <div className="h-10 w-10 flex-shrink-0 rounded bg-indigo-50 flex items-center justify-center border border-indigo-100 font-bold text-indigo-700">
+                  <div className="h-10 w-10 flex-shrink-0 rounded bg-blue-50 flex items-center justify-center border border-blue-100 font-bold text-[#15335b]">
                     {company.companyName.charAt(0)}
                   </div>
                   <div className="ml-4">
@@ -56,14 +56,14 @@ export function CompanyTable({ companies }: { companies: InterestedCompany[] }) 
                 {new Date(company.interestDate).toLocaleDateString()}
               </td>
               <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                <span className="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20 capitalize">
+                <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-[#15335b] ring-1 ring-inset ring-[#1b4376]/20 capitalize">
                   {company.currentStatus.baseStatus.replace('_', ' ')}
                 </span>
               </td>
               <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                 <Link 
                   href={`/communication-tpr/companies/${company.id}`}
-                  className="text-indigo-600 hover:text-indigo-900 flex items-center justify-end"
+                  className="text-[#1b4376] hover:text-indigo-900 flex items-center justify-end"
                 >
                   View<span className="sr-only">, {company.companyName}</span>
                   <ChevronRight className="w-4 h-4 ml-1" />

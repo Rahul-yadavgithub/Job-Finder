@@ -38,7 +38,7 @@ export function FollowUpWidgets() {
         {items.slice(0, 3).map(item => (
           <li key={item.id} className="py-3 flex justify-between gap-x-4">
             <div className="min-w-0">
-              <Link href={`/communication-tpr/companies/${item.companyId}`} className="text-sm font-semibold leading-6 text-indigo-600 hover:text-indigo-900 truncate block">
+              <Link href={`/communication-tpr/companies/${item.companyId}`} className="text-sm font-semibold leading-6 text-[#1b4376] hover:text-indigo-900 truncate block">
                 {item.companyName}
               </Link>
               <p className="mt-1 truncate text-xs leading-5 text-gray-500">{item.reason}</p>
@@ -88,11 +88,11 @@ export function FollowUpWidgets() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-indigo-200 overflow-hidden">
-        <div className="bg-indigo-50 border-b border-indigo-100 px-4 py-3 flex justify-between items-center">
+        <div className="bg-blue-50 border-b border-blue-100 px-4 py-3 flex justify-between items-center">
           <h3 className="text-sm font-semibold text-indigo-900 flex items-center gap-2">
             <Calendar className="w-4 h-4" /> Upcoming
           </h3>
-          <span className="bg-indigo-100 text-indigo-700 py-0.5 px-2 rounded-full text-xs font-medium">{upcoming.length}</span>
+          <span className="bg-blue-100 text-[#15335b] py-0.5 px-2 rounded-full text-xs font-medium">{upcoming.length}</span>
         </div>
         <div className="p-4">
           {renderList(upcoming, 'No upcoming follow-ups')}

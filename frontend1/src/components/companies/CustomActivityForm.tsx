@@ -42,7 +42,7 @@ export function CustomActivityForm({ companyId, onSuccess }: Props) {
     return (
       <button 
         onClick={() => setIsOpen(true)}
-        className="w-full border-2 border-dashed border-gray-300 rounded-xl p-4 text-gray-500 font-bold hover:bg-gray-50 hover:border-indigo-300 hover:text-indigo-600 transition-colors flex flex-col items-center gap-2 justify-center"
+        className="w-full border-2 border-dashed border-gray-300 rounded-xl p-4 text-gray-500 font-bold hover:bg-gray-50 hover:border-indigo-300 hover:text-[#1b4376] transition-colors flex flex-col items-center gap-2 justify-center"
       >
         <Plus size={24} />
         Log Custom Activity
@@ -53,7 +53,7 @@ export function CustomActivityForm({ companyId, onSuccess }: Props) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-4">
-        <MessageSquareText size={18} className="text-indigo-600" />
+        <MessageSquareText size={18} className="text-[#1b4376]" />
         <h3 className="font-bold text-gray-900">Log Custom Activity</h3>
       </div>
       
@@ -64,7 +64,7 @@ export function CustomActivityForm({ companyId, onSuccess }: Props) {
             required
             type="text" 
             placeholder="e.g. Salary Negotiation Call"
-            className="w-full text-sm p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-100 outline-none"
+            className="w-full text-sm p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-100 outline-none"
             value={title}
             onChange={e => setTitle(e.target.value)}
           />
@@ -75,7 +75,7 @@ export function CustomActivityForm({ companyId, onSuccess }: Props) {
           <input 
             type="text" 
             placeholder="Brief context..."
-            className="w-full text-sm p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-100 outline-none"
+            className="w-full text-sm p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-100 outline-none"
             value={description}
             onChange={e => setDescription(e.target.value)}
           />
@@ -86,7 +86,7 @@ export function CustomActivityForm({ companyId, onSuccess }: Props) {
           <textarea 
             rows={3}
             placeholder="Write full conversation details here..."
-            className="w-full text-sm p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-100 outline-none"
+            className="w-full text-sm p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-100 outline-none"
             value={notes}
             onChange={e => setNotes(e.target.value)}
           />
@@ -103,7 +103,7 @@ export function CustomActivityForm({ companyId, onSuccess }: Props) {
           <button 
             type="submit"
             disabled={loading || !title.trim()}
-            className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+            className="px-4 py-2 text-sm font-bold text-white bg-[#1b4376] hover:bg-[#15335b] rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
             Save Activity

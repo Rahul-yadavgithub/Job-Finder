@@ -123,7 +123,7 @@ export default function SourcesPage() {
                   ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none' 
                   : scanStatus === 'completed'
                     ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/25'
-                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-blue-900/20 hover:shadow-blue-900/40 hover:-translate-y-0.5'
+                    : 'bg-gradient-to-r from-blue-600 to-[#1b4376] hover:from-blue-700 hover:to-[#15335b] text-white shadow-blue-900/20 hover:shadow-blue-900/40 hover:-translate-y-0.5'
               }`}
             >
               {isGlobalScanning ? (

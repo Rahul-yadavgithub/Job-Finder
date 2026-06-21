@@ -69,7 +69,7 @@ export default function ApiKeyConfigPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100 shadow-sm">
+            <div className="p-2 bg-blue-50 text-[#1b4376] rounded-lg border border-blue-100 shadow-sm">
               <Key className="w-6 h-6" />
             </div>
             API Configuration Center
@@ -78,7 +78,7 @@ export default function ApiKeyConfigPage() {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all shadow-md hover:shadow-lg font-bold"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-[#1b4376] to-blue-600 text-white rounded-xl hover:from-[#15335b] hover:to-blue-700 transition-all shadow-md hover:shadow-lg font-bold"
         >
           <Plus className="w-5 h-5" />
           Add API Key
@@ -111,7 +111,7 @@ export default function ApiKeyConfigPage() {
                     <h3 className="font-bold text-gray-900 text-lg">{platform.name}</h3>
                     <button 
                       onClick={() => setShowGuideModal(platform.id)}
-                      className="text-xs text-indigo-600 font-semibold hover:underline flex items-center gap-1 bg-indigo-50 px-2.5 py-1.5 rounded-md border border-indigo-100 transition-colors hover:bg-indigo-100"
+                      className="text-xs text-[#1b4376] font-semibold hover:underline flex items-center gap-1 bg-blue-50 px-2.5 py-1.5 rounded-md border border-blue-100 transition-colors hover:bg-blue-100"
                     >
                       <BookOpen className="w-3.5 h-3.5" /> Setup Guide
                     </button>
@@ -256,26 +256,26 @@ function AddKeyModal({ branchId, onClose }: { branchId: string, onClose: () => v
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Platform</label>
-                <select value={platform} onChange={e => setPlatform(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm">
+                <select value={platform} onChange={e => setPlatform(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm">
                   {SUPPORTED_PLATFORMS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Identifier Label</label>
-                <input type="text" value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g. Apollo Sales Tier 1" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm" />
+                <input type="text" value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g. Apollo Sales Tier 1" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm" />
               </div>
 
               {platform === 'snov' ? (
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Client ID</label>
-                    <input type="text" value={clientId} onChange={e => setClientId(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm font-mono" />
+                    <input type="text" value={clientId} onChange={e => setClientId(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm font-mono" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Client Secret</label>
                     <div className="relative">
-                      <input type={showKey ? "text" : "password"} value={clientSecret} onChange={e => setClientSecret(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm font-mono pr-10" />
+                      <input type={showKey ? "text" : "password"} value={clientSecret} onChange={e => setClientSecret(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm font-mono pr-10" />
                       <button type="button" onClick={() => setShowKey(!showKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                         {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -286,7 +286,7 @@ function AddKeyModal({ branchId, onClose }: { branchId: string, onClose: () => v
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">API Key</label>
                   <div className="relative">
-                    <input type={showKey ? "text" : "password"} value={apiKey} onChange={e => setApiKey(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm font-mono pr-10" />
+                    <input type={showKey ? "text" : "password"} value={apiKey} onChange={e => setApiKey(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm font-mono pr-10" />
                     <button type="button" onClick={() => setShowKey(!showKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                       {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -297,11 +297,11 @@ function AddKeyModal({ branchId, onClose }: { branchId: string, onClose: () => v
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Limit</label>
-                  <input type="number" value={limit} onChange={e => setLimit(e.target.value)} placeholder="1000" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm" />
+                  <input type="number" value={limit} onChange={e => setLimit(e.target.value)} placeholder="1000" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Tier</label>
-                  <select value={keyType} onChange={e => setKeyType(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm">
+                  <select value={keyType} onChange={e => setKeyType(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm">
                     <option value="free">Free</option>
                     <option value="paid">Paid</option>
                   </select>
@@ -368,12 +368,12 @@ function ReplaceKeyModal({ branchId, keyId, platform, onClose }: { branchId: str
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">New Client ID</label>
-                <input type="text" value={clientId} onChange={e => setClientId(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm font-mono" />
+                <input type="text" value={clientId} onChange={e => setClientId(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm font-mono" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">New Client Secret</label>
                 <div className="relative">
-                  <input type={showKey ? "text" : "password"} value={clientSecret} onChange={e => setClientSecret(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm font-mono pr-10" />
+                  <input type={showKey ? "text" : "password"} value={clientSecret} onChange={e => setClientSecret(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm font-mono pr-10" />
                   <button type="button" onClick={() => setShowKey(!showKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                     {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -384,7 +384,7 @@ function ReplaceKeyModal({ branchId, keyId, platform, onClose }: { branchId: str
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">New API Key</label>
               <div className="relative">
-                <input type={showKey ? "text" : "password"} value={apiKey} onChange={e => setApiKey(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm font-mono pr-10" />
+                <input type={showKey ? "text" : "password"} value={apiKey} onChange={e => setApiKey(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm font-mono pr-10" />
                 <button type="button" onClick={() => setShowKey(!showKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                   {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -469,7 +469,7 @@ function PlatformGuideModal({ platform, onClose }: { platform: string, onClose: 
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <h3 className="font-bold text-slate-900 text-lg flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-indigo-600" />
+            <BookOpen className="w-5 h-5 text-[#1b4376]" />
             {guide.title}
           </h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-md hover:bg-slate-100">
@@ -483,7 +483,7 @@ function PlatformGuideModal({ platform, onClose }: { platform: string, onClose: 
             <ul className="space-y-3">
               {guide.steps.map((step: string, index: number) => (
                 <li key={index} className="flex items-start gap-3 text-sm text-slate-700">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs mt-0.5">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-[#15335b] flex items-center justify-center font-bold text-xs mt-0.5">
                     {index + 1}
                   </div>
                   <span className="leading-relaxed">{step}</span>
@@ -505,7 +505,7 @@ function PlatformGuideModal({ platform, onClose }: { platform: string, onClose: 
             href={guide.url} 
             target="_blank" 
             rel="noreferrer"
-            className="flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-700 hover:underline"
+            className="flex items-center gap-2 text-sm font-semibold text-[#1b4376] hover:text-[#15335b] hover:underline"
           >
             Open {platform.charAt(0).toUpperCase() + platform.slice(1)} Dashboard <ExternalLink className="w-4 h-4" />
           </a>

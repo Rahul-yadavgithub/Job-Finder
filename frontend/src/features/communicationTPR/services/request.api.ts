@@ -30,5 +30,10 @@ export const requestApi = {
   rejectRequest: async (requestId: string) => {
     const { data } = await commApi.post<{ success: boolean; data: CommunicationRequest }>(`/requests/${requestId}/reject`);
     return data;
+  },
+
+  revertRequest: async (requestId: string) => {
+    const { data } = await commApi.post<{ success: boolean; data: CommunicationRequest }>(`/requests/${requestId}/revert`);
+    return data;
   }
 };
