@@ -331,8 +331,8 @@ export default function DashboardPage() {
           {/* Add New Company Card */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col md:col-span-2 lg:col-span-1">
             <div className="p-6 flex-1">
-              <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center mb-4">
-                <CloudUpload className="w-6 h-6 text-indigo-600" />
+              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-4">
+                <CloudUpload className="w-6 h-6 text-[#1b4376]" />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-1">Add Companies</h3>
               <p className="text-slate-500 text-sm">Add manually or bulk upload via CSV/Excel.</p>
@@ -346,7 +346,7 @@ export default function DashboardPage() {
                 onClick={() => {
                   setShowManualModal(true);
                 }}
-                className="w-full flex items-center justify-center gap-2 text-indigo-600 font-medium hover:text-indigo-800 transition-colors"
+                className="w-full flex items-center justify-center gap-2 text-[#1b4376] font-medium hover:text-indigo-800 transition-colors"
               >
                 Open Form & Upload <ArrowRight className="w-4 h-4" />
               </button>
@@ -363,13 +363,13 @@ export default function DashboardPage() {
               <div className="flex gap-4">
                 <button
                   onClick={() => setModalTab('manual')}
-                  className={`text-lg font-bold pb-2 border-b-2 transition-colors ${modalTab === 'manual' ? 'text-indigo-600 border-indigo-600' : 'text-slate-400 border-transparent hover:text-slate-600'}`}
+                  className={`text-lg font-bold pb-2 border-b-2 transition-colors ${modalTab === 'manual' ? 'text-[#1b4376] border-[#1b4376]' : 'text-slate-400 border-transparent hover:text-slate-600'}`}
                 >
                   Manual Entry
                 </button>
                 <button
                   onClick={() => setModalTab('bulk')}
-                  className={`text-lg font-bold pb-2 border-b-2 transition-colors ${modalTab === 'bulk' ? 'text-indigo-600 border-indigo-600' : 'text-slate-400 border-transparent hover:text-slate-600'}`}
+                  className={`text-lg font-bold pb-2 border-b-2 transition-colors ${modalTab === 'bulk' ? 'text-[#1b4376] border-[#1b4376]' : 'text-slate-400 border-transparent hover:text-slate-600'}`}
                 >
                   Bulk Upload
                 </button>
@@ -404,7 +404,7 @@ export default function DashboardPage() {
                       <input 
                         type="text" 
                         placeholder="e.g. Cloudera"
-                        className={`w-full bg-slate-50 border ${isDuplicate ? 'border-amber-300 focus:ring-amber-500 focus:border-amber-500' : 'border-slate-200 focus:ring-indigo-500 focus:border-indigo-500'} text-slate-900 text-sm rounded-xl p-3.5 transition-all shadow-sm`}
+                        className={`w-full bg-slate-50 border ${isDuplicate ? 'border-amber-300 focus:ring-amber-500 focus:border-amber-500' : 'border-slate-200 focus:ring-blue-500 focus:border-blue-500'} text-slate-900 text-sm rounded-xl p-3.5 transition-all shadow-sm`}
                         value={manualForm.companyName}
                         onChange={(e) => setManualForm({ ...manualForm, companyName: e.target.value })}
                       />
@@ -418,7 +418,7 @@ export default function DashboardPage() {
                       <input 
                         type="text" 
                         placeholder="e.g. John Doe"
-                        className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl p-3.5 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm"
+                        className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl p-3.5 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
                         value={manualForm.hrName}
                         onChange={(e) => setManualForm({ ...manualForm, hrName: e.target.value })}
                       />
@@ -428,7 +428,7 @@ export default function DashboardPage() {
                       <input 
                         type="text" 
                         placeholder="e.g. +91 9876543210"
-                        className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl p-3.5 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm"
+                        className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl p-3.5 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
                         value={manualForm.hrPhone}
                         onChange={(e) => setManualForm({ ...manualForm, hrPhone: e.target.value })}
                       />
@@ -440,7 +440,7 @@ export default function DashboardPage() {
                     <input 
                       type="email" 
                       placeholder="e.g. hr@company.com"
-                      className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl p-3.5 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm"
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl p-3.5 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
                       value={manualForm.hrEmail}
                       onChange={(e) => setManualForm({ ...manualForm, hrEmail: e.target.value })}
                     />
@@ -451,7 +451,7 @@ export default function DashboardPage() {
                     <input 
                       type="url" 
                       placeholder="e.g. https://linkedin.com/in/..."
-                      className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl p-3.5 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm"
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl p-3.5 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
                       value={manualForm.linkedinProfile}
                       onChange={(e) => setManualForm({ ...manualForm, linkedinProfile: e.target.value })}
                     />
@@ -462,7 +462,7 @@ export default function DashboardPage() {
                     <button 
                       onClick={() => addManualCompanyMutation.mutate()}
                       disabled={!manualForm.companyName || addManualCompanyMutation.isPending}
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-md hover:shadow-lg disabled:shadow-none flex items-center justify-center gap-2"
+                      className="w-full bg-[#1b4376] hover:bg-[#15335b] disabled:bg-slate-300 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-md hover:shadow-lg disabled:shadow-none flex items-center justify-center gap-2"
                     >
                       {addManualCompanyMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <CloudUpload className="w-5 h-5" />}
                       {isDuplicate ? 'Update & Queue for Sync' : 'Save & Queue for Sync'}
@@ -479,7 +479,7 @@ export default function DashboardPage() {
                   {!previewData && (
                     <div 
                       className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
-                        previewMutation.isPending ? 'border-slate-300 bg-slate-50' : 'border-indigo-300 bg-indigo-50/30 hover:bg-indigo-50 hover:border-indigo-400 cursor-pointer'
+                        previewMutation.isPending ? 'border-slate-300 bg-slate-50' : 'border-indigo-300 bg-blue-50/30 hover:bg-blue-50 hover:border-indigo-400 cursor-pointer'
                       }`}
                       onClick={() => !previewMutation.isPending && fileInputRef.current?.click()}
                       onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
@@ -509,13 +509,13 @@ export default function DashboardPage() {
                       />
                       {previewMutation.isPending ? (
                         <div className="flex flex-col items-center gap-3">
-                          <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
+                          <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
                           <p className="text-slate-600 font-medium">Analyzing file for duplicates...</p>
                         </div>
                       ) : (
                         <div className="flex flex-col items-center gap-3">
-                          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm border border-indigo-100 mb-2">
-                            <Upload className="w-8 h-8 text-indigo-500" />
+                          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm border border-blue-100 mb-2">
+                            <Upload className="w-8 h-8 text-blue-500" />
                           </div>
                           <h3 className="text-lg font-bold text-slate-800">Click or Drag & Drop File Here</h3>
                           <p className="text-sm text-slate-500">Supports .csv, .xls, .xlsx</p>
@@ -610,7 +610,7 @@ export default function DashboardPage() {
                         <button 
                           onClick={() => confirmUploadMutation.mutate()}
                           disabled={previewData.valid.length === 0 || confirmUploadMutation.isPending}
-                          className="w-2/3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-md hover:shadow-lg disabled:shadow-none flex items-center justify-center gap-2"
+                          className="w-2/3 bg-[#1b4376] hover:bg-[#15335b] disabled:bg-slate-300 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-md hover:shadow-lg disabled:shadow-none flex items-center justify-center gap-2"
                         >
                           {confirmUploadMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
                           Save {previewData.valid.length} to Sync Center

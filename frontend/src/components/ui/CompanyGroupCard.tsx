@@ -67,10 +67,10 @@ export default function CompanyGroupCard({
             {Object.entries(drive_types).sort((a, b) => b[1] - a[1]).map(([dt, count]) => (
               <div key={dt} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
                 <div className="flex items-center gap-3">
-                  <Building className="w-5 h-5 text-indigo-500" />
+                  <Building className="w-5 h-5 text-blue-500" />
                   <span className="font-medium text-slate-700">{dt}</span>
                 </div>
-                <span className="bg-indigo-100 text-indigo-800 text-xs font-bold px-2.5 py-0.5 rounded-full">{count}</span>
+                <span className="bg-blue-100 text-indigo-800 text-xs font-bold px-2.5 py-0.5 rounded-full">{count}</span>
               </div>
             ))}
             {Object.keys(drive_types).length === 0 && <div className="text-sm text-slate-500 text-center py-4">No data available</div>}

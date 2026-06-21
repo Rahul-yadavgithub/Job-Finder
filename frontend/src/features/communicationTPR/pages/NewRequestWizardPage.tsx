@@ -79,7 +79,7 @@ export function NewRequestWizardPage() {
     onError: () => toast.error('Failed to save draft')
   });
 
-  // Step 3: Submit to Head TPO
+  // Step 3: Submit for Internal Review
   const submitMutation = useMutation({
     mutationFn: async () => {
       if (!draftId) throw new Error('No draft initialized');
@@ -87,7 +87,7 @@ export function NewRequestWizardPage() {
       return res.data;
     },
     onSuccess: () => {
-      toast.success('Submitted for Head TPO Approval');
+      toast.success('Submitted for Internal Review');
       router.push('/communication-tpr/requests');
     },
     onError: () => toast.error('Failed to submit draft')
@@ -331,10 +331,10 @@ export function NewRequestWizardPage() {
                   <AlertCircle className="h-5 w-5 text-blue-400" aria-hidden="true" />
                 </div>
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-blue-800">Ready for Head TPO</h3>
+                  <h3 className="text-sm font-medium text-blue-800">Ready for Internal Review</h3>
                   <div className="mt-2 text-sm text-blue-700">
                     <p>
-                      Clicking submit will send this draft to the Head TPO for final review. The email will not be sent to the company until the Head TPO approves it.
+                      Clicking submit will send this draft to the Approvals section for internal review. The email will not be sent to the company until it is approved and processed by TPO Staff.
                     </p>
                   </div>
                 </div>
@@ -354,7 +354,7 @@ export function NewRequestWizardPage() {
                 className="inline-flex justify-center rounded-md bg-green-600 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 disabled:opacity-50 flex items-center gap-2"
               >
                 {submitMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin"/> : <Send className="w-5 h-5" />}
-                Submit to Head TPO
+                Submit for Internal Review
               </button>
             </div>
           </div>

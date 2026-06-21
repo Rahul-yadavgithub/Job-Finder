@@ -10,7 +10,7 @@ export function PipelinePage() {
       <div className="sm:flex sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight flex items-center gap-3">
-            <Network className="w-8 h-8 text-indigo-500" />
+            <Network className="w-8 h-8 text-blue-500" />
             Communication Pipeline
           </h1>
           <p className="mt-1 text-sm text-gray-500">

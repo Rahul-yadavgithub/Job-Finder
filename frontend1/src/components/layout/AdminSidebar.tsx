@@ -75,7 +75,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
 
   const getRoleBadge = () => {
     switch (user.role) {
-      case 'head': return { text: 'Head TPO', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' };
+      case 'head': return { text: 'Head TPO', color: 'bg-blue-100 text-indigo-800 border-indigo-200' };
       case 'coordinator': return { text: 'Coordinator', color: 'bg-purple-100 text-purple-800 border-purple-200' };
       case 'caller': return { text: 'Caller', color: 'bg-blue-100 text-blue-800 border-blue-200' };
       default: return { text: 'Staff', color: 'bg-gray-100 text-gray-800 border-gray-200' };
@@ -223,7 +223,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
             {!user.jumpedIn ? (
               <button
                 onClick={openImpersonateModal}
-                className="w-full flex items-center gap-3 py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold rounded-lg transition-all hover:scale-[1.02] border border-indigo-200 overflow-hidden justify-start"
+                className="w-full flex items-center gap-3 py-2 px-3 bg-blue-50 hover:bg-blue-100 text-[#15335b] text-sm font-semibold rounded-lg transition-all hover:scale-[1.02] border border-indigo-200 overflow-hidden justify-start"
               >
                 <Eye size={16} className="flex-shrink-0" />
                 <span className="whitespace-nowrap transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100">
@@ -267,7 +267,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-gray-100">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50">
               <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Eye className="text-indigo-600" /> Select Staff to Impersonate
+                <Eye className="text-[#1b4376]" /> Select Staff to Impersonate
               </h2>
               <button onClick={() => setShowImpersonateModal(false)} className="text-gray-400 hover:bg-gray-200 p-1.5 rounded-lg transition-colors">
                 <X size={20} />
@@ -280,7 +280,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               </p>
               
               {isLoadingCoworkers ? (
-                <div className="py-8 flex justify-center text-indigo-500">
+                <div className="py-8 flex justify-center text-blue-500">
                   <RefreshCw className="animate-spin w-8 h-8" />
                 </div>
               ) : (
@@ -293,13 +293,13 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                         key={cw.id}
                         onClick={() => handleImpersonate(cw.id)}
                         disabled={isJumping}
-                        className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-colors flex items-center justify-between group disabled:opacity-50"
+                        className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-colors flex items-center justify-between group disabled:opacity-50"
                       >
                         <div>
                           <p className="font-bold text-gray-900">{cw.name}</p>
                           <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mt-0.5">{cw.role}</p>
                         </div>
-                        <span className="text-indigo-600 text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-[#1b4376] text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity">
                           Select →
                         </span>
                       </button>
@@ -321,12 +321,12 @@ function NavItem({ href, icon, label, active, badge }: { href: string; icon: Rea
       href={href}
       className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-[1.02] overflow-hidden ${
         active 
-          ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
+          ? 'bg-blue-50 text-[#15335b] shadow-sm border border-blue-100' 
           : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
       }`}
     >
       <div className="flex items-center gap-3">
-        <div className={`flex-shrink-0 ${active ? 'text-indigo-600' : 'text-gray-400'}`}>
+        <div className={`flex-shrink-0 ${active ? 'text-[#1b4376]' : 'text-gray-400'}`}>
           {icon}
         </div>
         <span className="whitespace-nowrap transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100">

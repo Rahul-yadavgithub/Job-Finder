@@ -26,12 +26,12 @@ export function TopNavbar({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
             {user && (
               <button 
                 onClick={() => setIsProfileModalOpen(true)}
-                className="relative w-9 h-9 rounded-full overflow-hidden border border-gray-200 hover:ring-2 hover:ring-indigo-500 transition-all flex items-center justify-center bg-indigo-50 shadow-sm"
+                className="relative w-9 h-9 rounded-full overflow-hidden border border-gray-200 hover:ring-2 hover:ring-blue-500 transition-all flex items-center justify-center bg-blue-50 shadow-sm"
               >
                 {user.profilePhotoUrl ? (
                   <img src={user.profilePhotoUrl} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
-                  <User className="w-5 h-5 text-indigo-600" />
+                  <User className="w-5 h-5 text-[#1b4376]" />
                 )}
               </button>
             )}

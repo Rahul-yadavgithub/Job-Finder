@@ -216,7 +216,7 @@ export default function AdminPeoplePage() {
                 <button
                   key={t}
                   onClick={() => updateTab(t === 'tpo-staff' ? 'coworkers' : t === 'department-reps' ? 'branch-tprs' : t)}
-                  className={`px-4 py-2 text-sm font-bold rounded-lg capitalize transition-all hover:scale-[1.02] ${isActive ? 'bg-white text-indigo-700 shadow border border-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}
+                  className={`px-4 py-2 text-sm font-bold rounded-lg capitalize transition-all hover:scale-[1.02] ${isActive ? 'bg-white text-[#15335b] shadow border border-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}
                 >
                   {t.replace('-', ' ')}
                 </button>
@@ -251,7 +251,7 @@ export default function AdminPeoplePage() {
                         </td>
                         <td className="px-6 py-4 text-gray-600">{cw.email}</td>
                         <td className="px-6 py-4">
-                          {cw.role === 'head' && <span className="px-2 py-1 rounded text-xs font-bold bg-indigo-100 text-indigo-800">Head TPO</span>}
+                          {cw.role === 'head' && <span className="px-2 py-1 rounded text-xs font-bold bg-blue-100 text-indigo-800">Head TPO</span>}
                           {cw.role === 'caller' && <span className="px-2 py-1 rounded text-xs font-bold bg-blue-100 text-blue-800">Caller</span>}
                           {cw.role === 'coordinator' && <span className="px-2 py-1 rounded text-xs font-bold bg-gray-100 text-gray-800">Coordinator</span>}
                         </td>
@@ -312,7 +312,7 @@ export default function AdminPeoplePage() {
                           <div className="font-bold text-gray-900">{tpr.name}</div>
                           <div className="text-xs text-gray-500">{tpr.roll_number}</div>
                         </td>
-                        <td className="px-6 py-4 font-bold text-indigo-700">{tpr.branch_code}</td>
+                        <td className="px-6 py-4 font-bold text-[#15335b]">{tpr.branch_code}</td>
                         <td className="px-6 py-4 text-gray-600">{tpr.email}</td>
                         <td className="px-6 py-4">
                           {tpr.status === 'approved' ? <span className="text-green-600 font-bold">Active</span> :
@@ -326,7 +326,7 @@ export default function AdminPeoplePage() {
                         <td className="px-6 py-4 text-right">
                           {user.isSuperAdmin && tpr.status === 'approved' && (
                             <div className="flex justify-end gap-2">
-                              <button onClick={() => handlePromoteToCommTpr(tpr.id)} className="px-3 py-1.5 text-xs font-bold text-indigo-600 border border-indigo-200 rounded hover:bg-indigo-50 transition-colors">Make Comm TPR</button>
+                              <button onClick={() => handlePromoteToCommTpr(tpr.id)} className="px-3 py-1.5 text-xs font-bold text-[#1b4376] border border-indigo-200 rounded hover:bg-blue-50 transition-colors">Make Comm TPR</button>
                               <button onClick={() => setRevokeModal({ isOpen: true, target: tpr, type: 'tpr' })} className="px-3 py-1.5 text-xs font-bold text-red-600 border border-red-200 rounded hover:bg-red-50 transition-colors">Revoke</button>
                             </div>
                           )}
@@ -364,11 +364,11 @@ export default function AdminPeoplePage() {
                           <td className="px-6 py-4">
                             <div className="font-bold text-gray-900 flex items-center gap-2">
                               {tpr.name}
-                              {tpr.role === 'communication_tpr' && <ShieldCheck size={14} className="text-indigo-600" />}
+                              {tpr.role === 'communication_tpr' && <ShieldCheck size={14} className="text-[#1b4376]" />}
                             </div>
                             <div className="text-xs text-gray-500">{tpr.roll_number}</div>
                           </td>
-                          <td className="px-6 py-4 font-bold text-indigo-700">{tpr.branch_code}</td>
+                          <td className="px-6 py-4 font-bold text-[#15335b]">{tpr.branch_code}</td>
                           <td className="px-6 py-4 text-gray-600">{tpr.email}</td>
                           <td className="px-6 py-4">
                             {tpr.status === 'approved' ? <span className="text-green-600 font-bold">Active</span> :
@@ -400,10 +400,10 @@ export default function AdminPeoplePage() {
                         <div className="p-5 flex items-center justify-between bg-gray-50/50 cursor-pointer" onClick={() => setExpandedBranch(isExpanded ? null : branch.branch_code)}>
                           <div>
                             <h3 className="font-bold text-gray-900">{branch.branch_name}</h3>
-                            <p className="text-sm font-medium text-indigo-600">{branch.branch_code}</p>
+                            <p className="text-sm font-medium text-[#1b4376]">{branch.branch_code}</p>
                           </div>
                           <div className="flex flex-col items-end gap-1">
-                            <span className="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded-full">{branch.active_count} Active</span>
+                            <span className="bg-blue-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded-full">{branch.active_count} Active</span>
                             {isExpanded ? <ChevronUp size={16} className="text-gray-400 mt-1"/> : <ChevronDown size={16} className="text-gray-400 mt-1"/>}
                           </div>
                         </div>

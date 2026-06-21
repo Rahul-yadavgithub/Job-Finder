@@ -1,5 +1,5 @@
 export type RequestType = 'institute_brochure' | 'branch_brochure' | 'jnf_form' | 'custom' | 'brochure' | 'officialCommunication';
-export type RequestStatus = 'draft' | 'pending_approval' | 'approved' | 'sent' | 'rejected' | 'cancelled' | 'completed' | 'submitted' | 'pending';
+export type RequestStatus = 'draft' | 'pending_approval' | 'pending_staff_review' | 'waiting_response' | 'approved' | 'sent' | 'rejected' | 'accepted' | 'cancelled' | 'completed' | 'submitted' | 'pending';
 
 export interface CommunicationRequest {
   id: string;

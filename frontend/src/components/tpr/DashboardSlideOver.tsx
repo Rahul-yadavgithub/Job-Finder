@@ -21,7 +21,7 @@ function CompanyCard({ company }: { company: CompanyEntry }) {
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition-all duration-150">
       <div className="flex items-start gap-3 mb-3">
-        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-[#1b4376] flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
           {initial}
         </div>
         <div className="flex-1 min-w-0">

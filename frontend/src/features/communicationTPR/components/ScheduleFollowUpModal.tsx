@@ -58,7 +58,7 @@ export function ScheduleFollowUpModal({ companyId, isOpen, onClose, onSuccess }:
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-indigo-500" />
+            <Calendar className="w-5 h-5 text-blue-500" />
             Schedule Follow-up
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100 transition-colors">
@@ -75,7 +75,7 @@ export function ScheduleFollowUpModal({ companyId, isOpen, onClose, onSuccess }:
                   type="date"
                   required
                   min={new Date().toISOString().split('T')[0]} // prevent past dates
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-[#1b4376] sm:text-sm sm:leading-6"
                   value={followUpDate}
                   onChange={(e) => setFollowUpDate(e.target.value)}
                 />
@@ -86,7 +86,7 @@ export function ScheduleFollowUpModal({ companyId, isOpen, onClose, onSuccess }:
               <div className="mt-2">
                 <input
                   type="time"
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-[#1b4376] sm:text-sm sm:leading-6"
                   value={followUpTime}
                   onChange={(e) => setFollowUpTime(e.target.value)}
                 />
@@ -105,7 +105,7 @@ export function ScheduleFollowUpModal({ companyId, isOpen, onClose, onSuccess }:
                     value={p}
                     checked={priority === p}
                     onChange={(e) => setPriority(e.target.value as FollowUpPriority)}
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-600 border-gray-300"
+                    className="h-4 w-4 text-[#1b4376] focus:ring-[#1b4376] border-gray-300"
                   />
                   {p}
                 </label>
@@ -121,7 +121,7 @@ export function ScheduleFollowUpModal({ companyId, isOpen, onClose, onSuccess }:
               <textarea
                 rows={3}
                 required
-                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#1b4376] sm:text-sm sm:leading-6"
                 placeholder="Call to check on brochure delivery..."
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
@@ -142,7 +142,7 @@ export function ScheduleFollowUpModal({ companyId, isOpen, onClose, onSuccess }:
             <button
               type="submit"
               disabled={isSubmitting || !followUpDate || !reason.trim()}
-              className="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors disabled:opacity-50"
+              className="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-[#1b4376] hover:bg-[#15335b] rounded-lg shadow-sm transition-colors disabled:opacity-50"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Schedule

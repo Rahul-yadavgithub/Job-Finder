@@ -16,6 +16,7 @@ export class ActivityService {
       companyId: row.company_id,
       userId: row.user_id,
       userName: row.users?.name,
+      userBranch: row.users?.branches?.name,
       activityType: row.activity_type,
       notes: row.notes,
       metadata: row.metadata,

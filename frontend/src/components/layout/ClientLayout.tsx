@@ -21,7 +21,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50/50">
+    <div className="flex w-full h-screen bg-slate-50/50">
       <Sidebar isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden md:ml-20">
         <TopNavbar onOpenSidebar={() => setIsMobileOpen(true)} />

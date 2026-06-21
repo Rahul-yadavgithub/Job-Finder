@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Building2, User, Phone, Mail, Calendar, Clock, BookOpen, AlertCircle, Users, Send, Network, Lock, Activity } from 'lucide-react';
 import { companyApi } from '../services/company.api';
 import { CompanyActivity } from '../types/activity';
+import { DetailedCompany } from '../types/company';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
 import { ActivityForm } from '../components/ActivityForm';
@@ -78,14 +79,18 @@ export function CompanyDetailPage() {
 
   const getLifecyclePhase = (): CommPhase => {
     const primaryStatus = company.currentStatus;
-    if (primaryStatus.editingLocked || primaryStatus.midStatus === 'transferred_to_head' || primaryStatus.midStatus === 'accepted' || primaryStatus.baseStatus === 'rejected' || primaryStatus.midStatus === 'revoked') {
-      return 'concluded';
+    
+    if (primaryStatus.midStatus === 'rejected') {
+      return 'rejected';
     }
-    if (primaryStatus.midStatus === 'ready_for_head_review' || primaryStatus.midStatus === 'pending_review') {
-      return 'ready_for_head_review';
+    if (primaryStatus.editingLocked || primaryStatus.midStatus === 'transferred_to_head' || primaryStatus.midStatus === 'accepted' || primaryStatus.baseStatus === 'rejected' || primaryStatus.midStatus === 'revoked') {
+      return 'completed';
+    }
+    if (primaryStatus.midStatus === 'pending_staff_review' || primaryStatus.midStatus === 'ready_for_head_review' || primaryStatus.midStatus === 'pending_review') {
+      return 'tpo_staff_review';
     }
     if (primaryStatus.midStatus === 'under_communication') {
-      return 'under_communication';
+      return 'email_drafted';
     }
     return 'new_arrival';
   };
@@ -93,7 +98,7 @@ export function CompanyDetailPage() {
   const currentPhase = getLifecyclePhase();
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12">
+    <div className="space-y-6 w-full max-w-none px-4 sm:px-6 lg:px-8 pb-12">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button 
@@ -121,7 +126,7 @@ export function CompanyDetailPage() {
               <span>&bull;</span>
               <span>Added by: <strong className="text-gray-900">{company.assignedTPR || 'Unknown'}</strong></span>
               <span>&bull;</span>
-              <span className="inline-flex items-center text-xs font-medium bg-indigo-50 text-indigo-700 px-2 rounded-full border border-indigo-200 capitalize">
+              <span className="inline-flex items-center text-xs font-medium bg-blue-50 text-[#15335b] px-2 rounded-full border border-indigo-200 capitalize">
                 Pipeline Stage: {(company.currentStatus.midStatus || 'interested').replace(/_/g, ' ')}
               </span>
             </p>
@@ -170,26 +175,26 @@ export function CompanyDetailPage() {
         </div>
       </div>
 
-      {/* Activity Timeline Card */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden p-6 md:p-8">
-        <div className="flex items-center gap-2 mb-8">
-          <Activity className="w-5 h-5 text-gray-500" />
-          <h2 className="text-lg font-bold text-gray-900">Activity Timeline</h2>
-        </div>
-        <CommWorkflowTracker currentPhase={currentPhase} />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         
         {/* Main Column */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="xl:col-span-3 space-y-6">
           
+          {/* Activity Timeline Card */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden p-6 md:p-8">
+            <div className="flex items-center gap-2 mb-8">
+              <Activity className="w-5 h-5 text-gray-500" />
+              <h2 className="text-lg font-bold text-gray-900">Activity Timeline</h2>
+            </div>
+            <CommWorkflowTracker currentPhase={currentPhase} />
+          </div>
+
           {!isLocked && <ActivityForm companyId={company.id} onSuccess={fetchActivities} />}
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="border-b border-gray-200 px-6 py-4 bg-gray-50">
               <h3 className="text-base font-semibold leading-6 text-gray-900 flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-indigo-500" />
+                <BookOpen className="w-5 h-5 text-blue-500" />
                 Company Overview
               </h3>
             </div>
@@ -204,7 +209,7 @@ export function CompanyDetailPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="border-b border-gray-200 px-6 py-4 bg-gray-50 flex justify-between items-center">
               <h3 className="text-base font-semibold leading-6 text-gray-900 flex items-center gap-2">
-                <Send className="w-5 h-5 text-indigo-500" />
+                <Send className="w-5 h-5 text-blue-500" />
                 Communication Requests
               </h3>
             </div>
@@ -217,13 +222,13 @@ export function CompanyDetailPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="border-b border-gray-200 px-6 py-4 bg-gray-50 flex justify-between items-center">
               <h3 className="text-base font-semibold leading-6 text-gray-900 flex items-center gap-2">
-                <Users className="w-5 h-5 text-indigo-500" />
+                <Users className="w-5 h-5 text-blue-500" />
                 HR Contacts
               </h3>
             </div>
             <div className="divide-y divide-gray-100">
               {company.hrContacts && company.hrContacts.length > 0 ? (
-                company.hrContacts.map(contact => (
+                company.hrContacts.map((contact: any) => (
                   <div key={contact.id} className="p-6 hover:bg-gray-50 transition-colors">
                     <h4 className="text-sm font-semibold text-gray-900">{contact.name}</h4>
                     <p className="text-sm text-gray-500 mb-3">{contact.designation}</p>
@@ -231,13 +236,13 @@ export function CompanyDetailPage() {
                       {contact.email && (
                         <div className="flex items-center text-sm text-gray-600">
                           <Mail className="h-4 w-4 mr-2 text-gray-400" />
-                          <a href={`mailto:${contact.email}`} className="hover:text-indigo-600 hover:underline">{contact.email}</a>
+                          <a href={`mailto:${contact.email}`} className="hover:text-[#1b4376] hover:underline">{contact.email}</a>
                         </div>
                       )}
                       {contact.phone && (
                         <div className="flex items-center text-sm text-gray-600">
                           <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                          <a href={`tel:${contact.phone}`} className="hover:text-indigo-600 hover:underline">{contact.phone}</a>
+                          <a href={`tel:${contact.phone}`} className="hover:text-[#1b4376] hover:underline">{contact.phone}</a>
                         </div>
                       )}
                     </div>
@@ -253,11 +258,11 @@ export function CompanyDetailPage() {
         </div>
 
         {/* Sidebar Column */}
-        <div className="space-y-6">
+        <div className="xl:col-span-1 space-y-6">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="border-b border-gray-200 px-6 py-4 bg-gray-50">
               <h3 className="text-base font-semibold leading-6 text-gray-900 flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-indigo-500" />
+                <AlertCircle className="w-5 h-5 text-blue-500" />
                 Primary Info
               </h3>
             </div>
@@ -273,7 +278,7 @@ export function CompanyDetailPage() {
               <div className="pt-4 border-t border-gray-100">
                 <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Current Status</label>
                 <div className="mt-1">
-                  <span className="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-sm font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20 capitalize">
+                  <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-sm font-medium text-[#15335b] ring-1 ring-inset ring-[#1b4376]/20 capitalize">
                     {company.currentStatus.baseStatus.replace('_', ' ')}
                   </span>
                 </div>
@@ -314,7 +319,7 @@ export function CompanyDetailPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
              <div className="border-b border-gray-200 px-6 py-4 bg-gray-50 flex justify-between items-center">
               <h3 className="text-base font-semibold leading-6 text-gray-900 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-indigo-500" />
+                <Clock className="w-5 h-5 text-blue-500" />
                 Activity Timeline
               </h3>
               <span className="inline-flex items-center rounded-md bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-800">

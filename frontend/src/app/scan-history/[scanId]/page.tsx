@@ -213,7 +213,7 @@ export default function ScanDetailsPage() {
         </div>
 
         <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-200 shadow-sm flex items-start gap-3 md:gap-4">
-          <div className="p-2.5 md:p-3 rounded-xl bg-indigo-50 text-indigo-600 flex-shrink-0">
+          <div className="p-2.5 md:p-3 rounded-xl bg-blue-50 text-[#1b4376] flex-shrink-0">
             <Building2 className="w-5 h-5 md:w-6 md:h-6" />
           </div>
           <div>
@@ -227,7 +227,7 @@ export default function ScanDetailsPage() {
       {showRaw && (
         <div className="mb-8 bg-white rounded-2xl border border-blue-200 shadow-sm overflow-hidden">
           {/* Section Header */}
-          <div className="px-4 md:px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="px-4 md:px-6 py-4 bg-gradient-to-r from-blue-50 to-blue-50 border-b border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="text-base md:text-lg font-bold text-slate-900 flex items-center gap-2">
                 <FileSearch className="w-5 h-5 text-blue-600" />

@@ -88,8 +88,8 @@ export async function sendPlacementEmail({
       from: `"NITH Placement Cell" <${process.env.SMTP_USER}>`,
       to: toEmail,
       subject,
-      html: bodyHtml,
-      // If we want a plain text version, we can strip HTML tags using a basic regex or just leave it out. Nodemailer handles html-only fine.
+      html: bodyHtml.replace(/\n/g, '<br>'),
+      text: bodyHtml
     };
 
     if (attachmentUrl && attachmentFilename) {

@@ -61,6 +61,11 @@ export async function applyStatusUpdate({
       payload.locked_by = userId;
       payload.locked_at = new Date().toISOString();
       payload.mid_status = 'pending_review';
+      
+      // Set original_marked_by if not already set
+      if (!current.original_marked_by) {
+        payload.original_marked_by = userId;
+      }
     }
   } else if (layer === 'mid') {
     payload.mid_status = newStatus;

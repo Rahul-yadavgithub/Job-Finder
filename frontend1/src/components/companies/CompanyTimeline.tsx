@@ -19,7 +19,7 @@ interface TimelineEvent {
   conversation_notes?: string;
   metadata?: any;
   created_at: string;
-  users?: { name: string };
+  users?: { name: string, branches?: { name: string } };
 }
 
 interface Workflow {
@@ -114,13 +114,16 @@ export function CompanyTimeline({ companyId }: Props) {
           
           return (
             <div key={event.id} className="relative pl-6">
-              <div className="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full border-2 border-white bg-indigo-500 shadow-sm z-10" />
+              <div className="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full border-2 border-white bg-green-500 shadow-sm z-10" />
               <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4">
                 <div className="flex justify-between items-start gap-2 mb-2">
                   <div>
                     <h3 className="font-bold text-gray-900 text-sm">{event.title}</h3>
                     <div className="text-xs text-gray-500 mt-1">
-                      <span className="font-semibold text-gray-700">{event.users?.name || 'System'}</span>
+                      <span className="font-semibold text-gray-700">
+                        {event.users?.name || 'System'}
+                        {event.users?.branches?.name && <span className="text-green-600 ml-1">({event.users.branches.name})</span>}
+                      </span>
                     </div>
                   </div>
                   <time className="text-xs text-gray-400 whitespace-nowrap pt-0.5">
@@ -143,7 +146,7 @@ export function CompanyTimeline({ companyId }: Props) {
                   <div className="mt-2">
                     <button 
                       onClick={() => toggleItemExpand(event.id)}
-                      className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800"
+                      className="flex items-center gap-1.5 text-xs font-bold text-gray-900 hover:text-black"
                     >
                       <MessageSquare size={14} /> 
                       {isExpanded ? 'Hide Details' : 'View Details'}
@@ -171,7 +174,7 @@ export function CompanyTimeline({ companyId }: Props) {
         className="w-full flex justify-between items-center p-4 bg-white hover:bg-gray-50 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Layers size={18} className="text-indigo-600" />
+          <Layers size={18} className="text-green-600" />
           <h3 className="font-bold text-gray-900 uppercase tracking-wider text-sm">{title}</h3>
         </div>
         {openSections[id] ? <ChevronUp size={20} className="text-gray-400" /> : <ChevronDown size={20} className="text-gray-400" />}

@@ -11,8 +11,8 @@ export const metadata: Metadata = {
   title: "NITH TPR Dashboard",
   description: "Automated Job Discovery and Company Tracking",
   icons: {
-    icon: "https://res.cloudinary.com/dzbliymin/image/upload/v1781725894/logonith_gb3opv.webp",
-    apple: "https://res.cloudinary.com/dzbliymin/image/upload/v1781725894/logonith_gb3opv.webp",
+    icon: "https://res.cloudinary.com/dzbliymin/image/upload/r_20/v1781725894/logonith_gb3opv.webp",
+    apple: "https://res.cloudinary.com/dzbliymin/image/upload/r_20/v1781725894/logonith_gb3opv.webp",
   }
 };
 
@@ -23,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} flex min-h-screen bg-slate-50 text-slate-900`}>
+      <body className={`${inter.className} border-t-[4px] border-[#1b4376] flex min-h-screen w-full bg-slate-50 text-slate-900`}>
         <Providers>
           <Toaster position="top-right" richColors />
           <ClientLayout>

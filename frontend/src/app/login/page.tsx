@@ -287,25 +287,25 @@ export default function LoginPage() {
               </div>
 
               {isCommTpr && (
-                <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 animate-in fade-in slide-in-from-top-4 duration-300 mt-2">
+                <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 animate-in fade-in slide-in-from-top-4 duration-300 mt-2">
                   <label className="block text-sm font-semibold text-indigo-900 mb-3 flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4" /> Select Destination Portal
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     <label className={`
                       relative flex flex-col items-center justify-center p-3 rounded-[4px] border-2 cursor-pointer transition-all
-                      ${portalChoice === 'branch' ? 'border-[#1b4376] bg-white shadow-sm' : 'border-transparent bg-indigo-100/50 hover:bg-indigo-100'}
+                      ${portalChoice === 'branch' ? 'border-[#1b4376] bg-white shadow-sm' : 'border-transparent bg-blue-100/50 hover:bg-blue-100'}
                     `}>
                       <input type="radio" className="sr-only" checked={portalChoice === 'branch'} onChange={() => setPortalChoice('branch')} />
-                      <span className={`text-xs font-bold ${portalChoice === 'branch' ? 'text-[#1b4376]' : 'text-indigo-600'}`}>Branch Dashboard</span>
+                      <span className={`text-xs font-bold ${portalChoice === 'branch' ? 'text-[#1b4376]' : 'text-[#1b4376]'}`}>Branch Dashboard</span>
                     </label>
                     
                     <label className={`
                       relative flex flex-col items-center justify-center p-3 rounded-[4px] border-2 cursor-pointer transition-all
-                      ${portalChoice === 'communication' ? 'border-[#1b4376] bg-white shadow-sm' : 'border-transparent bg-indigo-100/50 hover:bg-indigo-100'}
+                      ${portalChoice === 'communication' ? 'border-[#1b4376] bg-white shadow-sm' : 'border-transparent bg-blue-100/50 hover:bg-blue-100'}
                     `}>
                       <input type="radio" className="sr-only" checked={portalChoice === 'communication'} onChange={() => setPortalChoice('communication')} />
-                      <span className={`text-xs font-bold ${portalChoice === 'communication' ? 'text-[#1b4376]' : 'text-indigo-600'}`}>Comm Dashboard</span>
+                      <span className={`text-xs font-bold ${portalChoice === 'communication' ? 'text-[#1b4376]' : 'text-[#1b4376]'}`}>Comm Dashboard</span>
                     </label>
                   </div>
                 </div>

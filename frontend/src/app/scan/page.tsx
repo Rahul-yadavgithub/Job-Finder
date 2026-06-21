@@ -45,7 +45,7 @@ export default function ScanCenterPage() {
           <span>Intelligence Engine Ready</span>
         </motion.div>
         <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-slate-900">
-          Command <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Center</span>
+          Command <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-[#1b4376]">Center</span>
         </h1>
         <p className="text-xl text-slate-500 max-w-2xl mx-auto font-medium">
           Deploy deterministic scrapers across the global and Indian hiring ecosystems to enrich your placement database.
@@ -71,7 +71,7 @@ export default function ScanCenterPage() {
             </div>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-start gap-4">
-            <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600">
+            <div className="p-3 bg-blue-50 rounded-xl text-[#1b4376]">
               <Zap className="w-6 h-6" />
             </div>
             <div>
@@ -99,7 +99,7 @@ export default function ScanCenterPage() {
         >
           {/* Animated Background Gradients */}
           <div className="absolute top-0 -left-1/4 w-full h-full bg-gradient-to-br from-blue-600/30 to-transparent blur-3xl opacity-50 pointer-events-none group-hover:opacity-70 transition-opacity duration-1000"></div>
-          <div className="absolute bottom-0 -right-1/4 w-full h-full bg-gradient-to-tl from-indigo-600/30 to-transparent blur-3xl opacity-50 pointer-events-none group-hover:opacity-70 transition-opacity duration-1000"></div>
+          <div className="absolute bottom-0 -right-1/4 w-full h-full bg-gradient-to-tl from-[#1b4376]/30 to-transparent blur-3xl opacity-50 pointer-events-none group-hover:opacity-70 transition-opacity duration-1000"></div>
 
           <div className="bg-slate-900/80 backdrop-blur-xl w-full h-full rounded-[2.4rem] border border-slate-800 p-12 min-h-[500px] flex flex-col items-center justify-center relative z-10">
             
@@ -115,7 +115,7 @@ export default function ScanCenterPage() {
                 
                 <button 
                   onClick={() => triggerScan.mutate()}
-                  className="relative z-10 flex items-center justify-center w-56 h-56 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full shadow-[0_0_80px_rgba(59,130,246,0.5)] border border-blue-400/30 overflow-hidden group/btn"
+                  className="relative z-10 flex items-center justify-center w-56 h-56 bg-gradient-to-br from-blue-500 to-[#1b4376] rounded-full shadow-[0_0_80px_rgba(59,130,246,0.5)] border border-blue-400/30 overflow-hidden group/btn"
                 >
                   <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-500 ease-out"></div>
                   <div className="flex flex-col items-center text-white relative z-20">
@@ -150,7 +150,7 @@ export default function ScanCenterPage() {
                     <span className="text-blue-400">Processing</span>
                   </div>
                   <div className="w-full bg-slate-800 rounded-full h-2 shadow-inner overflow-hidden">
-                    <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full animate-[progress_8s_ease-in-out_forwards]" style={{ width: '0%' }}></div>
+                    <div className="bg-gradient-to-r from-blue-500 to-blue-500 h-2 rounded-full animate-[progress_8s_ease-in-out_forwards]" style={{ width: '0%' }}></div>
                   </div>
                 </div>
                 <style jsx>{`

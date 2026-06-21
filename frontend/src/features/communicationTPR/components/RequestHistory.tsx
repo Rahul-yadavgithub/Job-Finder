@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Send, FileText, CheckCircle2, XCircle, Clock, FileWarning } from 'lucide-react';
+import { Send, FileText, CheckCircle2, XCircle, Clock, FileWarning, RotateCcw } from 'lucide-react';
 import { requestApi } from '../services/request.api';
 import { CommunicationRequest } from '../types/request';
+import { useRouter } from 'next/navigation';
 
-export function RequestHistory({ companyId }: { companyId: string }) {
+export function RequestHistory({ companyId, onRevert }: { companyId: string, onRevert?: () => void }) {
+  const router = useRouter();
   const [requests, setRequests] = useState<CommunicationRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,6 +35,20 @@ export function RequestHistory({ companyId }: { companyId: string }) {
       </div>
     );
   }
+
+  const handleRevert = async (requestId: string) => {
+    try {
+      setLoading(true);
+      await requestApi.revertRequest(requestId);
+      if (onRevert) onRevert();
+      else fetchRequests();
+      router.push('/communication-tpr/pipeline');
+    } catch (err) {
+      console.error('Failed to revert', err);
+      alert('Failed to revert request.');
+      setLoading(false);
+    }
+  };
 
   const getStatusConfig = (status: string) => {
     switch(status) {
@@ -73,6 +89,17 @@ export function RequestHistory({ companyId }: { companyId: string }) {
                 <p className="mt-2 text-sm leading-6 text-gray-600 border-l-2 border-gray-200 pl-3">
                   {request.notes}
                 </p>
+              )}
+              {request.status === 'rejected' && (
+                <div className="mt-3">
+                  <button
+                    onClick={() => handleRevert(request.id)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-md border border-red-200 transition-colors"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Revert & Follow-up
+                  </button>
+                </div>
               )}
             </div>
             <div className="mt-4 sm:mt-0 flex flex-none items-center gap-x-4">

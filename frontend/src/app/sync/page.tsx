@@ -97,10 +97,10 @@ export default function SyncCenterPage() {
     <div className="p-4 md:p-8 w-full max-w-none space-y-8 md:space-y-12">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden">
         {/* Decorative background element */}
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 opacity-50 blur-3xl pointer-events-none"></div>
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 rounded-full bg-gradient-to-br from-blue-50 to-blue-50 opacity-50 blur-3xl pointer-events-none"></div>
         
         <div className="max-w-xl relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 font-semibold text-xs border border-indigo-100 mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-[#1b4376] font-semibold text-xs border border-blue-100 mb-4">
             <CloudUpload className="w-3.5 h-3.5" />
             <span>Master Synchronization</span>
           </div>
@@ -115,7 +115,7 @@ export default function SyncCenterPage() {
             <button
               onClick={() => inboundSyncMutation.mutate()}
               disabled={inboundSyncMutation.isPending}
-              className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 text-white font-semibold py-2.5 px-6 rounded-lg transition-all shadow-md hover:shadow-lg flex-1 sm:flex-none whitespace-nowrap"
+              className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-[#1b4376] hover:from-blue-700 hover:to-[#15335b] disabled:from-slate-400 disabled:to-slate-500 text-white font-semibold py-2.5 px-6 rounded-lg transition-all shadow-md hover:shadow-lg flex-1 sm:flex-none whitespace-nowrap"
             >
               {inboundSyncMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <DownloadCloud className="w-5 h-5" />}
               Pull Updates — {user.branchName}
@@ -177,7 +177,7 @@ export default function SyncCenterPage() {
                 </thead>
                 <tbody>
                   {pendingCompanies?.map((company: any) => (
-                    <tr key={company._id} className={`border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors ${selectedIds.includes(company._id) ? 'bg-indigo-50/50' : ''}`}>
+                    <tr key={company._id} className={`border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors ${selectedIds.includes(company._id) ? 'bg-blue-50/50' : ''}`}>
                       <td className="px-6 py-4">
                         <input 
                           type="checkbox" 

@@ -5,6 +5,7 @@ export interface CompanyActivity {
   companyId: string;
   userId?: string;
   userName?: string;
+  userBranch?: string;
   activityType: ActivityType;
   notes?: string;
   metadata?: any;

@@ -48,7 +48,7 @@ export function CommunicationQueuePage() {
       <div className="sm:flex sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight flex items-center gap-3">
-            <Send className="w-8 h-8 text-indigo-600" />
+            <Send className="w-8 h-8 text-[#1b4376]" />
             Communication Queue
           </h1>
           <p className="mt-1 text-sm text-gray-500">

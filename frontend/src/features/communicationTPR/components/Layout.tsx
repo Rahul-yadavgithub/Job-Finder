@@ -19,7 +19,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#f5f7f9]">
+    <div className="flex w-full min-h-screen bg-[#f5f7f9]">
       <Sidebar isOpen={isMobileSidebarOpen} onClose={() => setIsMobileSidebarOpen(false)} />
       <div className="flex flex-1 flex-col md:pl-20 w-full min-w-0">
         <TopNavbar onOpenSidebar={() => setIsMobileSidebarOpen(true)} />

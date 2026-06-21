@@ -49,7 +49,7 @@ export async function getTimeline(companyId: string, viewerLayer: 'base' | 'comm
   try {
     let query = supabase
       .from('company_timeline')
-      .select('*, users!performed_by(name)')
+      .select('*, users!performed_by(name, branches(name))')
       .eq('company_id', companyId)
       .order('created_at', { ascending: true });
 

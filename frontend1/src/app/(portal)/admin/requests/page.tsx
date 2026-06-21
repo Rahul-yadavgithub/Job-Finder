@@ -192,7 +192,7 @@ export default function AdminRequestsPage() {
         <div className="p-4 border-b border-gray-200 flex gap-2 overflow-x-auto bg-gray-50/50">
           <button
             onClick={() => updateTab('company-requests')}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${tab === 'company-requests' ? 'bg-white text-indigo-700 shadow border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'}`}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${tab === 'company-requests' ? 'bg-white text-[#15335b] shadow border border-indigo-200' : 'text-gray-600 hover:bg-gray-100'}`}
           >
             <Briefcase size={16} /> Company Requests
           </button>
@@ -201,7 +201,7 @@ export default function AdminRequestsPage() {
             <>
               <button
                 onClick={() => updateTab('coworker-requests')}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${tab === 'coworker-requests' ? 'bg-white text-indigo-700 shadow border border-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${tab === 'coworker-requests' ? 'bg-white text-[#15335b] shadow border border-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}
               >
                 TPO Staff Requests 
                 {stats.worker > 0 && <span className="bg-coral-100 text-coral-700 py-0.5 px-2 rounded-full text-[10px]">{stats.worker}</span>}
@@ -209,7 +209,7 @@ export default function AdminRequestsPage() {
               
               <button
                 onClick={() => updateTab('tpr-requests')}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${tab === 'tpr-requests' ? 'bg-white text-indigo-700 shadow border border-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${tab === 'tpr-requests' ? 'bg-white text-[#15335b] shadow border border-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}
               >
                 Department Rep Requests 
                 {stats.tpr > 0 && <span className="bg-amber-100 text-amber-700 py-0.5 px-2 rounded-full text-[10px]">{stats.tpr}</span>}
@@ -217,7 +217,7 @@ export default function AdminRequestsPage() {
               
               <button
                 onClick={() => updateTab('all-history')}
-                className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${tab === 'all-history' ? 'bg-white text-indigo-700 shadow border border-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}
+                className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${tab === 'all-history' ? 'bg-white text-[#15335b] shadow border border-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}
               >
                 All Requests (History)
               </button>
@@ -258,7 +258,7 @@ export default function AdminRequestsPage() {
                     <td className="px-6 py-4">
                       <div className="font-bold text-gray-900">{req.name}</div>
                       <div className="text-xs text-gray-500">{req.email}</div>
-                      {req.request_type === 'branch_tpr' && <div className="text-[10px] uppercase font-bold text-indigo-500 mt-0.5">TPR REQUEST</div>}
+                      {req.request_type === 'branch_tpr' && <div className="text-[10px] uppercase font-bold text-blue-500 mt-0.5">TPR REQUEST</div>}
                       {req.request_type === 'worker' && <div className="text-[10px] uppercase font-bold text-coral-500 mt-0.5">WORKER REQUEST</div>}
                     </td>
                     <td className="px-6 py-4">
@@ -266,7 +266,7 @@ export default function AdminRequestsPage() {
                         <span className="font-medium capitalize text-gray-700">{req.designation.replace('_', ' ')}</span>
                       ) : (
                         <div className="flex flex-col">
-                          <span className="font-bold text-indigo-700">{req.branch_code}</span>
+                          <span className="font-bold text-[#15335b]">{req.branch_code}</span>
                           <span className="text-xs text-gray-500">Roll: {req.roll_number}</span>
                         </div>
                       )}
@@ -325,14 +325,14 @@ export default function AdminRequestsPage() {
               <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
                 <p className="text-sm font-bold text-gray-900">{approveWorkerModal.request.name}</p>
                 <p className="text-xs text-gray-500">{approveWorkerModal.request.email}</p>
-                <p className="text-xs text-indigo-600 font-medium mt-1 uppercase tracking-wider">Requested: {approveWorkerModal.request.designation.replace('_', ' ')}</p>
+                <p className="text-xs text-[#1b4376] font-medium mt-1 uppercase tracking-wider">Requested: {approveWorkerModal.request.designation.replace('_', ' ')}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Assign Role</label>
                 <select 
                   value={approveRole}
                   onChange={(e) => setApproveRole(e.target.value)}
-                  className="w-full p-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="caller">Caller</option>
                   <option value="coordinator">Coordinator</option>

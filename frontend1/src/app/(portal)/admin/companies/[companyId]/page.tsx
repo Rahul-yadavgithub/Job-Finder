@@ -44,7 +44,7 @@ export default function CompanyDetailPage() {
 
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto space-y-6 animate-pulse">
+      <div className="w-full max-w-none space-y-6 animate-pulse">
         <div className="h-8 w-32 bg-gray-200 rounded"></div>
         <div className="h-48 bg-white rounded-xl border border-gray-200 shadow-sm"></div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -57,7 +57,7 @@ export default function CompanyDetailPage() {
 
   if (error || !company) {
     return (
-      <div className="max-w-5xl mx-auto py-12 flex flex-col items-center justify-center text-center">
+      <div className="w-full max-w-none py-12 flex flex-col items-center justify-center text-center">
         <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
           <Building2 size={32} />
         </div>
@@ -65,7 +65,7 @@ export default function CompanyDetailPage() {
         <p className="text-gray-500 mb-6">{error || 'The company details could not be found or you do not have permission.'}</p>
         <button 
           onClick={() => router.back()}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2"
+          className="px-4 py-2 bg-[#1b4376] text-white rounded-lg font-bold hover:bg-[#15335b] transition-colors flex items-center gap-2"
         >
           <ArrowLeft size={16} /> Go Back
         </button>
@@ -87,7 +87,7 @@ export default function CompanyDetailPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="w-full max-w-none space-y-6">
       <button 
         onClick={() => router.push('/admin/companies')}
         className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors"
@@ -96,8 +96,8 @@ export default function CompanyDetailPage() {
       </button>
 
       {/* Header Card */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="h-2 bg-indigo-600"></div>
+      <div className="bg-white rounded-xl border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+        <div className="h-2 bg-[#1b4376]"></div>
         <div className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-start justify-between gap-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
@@ -120,7 +120,7 @@ export default function CompanyDetailPage() {
             {primaryStatus?.drive_id && (
               <Link 
                 href="/admin/drives"
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 font-bold text-sm transition-colors border border-indigo-100"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-[#15335b] rounded-lg hover:bg-blue-100 font-bold text-sm transition-colors border border-blue-100"
               >
                 <Calendar size={16} /> View Drive Schedule
               </Link>
@@ -134,9 +134,9 @@ export default function CompanyDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         {/* Main Content */}
-        <div className="col-span-1 md:col-span-2 space-y-6">
+        <div className="col-span-1 xl:col-span-3 space-y-6">
           
           {primaryStatus && user?.isSuperAdmin && (
             <WorkflowActionCenter 
@@ -153,7 +153,7 @@ export default function CompanyDetailPage() {
             </div>
             <div className="p-6">
               <div className="mb-6">
-                <WorkflowProgressTracker currentPhase={getLifecyclePhase() as any} />
+                <WorkflowProgressTracker companyId={company.id} currentPhase={getLifecyclePhase() as any} />
               </div>
               {primaryStatus ? (
                 <CompanyTimeline companyId={company.id} />
@@ -165,7 +165,7 @@ export default function CompanyDetailPage() {
         </div>
 
         {/* Sidebar Info */}
-        <div className="col-span-1 space-y-6">
+        <div className="col-span-1 xl:col-span-1 space-y-6">
           <WorkflowSidebarSummary companyId={company.id} />
           
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -184,7 +184,7 @@ export default function CompanyDetailPage() {
               </div>
               {primaryStatus?.interested_by_name && (
                 <div className="pt-4 border-t border-gray-100 mt-2">
-                  <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <p className="text-xs font-bold text-[#1b4376] uppercase tracking-wider mb-1 flex items-center gap-1.5">
                     <CheckCircle2 size={12} /> Discovered & Interested By
                   </p>
                   <p className="text-sm font-bold text-gray-900">{primaryStatus.interested_by_name}</p>
@@ -198,7 +198,7 @@ export default function CompanyDetailPage() {
               {primaryStatus && (
                 <div>
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Next Follow-up</p>
-                  <p className={`text-sm font-bold ${primaryStatus.next_followup_date ? (new Date(primaryStatus.next_followup_date) < new Date() ? 'text-red-600' : 'text-indigo-600') : 'text-gray-500'}`}>
+                  <p className={`text-sm font-bold ${primaryStatus.next_followup_date ? (new Date(primaryStatus.next_followup_date) < new Date() ? 'text-red-600' : 'text-[#1b4376]') : 'text-gray-500'}`}>
                     {primaryStatus.next_followup_date ? format(new Date(primaryStatus.next_followup_date), 'MMM do, yyyy') : 'None Scheduled'}
                   </p>
                 </div>
@@ -213,7 +213,7 @@ export default function CompanyDetailPage() {
             </div>
             <div className="p-6 space-y-4">
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg shrink-0">
+                <div className="w-10 h-10 rounded-full bg-blue-100 text-[#15335b] flex items-center justify-center font-bold text-lg shrink-0">
                   {(company.hr_name || 'H')[0].toUpperCase()}
                 </div>
                 <div>
@@ -230,7 +230,7 @@ export default function CompanyDetailPage() {
                   <div className="flex-1 overflow-hidden">
                     <p className="text-xs font-bold text-gray-500">Email Address</p>
                     {company.email ? (
-                      <a href={`mailto:${company.email}`} className="text-sm font-medium text-indigo-600 hover:underline truncate block">
+                      <a href={`mailto:${company.email}`} className="text-sm font-medium text-[#1b4376] hover:underline truncate block">
                         {company.email}
                       </a>
                     ) : (
@@ -246,7 +246,7 @@ export default function CompanyDetailPage() {
                   <div className="flex-1 overflow-hidden">
                     <p className="text-xs font-bold text-gray-500">Phone Number</p>
                     {company.phone_number ? (
-                      <a href={`tel:${company.phone_number}`} className="text-sm font-medium text-gray-900 hover:text-indigo-600 block">
+                      <a href={`tel:${company.phone_number}`} className="text-sm font-medium text-gray-900 hover:text-[#1b4376] block">
                         {company.phone_number}
                       </a>
                     ) : (

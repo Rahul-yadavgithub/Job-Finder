@@ -78,7 +78,7 @@ export default function CompanyDetailsPage({ params }: { params: Promise<{ id: s
 
   if (!company) {
     return (
-      <div className="p-8 max-w-5xl mx-auto text-center">
+      <div className="p-8 w-full max-w-none text-center">
         <h2 className="text-2xl font-bold text-slate-800">Company Not Found</h2>
         <Link href="/companies" className="text-blue-600 hover:underline mt-4 inline-block">Return to Companies List</Link>
       </div>
@@ -90,7 +90,7 @@ export default function CompanyDetailsPage({ params }: { params: Promise<{ id: s
   const isPending = company.syncStatus === 'pending';
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8">
+    <div className="p-8 w-full max-w-none space-y-8">
       {/* Header */}
       <div>
         <Link href="/sync" className="text-sm text-slate-500 hover:text-blue-600 flex items-center gap-1 mb-6">
@@ -267,7 +267,7 @@ export default function CompanyDetailsPage({ params }: { params: Promise<{ id: s
           </section>
 
           {/* AI Intelligence */}
-          <section className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 shadow-sm">
+          <section className="bg-blue-50 border border-blue-100 rounded-2xl p-6 shadow-sm">
             <h2 className="text-xs font-bold text-indigo-800 uppercase tracking-wider mb-4 flex items-center gap-2">
               <BarChart3 className="w-4 h-4" /> AI Intelligence
             </h2>
@@ -278,7 +278,7 @@ export default function CompanyDetailsPage({ params }: { params: Promise<{ id: s
                   <span className="text-xs font-bold text-indigo-900">{company.placementScore || 'Not Scored'}/100</span>
                 </div>
                 <div className="w-full bg-indigo-200/50 rounded-full h-1.5">
-                  <div className="bg-indigo-600 h-1.5 rounded-full" style={{ width: `${company.placementScore || 0}%` }}></div>
+                  <div className="bg-[#1b4376] h-1.5 rounded-full" style={{ width: `${company.placementScore || 0}%` }}></div>
                 </div>
               </div>
               
@@ -290,7 +290,7 @@ export default function CompanyDetailsPage({ params }: { params: Promise<{ id: s
                       <span key={i} className="bg-white/60 text-indigo-900 px-2 py-0.5 rounded text-[10px] font-bold border border-indigo-200/50">{signal}</span>
                     ))
                   ) : (
-                    <span className="text-xs text-indigo-700/70">No core signals analyzed.</span>
+                    <span className="text-xs text-[#15335b]/70">No core signals analyzed.</span>
                   )}
                 </div>
               </div>

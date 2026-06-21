@@ -17,11 +17,18 @@ import {
   delegateTask,
   getMyTasks,
   updateTaskStatus,
-  getCoworkerDashboardStats
+  getCoworkerDashboardStats,
+  deleteTask
 } from '../controllers/adminRequests.controller';
 import { jumpIn, jumpOut } from '../controllers/adminAuth.controller';
 import { getTimeline } from '../services/timeline.service';
 import { getTemplates, uploadTemplate } from '../controllers/adminSettings.controller';
+import {
+  getStaffRequests,
+  sendStaffRequest,
+  markResponse,
+  rejectStaffRequest
+} from '../controllers/staffRequests.controller';
 
 const router = Router();
 
@@ -54,6 +61,13 @@ router.post('/timeline/:companyId/custom', addCustomTimelineEvent);
 router.post('/tasks', delegateTask);
 router.get('/tasks/my-tasks', getMyTasks);
 router.patch('/tasks/:taskId/execute', updateTaskStatus);
+router.delete('/tasks/:taskId', deleteTask);
+
+// Staff Requests (New TPO Staff Queue)
+router.get('/staff/requests', getStaffRequests);
+router.post('/staff/requests/:id/send', sendStaffRequest);
+router.post('/staff/requests/:id/mark-response', markResponse);
+router.post('/staff/requests/:id/reject', rejectStaffRequest);
 
 // Dashboard
 router.get('/dashboard-stats', getCoworkerDashboardStats);

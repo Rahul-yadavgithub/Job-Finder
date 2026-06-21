@@ -38,7 +38,7 @@ export default function DrivesManagementPage() {
     if (isToday(scheduledDate)) {
       return { label: 'Today', color: 'bg-green-100 text-green-700 border-green-200 animate-pulse' };
     }
-    return { label: 'Upcoming', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' };
+    return { label: 'Upcoming', color: 'bg-blue-100 text-[#15335b] border-indigo-200' };
   };
 
   const filteredDrives = drives.filter(drive => {
@@ -60,12 +60,12 @@ export default function DrivesManagementPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-5 rounded-xl border border-indigo-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
+        <div className="bg-white p-5 rounded-xl border border-blue-100 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-[#1b4376]">
             <CalendarDays size={24} />
           </div>
           <div>
-            <p className="text-sm font-bold text-indigo-600 uppercase tracking-wider">Upcoming Drives</p>
+            <p className="text-sm font-bold text-[#1b4376] uppercase tracking-wider">Upcoming Drives</p>
             <p className="text-2xl font-bold text-gray-900">
               {drives.filter(d => getDriveStatus(d).label === 'Upcoming').length}
             </p>
@@ -102,7 +102,7 @@ export default function DrivesManagementPage() {
               <button
                 key={t}
                 onClick={() => setStatusFilter(t)}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md capitalize transition-colors ${statusFilter === t ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md capitalize transition-colors ${statusFilter === t ? 'bg-white text-[#15335b] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 {t}
               </button>
@@ -115,7 +115,7 @@ export default function DrivesManagementPage() {
               placeholder="Search drives..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </div>
         </div>
@@ -147,7 +147,7 @@ export default function DrivesManagementPage() {
                     <div className="flex items-start justify-between mb-4 pr-24">
                       <div>
                         <h3 className="font-bold text-lg text-gray-900 mb-1">{drive.company_name || 'Unknown Company'}</h3>
-                        <p className="text-indigo-600 font-semibold text-sm capitalize">{drive.drive_type.replace('_', ' ')} Drive</p>
+                        <p className="text-[#1b4376] font-semibold text-sm capitalize">{drive.drive_type.replace('_', ' ')} Drive</p>
                       </div>
                     </div>
 
@@ -172,7 +172,7 @@ export default function DrivesManagementPage() {
                       </div>
                       <Link 
                         href={`/admin/companies/${drive.assignment_id}`}
-                        className="text-sm font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group-hover:translate-x-1 transition-transform"
+                        className="text-sm font-bold text-[#1b4376] hover:text-[#15335b] flex items-center gap-1 group-hover:translate-x-1 transition-transform"
                       >
                         View Details <ExternalLink size={14} />
                       </Link>

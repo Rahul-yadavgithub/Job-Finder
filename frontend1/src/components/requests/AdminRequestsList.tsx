@@ -75,7 +75,7 @@ export function AdminRequestsList() {
       return (
         <div className="flex flex-col gap-1 mt-2">
           <div className="text-sm font-medium text-gray-900 flex items-center gap-1"><FileText size={14}/> {req.request_data.document_type.toUpperCase()} Approval</div>
-          <a href={req.request_data.file_url} target="_blank" rel="noreferrer" className="text-xs text-indigo-600 hover:underline inline-flex items-center gap-1">
+          <a href={req.request_data.file_url} target="_blank" rel="noreferrer" className="text-xs text-[#1b4376] hover:underline inline-flex items-center gap-1">
             <Eye size={12}/> View Document
           </a>
         </div>
@@ -119,7 +119,7 @@ export function AdminRequestsList() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="font-bold text-lg text-gray-900 flex items-center gap-1"><Building2 size={16} className="text-gray-400"/> {req.companies?.name}</span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-[#15335b] border border-blue-100">
                 {req.companies?.branches?.code || 'Unknown'}
               </span>
             </div>
@@ -164,7 +164,7 @@ export function AdminRequestsList() {
                   value={actionMessage}
                   onChange={(e) => setActionMessage(e.target.value)}
                   placeholder={`Optional message for the branch TPR...`}
-                  className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 resize-none h-24"
+                  className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none h-24"
                 />
               </div>
             </div>

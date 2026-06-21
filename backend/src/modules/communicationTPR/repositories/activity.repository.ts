@@ -5,7 +5,7 @@ export class ActivityRepository {
   async getActivitiesByCompany(companyId: string) {
     const { data, error } = await supabase
       .from('company_activities')
-      .select('*, users(name)')
+      .select('*, users(name, branches(name))')
       .eq('company_id', companyId)
       .order('created_at', { ascending: false });
 

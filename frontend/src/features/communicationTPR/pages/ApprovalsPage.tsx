@@ -65,7 +65,7 @@ export function ApprovalsPage() {
   );
 
   if (isLoading) return <LoadingState />;
-  if (error) return <ErrorState message={error} retry={fetchPendingApprovals} />;
+  if (error) return <ErrorState message={error} onRetry={fetchPendingApprovals} />;
 
   return (
     <DashboardLayout>
@@ -82,7 +82,7 @@ export function ApprovalsPage() {
               placeholder="Search companies or TPRs..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-600 outline-none"
+              className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1b4376] outline-none"
             />
           </div>
         </div>
@@ -121,7 +121,7 @@ export function ApprovalsPage() {
                     <td className="px-6 py-4 text-right">
                       <button
                         onClick={() => setSelectedRequest(req)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#15335b] bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
                       >
                         <Eye className="w-4 h-4" />
                         Review
@@ -192,7 +192,7 @@ export function ApprovalsPage() {
               <button
                 onClick={() => handleApprove(selectedRequest.id)}
                 disabled={isProcessing}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 text-sm font-medium text-white bg-[#1b4376] hover:bg-[#15335b] rounded-lg transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
               >
                 <CheckCircle className="w-4 h-4" />
                 {isProcessing ? 'Processing...' : 'Approve & Send'}

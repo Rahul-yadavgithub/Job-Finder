@@ -126,7 +126,7 @@ export default function SuccessionSettings() {
           {info?.successor && (
             <button 
               onClick={() => setShowPicker(true)}
-              className="text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+              className="text-sm font-semibold text-[#1b4376] hover:text-[#15335b]"
             >
               Change Successor
             </button>
@@ -135,14 +135,14 @@ export default function SuccessionSettings() {
         
         <div className="p-6">
           {info?.successor ? (
-            <div className="flex items-center gap-4 bg-indigo-50 border border-indigo-100 p-4 rounded-xl">
+            <div className="flex items-center gap-4 bg-blue-50 border border-blue-100 p-4 rounded-xl">
               <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm border border-indigo-200">
-                <Star className="text-indigo-600 fill-indigo-600" size={20} />
+                <Star className="text-[#1b4376] fill-[#1b4376]" size={20} />
               </div>
               <div>
                 <p className="text-lg font-bold text-indigo-900">{info.successor.name}</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-sm text-indigo-700">{info.successor.email}</span>
+                  <span className="text-sm text-[#15335b]">{info.successor.email}</span>
                   <span className="text-indigo-300">•</span>
                   <span className="text-sm font-semibold text-indigo-800 capitalize">{info.successor.designation.replace('_', ' ')}</span>
                 </div>
@@ -181,7 +181,7 @@ export default function SuccessionSettings() {
             maxLength={2000}
             rows={6}
             placeholder="Write handover instructions..."
-            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 resize-none"
+            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none"
           />
           <div className="flex items-center justify-between">
             <span className={`text-xs font-medium ${note.length > 1800 ? 'text-amber-600' : 'text-gray-400'}`}>
@@ -272,7 +272,7 @@ export default function SuccessionSettings() {
           <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[80vh]">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
               <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Users className="text-indigo-600" /> Select TPO Staff
+                <Users className="text-[#1b4376]" /> Select TPO Staff
               </h3>
               <button onClick={() => setShowPicker(false)} className="text-gray-400 hover:text-gray-600 font-bold">X</button>
             </div>
@@ -284,7 +284,7 @@ export default function SuccessionSettings() {
                   <button
                     key={w.id}
                     onClick={() => handleSetSuccessor(w.id)}
-                    className="w-full text-left p-4 rounded-xl border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-colors flex justify-between items-center group"
+                    className="w-full text-left p-4 rounded-xl border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-colors flex justify-between items-center group"
                   >
                     <div>
                       <p className="font-bold text-gray-900 group-hover:text-indigo-900">{w.name}</p>

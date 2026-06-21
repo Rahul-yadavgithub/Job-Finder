@@ -76,7 +76,7 @@ function RecoveryCompleteContent() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-[#1b4376] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -95,7 +95,7 @@ function RecoveryCompleteContent() {
           </p>
           <Link 
             href="/login"
-            className="text-indigo-600 font-medium hover:text-indigo-700"
+            className="text-[#1b4376] font-medium hover:text-[#15335b]"
           >
             &larr; Back to Login
           </Link>
@@ -127,7 +127,7 @@ function RecoveryCompleteContent() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 py-12">
       <div className="bg-white rounded-2xl shadow-xl border border-gray-100 max-w-[480px] w-full p-8">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-blue-50 text-[#1b4376] rounded-full flex items-center justify-center mx-auto mb-4">
             <ShieldCheck size={32} />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Complete Leadership Setup</h1>
@@ -138,7 +138,7 @@ function RecoveryCompleteContent() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {requestData?.isExistingUser ? (
-            <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl text-center mb-6">
+            <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl text-center mb-6">
               <p className="text-indigo-900 font-medium">
                 Your existing co-worker account will be promoted to Head TPO.
               </p>
@@ -155,7 +155,7 @@ function RecoveryCompleteContent() {
                   title="Must contain at least 8 characters, one letter and one number"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="••••••••"
                 />
               </div>
@@ -167,7 +167,7 @@ function RecoveryCompleteContent() {
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="••••••••"
                 />
               </div>
@@ -197,7 +197,7 @@ export default function RecoveryCompletePage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-[#1b4376] border-t-transparent rounded-full animate-spin"></div>
       </div>
     }>
       <RecoveryCompleteContent />

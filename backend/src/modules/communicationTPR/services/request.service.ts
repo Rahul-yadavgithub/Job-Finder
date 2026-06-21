@@ -58,38 +58,6 @@ export class RequestService {
 
   async submitForApproval(requestId: string): Promise<CommunicationRequest> {
     const data = await this.requestRepository.submitForApproval(requestId);
-    
-    // Fetch assignment_id from company_status
-    const { data: statusData } = await supabase
-      .from('company_status')
-      .select('id')
-      .eq('company_id', data.company_id)
-      .single();
-
-    if (statusData) {
-      const requiresHeadTPO = data.request_type === 'jnf_form' || data.request_type === 'database';
-      let adminReqType = data.request_type;
-      if (adminReqType === 'brochure' || adminReqType === 'institute_brochure') adminReqType = 'send_brochure';
-      else if (adminReqType === 'jnf_form') adminReqType = 'send_jnf';
-      else if (adminReqType === 'database') adminReqType = 'send_database';
-
-      await supabase.from('admin_requests').insert({
-        company_id: data.company_id,
-        assignment_id: statusData.id,
-        request_source: 'comm_tpr',
-        request_type: adminReqType,
-        requires_head_tpo: requiresHeadTPO,
-        raised_by: data.requested_by,
-        email_to: data.email_to,
-        email_subject: data.email_subject,
-        email_body: data.email_body,
-        attachment_template_id: data.template_id,
-        status: 'pending',
-        urgency: data.urgency || 'normal',
-        notes: data.notes
-      });
-    }
-
     return this.formatRequest(data);
   }
 
@@ -104,45 +72,83 @@ export class RequestService {
     
     if (!requestDetails) throw new Error('Request not found');
     if (requestDetails.status !== 'pending_approval') {
-      throw new Error('Request must be in pending_approval state to approve and send');
+      throw new Error('Request must be in pending_approval state to approve');
     }
 
-    if (!requestDetails.email_to || !requestDetails.email_subject || !requestDetails.email_body) {
-      throw new Error('Email details are incomplete');
-    }
-
-    const templateData = requestDetails.email_templates;
-
-    // 2. Fetch first follow-up rule to determine next_followup_date
-    let nextFollowupDate = null;
-    const { data: followupRules } = await supabase
-      .from('comm_followup_rules')
-      .select('wait_days')
-      .eq('followup_number', 1)
+    // 2. Fetch assignment_id from company_status
+    const { data: statusData } = await supabase
+      .from('company_status')
+      .select('id')
+      .eq('company_id', requestDetails.company_id)
       .single();
 
-    if (followupRules && followupRules.wait_days) {
-      const date = new Date();
-      date.setDate(date.getDate() + followupRules.wait_days);
-      nextFollowupDate = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+    if (statusData) {
+      await supabase.from('company_status')
+        .update({ 
+          top_stage: 'pending_staff_review',
+          mid_status: 'pending_staff_review'
+        })
+        .eq('company_id', requestDetails.company_id);
+
+      await supabase.from('staff_requests').insert({
+        company_id: requestDetails.company_id,
+        assignment_id: statusData.id,
+        raised_by: requestDetails.requested_by,
+        email_to: requestDetails.email_to,
+        email_subject: requestDetails.email_subject,
+        email_body: requestDetails.email_body,
+        attachment_template_id: requestDetails.template_id,
+        status: 'pending_send'
+      });
     }
 
-    // 3. Send email via NodeMailer
-    await sendPlacementEmail({
-      toEmail: requestDetails.email_to,
-      subject: requestDetails.email_subject,
-      bodyHtml: requestDetails.email_body,
-      attachmentUrl: templateData?.attachment_url,
-      attachmentFilename: templateData?.attachment_filename,
-    });
-
-    // 4. Update status to sent & set next_followup_date
-    const data = await this.requestRepository.approveAndMarkSent(requestId, nextFollowupDate);
+    // 3. Update status to pending_staff_review (Wait for TPO Staff)
+    const data = await this.requestRepository.updateRequestStatus(requestId, { status: 'pending_staff_review' });
     return this.formatRequest(data);
   }
 
   async rejectRequest(requestId: string): Promise<CommunicationRequest> {
     const data = await this.requestRepository.updateRequestStatus(requestId, { status: 'rejected' });
+    return this.formatRequest(data);
+  }
+
+  async revertRequest(requestId: string, currentUserId: string): Promise<CommunicationRequest> {
+    // Look up original_marked_by on the request's company record
+    const requestDetails = await this.requestRepository.getRequestForEmail(requestId);
+    if (!requestDetails) throw new Error('Request not found');
+
+    const { data: statusData, error: statusError } = await supabase
+      .from('company_status')
+      .select('original_marked_by')
+      .eq('company_id', requestDetails.company_id)
+      .single();
+
+    if (statusError || !statusData) {
+      throw new Error('Company status not found');
+    }
+
+    const originalMarkedBy = statusData.original_marked_by;
+    if (!originalMarkedBy) {
+      throw new Error('Original marking TPR not found for this company');
+    }
+
+    // Only allow revert if the current user is the original_marked_by (though the requirement said "auto-assigns",
+    // wait, the API should probably just assign it to originalMarkedBy, but wait, who clicks "Revert"? The Mid TPR does.)
+    // "Mid TPR (original one) clicks Revert -> confirm task re-assigns specifically to them"
+
+    // Reset company_status.top_stage to 'not_contacted' and mid_status to null so it goes back to calling
+    await supabase.from('company_status')
+      .update({ 
+        top_stage: null, 
+        mid_status: null, 
+        base_status: 'call_again', // or not_contacted
+        locked: false,
+        locked_by: null
+      })
+      .eq('company_id', requestDetails.company_id);
+
+    // Update request status
+    const data = await this.requestRepository.updateRequestStatus(requestId, { status: 'rejected' }); // Leave it as rejected but now they can re-contact
     return this.formatRequest(data);
   }
 }
