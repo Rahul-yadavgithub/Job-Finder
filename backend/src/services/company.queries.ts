@@ -313,11 +313,11 @@ export async function getAdminCompanyStats() {
     addedTodayRes,
     reachedTopRes
   ] = await Promise.all([
-    supabase.from('companies').select('*', { count: 'exact', head: true }),
+    supabase.from('company_status').select('*', { count: 'exact', head: true }).or('base_status.eq.interested,locked.eq.true'),
     supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('mid_status', 'accepted'),
     supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('mid_status', 'pending_review').eq('locked', true),
     supabase.from('company_status').select('*', { count: 'exact', head: true }).is('mid_status', null).eq('locked', false).eq('base_status', 'interested'),
-    supabase.from('companies').select('*', { count: 'exact', head: true }).gte('created_at', `${currentDate}T00:00:00.000Z`),
+    supabase.from('company_status').select('id, companies!inner(id, created_at)', { count: 'exact', head: true }).or('base_status.eq.interested,locked.eq.true').gte('companies.created_at', `${currentDate}T00:00:00.000Z`),
     supabase.from('company_status').select('*', { count: 'exact', head: true }).not('top_status', 'is', null)
   ]);
 
@@ -348,7 +348,7 @@ export async function getAdminCompanyList({
     .from('companies')
     .select(`
       id, company_name, hr_name, email, phone_number, data_source, created_at,
-      company_status!inner(base_status, mid_status, top_status, locked, next_followup_date),
+      company_status!inner(base_status, mid_status, top_status, locked, next_followup_date, interested_by_name, interested_at),
       branches(name),
       users!created_by(name),
       status_history(new_status, changed_at)
@@ -405,6 +405,8 @@ export async function getAdminCompanyList({
       top_status: row.company_status?.[0]?.top_status,
       locked: row.company_status?.[0]?.locked,
       next_followup_date: row.company_status?.[0]?.next_followup_date,
+      interested_by_name: row.company_status?.[0]?.interested_by_name,
+      interested_at: row.company_status?.[0]?.interested_at,
       branch_name: row.branches?.name,
       added_by_name: row.users?.name,
       latest_status,

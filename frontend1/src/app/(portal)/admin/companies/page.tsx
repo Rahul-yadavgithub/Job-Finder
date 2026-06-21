@@ -52,7 +52,12 @@ export default function AdminCompaniesPage() {
     try {
       const [statsRes, compRes] = await Promise.all([
         adminGet<{ data: any }>('/companies/stats'),
-        adminGet<{ data: any[] }>('/companies', { search, status: tab === 'all' ? '' : tab, branch_id: branchFilter, limit: 50 })
+        adminGet<{ data: any[] }>('/companies', { 
+          search, 
+          filter: tab === 'all' ? '' : (tab === 'new' ? 'newly_added' : tab), 
+          branchId: branchFilter, 
+          limit: 50 
+        })
       ]);
       if (statsRes.data) setStats(statsRes.data);
       if (compRes.data) setCompanies(compRes.data);

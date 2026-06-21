@@ -42,7 +42,7 @@ export default function AdminPeoplePage() {
     setLoading(true);
     try {
       const [statsRes, coworkersRes, tprsRes, commTprsRes] = await Promise.all([
-        adminGet<{ data: any }>('/people/stats'),
+        adminGet<{ data: any }>('/people/overview'),
         adminGet<{ data: any[] }>('/people/coworkers'),
         adminGet<{ data: any[] }>('/people/branch-tprs'),
         adminGet<{ data: any[] }>('/people/communication-tprs')

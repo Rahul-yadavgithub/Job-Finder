@@ -71,9 +71,7 @@ export class CompanyController {
         performedBy: req.user?.userId,
         performedByLayer: 'comm',
         title: `Communication TPR marked status as ${status}`,
-        isVisibleToBase: status === 'revoked',
-        isVisibleToComm: true,
-        isVisibleToAdmin: true
+        visibilityScope: status === 'revoked' ? 'all_roles' : 'communication_tpr_and_above'
       });
 
       res.status(200).json({ success: true, data });

@@ -64,8 +64,7 @@ export class FollowUpController {
           performedBy: req.user?.userId,
           performedByLayer: 'comm',
           title: `Follow-up completed`,
-          isVisibleToComm: true,
-          isVisibleToAdmin: true
+          visibilityScope: 'communication_tpr_and_above'
         });
       }
 

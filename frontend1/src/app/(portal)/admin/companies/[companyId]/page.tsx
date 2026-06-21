@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { adminGet } from '@/lib/admin/api';
 import { useParams, useRouter } from 'next/navigation';
-import { Building2, MapPin, Mail, Phone, Calendar, ArrowLeft, Clock, History, ExternalLink, Activity } from 'lucide-react';
+import { Building2, MapPin, Mail, Phone, Calendar, ArrowLeft, Clock, History, ExternalLink, Activity, CheckCircle2 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { CompanyTimeline } from '@/components/companies/CompanyTimeline';
 import Link from 'next/link';
@@ -71,19 +71,40 @@ export default function CompanyDetailPage() {
   const primaryStatus = company.company_status?.[0];
 
   const renderTopStatus = () => {
-    if (!primaryStatus?.top_status) return null;
-    const stages: Record<string, { label: string, color: string }> = {
-      brochure_sent: { label: 'Brochure Sent', color: 'bg-blue-100 text-blue-700' },
-      jnf_sent: { label: 'JNF Sent', color: 'bg-indigo-100 text-indigo-700' },
-      database_sent: { label: 'Database Sent', color: 'bg-purple-100 text-purple-700' },
-      drive_confirmed: { label: 'Drive Confirmed', color: 'bg-green-100 text-green-700' },
-      completed: { label: 'Process Completed', color: 'bg-emerald-100 text-emerald-700' }
-    };
-    const s = stages[primaryStatus.top_status];
-    if (!s) return null;
+    if (!primaryStatus) return null;
+    const stages = [
+      { id: 'interested', label: 'Interested', active: primaryStatus.base_status === 'interested' && !primaryStatus.locked },
+      { id: 'under_comm', label: 'Under Communication', active: primaryStatus.locked && primaryStatus.mid_status === 'in_process' },
+      { id: 'ready_review', label: 'Ready For Head Review', active: primaryStatus.mid_status === 'pending_review' },
+      { id: 'transferred_head', label: 'Transferred To Head', active: primaryStatus.mid_status === 'accepted' },
+      { id: 'completed', label: 'Completed', active: primaryStatus.top_status === 'completed' }
+    ];
+
+    const currentStageIndex = stages.findLastIndex(s => s.active) !== -1 
+      ? stages.findLastIndex(s => s.active) 
+      : 0;
+
     return (
-      <div className={`px-3 py-1 rounded-full text-xs font-bold ${s.color}`}>
-        {s.label}
+      <div className="w-full mb-6">
+        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Current Stage</p>
+        <div className="flex items-center gap-2">
+          {stages.map((stage, idx) => (
+            <React.Fragment key={stage.id}>
+              <div className={`px-4 py-2 rounded-lg text-sm font-bold ${
+                idx === currentStageIndex 
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' 
+                  : idx < currentStageIndex
+                    ? 'bg-indigo-50 text-indigo-700 border border-indigo-100'
+                    : 'bg-gray-50 text-gray-400 border border-gray-100'
+              }`}>
+                {stage.label}
+              </div>
+              {idx < stages.length - 1 && (
+                <div className={`h-0.5 w-6 ${idx < currentStageIndex ? 'bg-indigo-200' : 'bg-gray-100'}`}></div>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
       </div>
     );
   };
@@ -104,7 +125,6 @@ export default function CompanyDetailPage() {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-3xl font-bold text-gray-900">{company.company_name}</h1>
-              {renderTopStatus()}
             </div>
             
             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mt-4">
@@ -146,6 +166,7 @@ export default function CompanyDetailPage() {
               <h2 className="text-lg font-bold text-gray-900">Activity Timeline</h2>
             </div>
             <div className="p-6">
+              {renderTopStatus()}
               {primaryStatus ? (
                 <CompanyTimeline companyId={company.id} />
               ) : (
@@ -171,6 +192,19 @@ export default function CompanyDetailPage() {
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Data Source</p>
                 <p className="text-sm text-gray-800 capitalize font-medium">{company.data_source?.replace('_', ' ')}</p>
               </div>
+              {primaryStatus?.interested_by_name && (
+                <div className="pt-4 border-t border-gray-100 mt-2">
+                  <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                    <CheckCircle2 size={12} /> Discovered & Interested By
+                  </p>
+                  <p className="text-sm font-bold text-gray-900">{primaryStatus.interested_by_name}</p>
+                  {primaryStatus.interested_at && (
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {format(new Date(primaryStatus.interested_at), 'dd MMM yyyy, h:mm a')}
+                    </p>
+                  )}
+                </div>
+              )}
               {primaryStatus && (
                 <div>
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Next Follow-up</p>

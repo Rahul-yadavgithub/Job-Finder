@@ -78,9 +78,7 @@ export const updateStatus = async (req: AuthRequest, res: Response): Promise<voi
       performedByLayer: 'base',
       title: `Base status updated to ${base_status}`,
       description: notes,
-      isVisibleToBase: true,
-      isVisibleToComm: true,
-      isVisibleToAdmin: true
+      visibilityScope: 'all_roles'
     });
 
     res.status(200).json(result);

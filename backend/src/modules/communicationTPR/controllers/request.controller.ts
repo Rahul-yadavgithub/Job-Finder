@@ -109,8 +109,7 @@ export class RequestController {
         performedBy: req.user?.userId,
         performedByLayer: 'comm',
         title: `Sent ${data.requestType} to company`,
-        isVisibleToComm: true,
-        isVisibleToAdmin: true
+        visibilityScope: 'communication_tpr_and_above'
       });
 
       res.status(200).json({ success: true, data });

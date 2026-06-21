@@ -41,7 +41,7 @@ export default function AdminDashboard() {
       const [reqRes, compRes, peopleRes, auditRes, workersRes] = await Promise.all([
         adminGet<{ data: { pending_worker_requests: number, pending_tpr_requests: number } }>('/user-requests/stats'),
         adminGet<{ data: { total: number, confirmed: number, pending_mid_review: number, added_today: number } }>('/companies/stats'),
-        adminGet<{ data: { coworkers: { total: number, active: number }, branchTprs: { total: number } } }>('/people/stats'),
+        adminGet<{ data: { coworkers: { total: number, active: number }, branchTprs: { total: number } } }>('/people/overview'),
         adminGet<{ count: number }>('/stats/audit-today'),
         adminGet<{ data: any[] }>('/people/coworkers')
       ]);

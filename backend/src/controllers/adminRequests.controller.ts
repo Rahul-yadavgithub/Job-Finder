@@ -158,9 +158,7 @@ export const actionRequest = async (req: AdminRequest, res: Response): Promise<v
         title: `Email sent: ${request.email_subject || 'Document'}`,
         description: `Sent to ${request.email_to || 'Company'}`,
         metadata: { request_type: request.request_type, email_to: request.email_to, email_subject: request.email_subject },
-        isVisibleToBase: false,
-        isVisibleToComm: true,
-        isVisibleToAdmin: true
+        visibilityScope: 'communication_tpr_and_above'
       });
 
       await supabase
@@ -260,8 +258,7 @@ export const logCompanyResponse = async (req: AdminRequest, res: Response): Prom
       metadata: { nextActionRequested, respondedByName },
       performedBy: req.admin?.userId,
       performedByLayer: 'admin',
-      isVisibleToComm: true,
-      isVisibleToAdmin: true
+      visibilityScope: 'communication_tpr_and_above'
     });
 
     if (nextActionRequested && nextActionRequested !== 'no_action' && nextActionRequested !== 'other') {
@@ -351,8 +348,7 @@ export const confirmDrive = async (req: AdminRequest, res: Response): Promise<vo
       description: `Scheduled for ${scheduledDate} at ${scheduledTime}`,
       performedBy: req.admin?.userId,
       performedByLayer: 'admin',
-      isVisibleToComm: true,
-      isVisibleToAdmin: true
+      visibilityScope: 'communication_tpr_and_above'
     });
 
     res.status(200).json({ success: true, driveId: drive.id });
@@ -385,8 +381,7 @@ export const openRegistration = async (req: AdminRequest, res: Response): Promis
       title: 'Registrations Opened',
       performedBy: req.admin?.userId,
       performedByLayer: 'admin',
-      isVisibleToComm: true,
-      isVisibleToAdmin: true
+      visibilityScope: 'communication_tpr_and_above'
     });
 
     res.status(200).json({ success: true });

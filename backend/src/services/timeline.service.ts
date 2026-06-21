@@ -9,9 +9,8 @@ export interface TimelineEvent {
   title: string;
   description?: string;
   metadata?: any;
-  isVisibleToBase?: boolean;
-  isVisibleToComm?: boolean;
-  isVisibleToAdmin?: boolean;
+  conversationNotes?: string;
+  visibilityScope?: 'admin_only' | 'base_tpr_and_above' | 'communication_tpr_and_above' | 'head_tpr_and_above' | 'all_roles';
 }
 
 export async function appendTimeline(event: TimelineEvent): Promise<void> {
@@ -33,10 +32,9 @@ export async function appendTimeline(event: TimelineEvent): Promise<void> {
         performed_by_layer: event.performedByLayer,
         title: event.title,
         description: event.description,
+        conversation_notes: event.conversationNotes,
         metadata: event.metadata || {},
-        is_visible_to_base: event.isVisibleToBase ?? false,
-        is_visible_to_comm: event.isVisibleToComm ?? true,
-        is_visible_to_admin: event.isVisibleToAdmin ?? true
+        visibility_scope: event.visibilityScope || 'all_roles'
       }]);
 
     if (error) {
@@ -56,11 +54,11 @@ export async function getTimeline(companyId: string, viewerLayer: 'base' | 'comm
       .order('created_at', { ascending: true });
 
     if (viewerLayer === 'base') {
-      query = query.eq('is_visible_to_base', true);
+      query = query.in('visibility_scope', ['all_roles', 'base_tpr_and_above']);
     } else if (viewerLayer === 'comm') {
-      query = query.eq('is_visible_to_comm', true);
+      query = query.in('visibility_scope', ['all_roles', 'base_tpr_and_above', 'communication_tpr_and_above']);
     } else if (viewerLayer === 'admin') {
-      query = query.eq('is_visible_to_admin', true);
+      query = query.in('visibility_scope', ['all_roles', 'base_tpr_and_above', 'communication_tpr_and_above', 'head_tpr_and_above', 'admin_only']);
     }
 
     const { data, error } = await query;

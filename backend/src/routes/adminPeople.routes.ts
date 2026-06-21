@@ -14,7 +14,7 @@ const router = Router();
 
 router.use(verifyAdminToken);
 
-router.get('/people/stats', requireAdminRole('head', 'caller', 'coordinator'), getPeopleStats);
+router.get('/people/overview', requireAdminRole('head', 'caller', 'coordinator'), getPeopleStats);
 router.get('/people/coworkers', requireAdminRole('head', 'caller', 'coordinator'), getCoworkers);
 router.get('/people/branch-tprs', requireAdminRole('head', 'caller', 'coordinator'), getBranchTprs);
 router.get('/people/communication-tprs', requireAdminRole('head', 'caller', 'coordinator'), getCommunicationTprs);
