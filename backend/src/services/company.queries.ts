@@ -366,12 +366,12 @@ export async function getAdminCompanyList({
   if (filter === 'confirmed') {
     query = query.eq('company_status.top_status', 'completed');
   } else if (filter === 'pending') {
-    // mid_status is accepted (meaning it passed head review), but top_status is not completed
     query = query.eq('company_status.mid_status', 'accepted')
+                 .not('company_status.top_status', 'is', null)
                  .neq('company_status.top_status', 'completed');
   } else if (filter === 'new' || filter === 'newly_added') {
-    // waiting for head review
-    query = query.eq('company_status.mid_status', 'pending_review');
+    query = query.eq('company_status.mid_status', 'accepted')
+                 .is('company_status.top_status', null);
   }
 
   const from = (page - 1) * limit;

@@ -97,7 +97,12 @@ export const markResponse = async (req: AdminRequest, res: Response): Promise<vo
     }
 
     if (outcome === 'accepted') {
-      await supabase.from('company_status').update({ top_stage: 'brochure_sent' }).eq('id', request.assignment_id);
+      const { error: statusError } = await supabase.from('company_status').update({ 
+        mid_status: 'accepted',
+        top_status: null // This puts it in the 'New' tab on the Admin Dashboard
+      }).eq('id', request.assignment_id);
+
+      if (statusError) console.error('Failed to update company_status:', statusError);
 
       await supabase.from('admin_requests').insert({
         company_id: request.company_id,
@@ -118,12 +123,14 @@ export const markResponse = async (req: AdminRequest, res: Response): Promise<vo
       await supabase.from('communication_requests').update({ status: 'accepted' }).eq('company_id', request.company_id).eq('status', 'waiting_response');
 
       // Update workflow state to show it's completed on Head TPR dashboard
-      await supabase.from('company_workflows').upsert({
+      const { error: wfError } = await supabase.from('company_workflows').upsert({
         assignment_id: request.assignment_id,
         workflow_type: 'brochure',
         status: 'acknowledged',
         updated_at: new Date().toISOString()
       }, { onConflict: 'assignment_id, workflow_type' });
+      
+      if (wfError) console.error('Failed to update workflow:', wfError);
 
       await appendTimeline({
         companyId: request.company_id,

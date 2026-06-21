@@ -1,5 +1,6 @@
 import { CompanyRepository } from '../repositories/company.repository';
 import { GetCompaniesFilters, InterestedCompany, PaginatedResult } from '../types/company.types';
+import { supabase } from '../../../config/supabase';
 
 export class CompanyService {
   private companyRepository: CompanyRepository;
@@ -82,6 +83,22 @@ export class CompanyService {
       (a: any, b: any) => new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime()
     );
 
+    // Fetch latest rejection reason if mid_status is rejected
+    let rejectionReason = null;
+    if (status?.mid_status === 'rejected') {
+      const { data: staffReqs } = await supabase
+        .from('staff_requests')
+        .select('rejection_reason')
+        .eq('company_id', id)
+        .eq('status', 'rejected')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      if (staffReqs && staffReqs.length > 0) {
+        rejectionReason = staffReqs[0].rejection_reason;
+      }
+    }
+
     return {
       id: row.id,
       companyName: row.company_name,
@@ -102,6 +119,7 @@ export class CompanyService {
       },
       hrContacts: row.hr_contacts || [],
       statusHistory,
+      rejectionReason,
       contactLog
     };
   }
