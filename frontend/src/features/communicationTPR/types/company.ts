@@ -23,6 +23,7 @@ export interface DetailedCompany extends InterestedCompany {
   hrContacts: any[];
   statusHistory: any[];
   contactLog: any[];
+  rejectionReason?: string;
 }
 
 export interface PaginatedCompanies {

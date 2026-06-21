@@ -38,19 +38,33 @@ export default function MyTasksPage() {
   const [executingTask, setExecutingTask] = useState<string | null>(null);
   const [overviewModalReq, setOverviewModalReq] = useState<StaffRequest | null>(null);
   const [confirmSendReq, setConfirmSendReq] = useState<StaffRequest | null>(null);
+  const [responseModal, setResponseModal] = useState<{ id: string, outcome: 'accepted' | 'rejected' } | null>(null);
+  const [responseNotes, setResponseNotes] = useState('');
   const [errorState, setErrorState] = useState<Record<string, string>>({});
   const { user } = useAdminAuth();
 
   const fetchTasks = async () => {
     try {
-      const [res, staffRes] = await Promise.all([
-        adminGet<{ data: Task[] }>('/tasks/my-tasks'),
-        adminGet<{ data: StaffRequest[] }>('/staff/requests')
-      ]);
+      const isHead = user?.role === 'head' && !user?.jumpedIn;
+      
+      const promises: Promise<any>[] = [
+        adminGet<{ data: Task[] }>('/tasks/my-tasks')
+      ];
+      
+      if (!isHead) {
+        promises.push(adminGet<{ data: StaffRequest[] }>('/staff/requests'));
+      }
+
+      const results = await Promise.all(promises);
+      const res = results[0];
+      const staffRes = !isHead ? results[1] : { data: [] };
+
       if (res.data) setTasks(res.data);
       if (staffRes.data) {
         // Filter out accepted/rejected from view
-        setStaffRequests(staffRes.data.filter(r => r.status === 'pending_send' || r.status === 'waiting_response'));
+        setStaffRequests(staffRes.data.filter((r: StaffRequest) => r.status === 'pending_send' || r.status === 'waiting_response'));
+      } else {
+        setStaffRequests([]);
       }
     } catch (error) {
       console.error('Failed to fetch tasks', error);
@@ -60,8 +74,10 @@ export default function MyTasksPage() {
   };
 
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    if (user) {
+      fetchTasks();
+    }
+  }, [user?.role, user?.jumpedIn]);
 
   const handleExecute = async (taskId: string, newStatus: string, notes: string = '') => {
     setExecutingTask(taskId);
@@ -106,10 +122,8 @@ export default function MyTasksPage() {
     }
   };
 
-  const handleStaffResponse = async (id: string, outcome: 'accepted' | 'rejected') => {
-    const notes = prompt(`Enter notes for marking as ${outcome}:`);
-    if (!notes && outcome === 'rejected') {
-      alert('Notes are required for rejection.');
+  const submitStaffResponse = async (id: string, outcome: 'accepted' | 'rejected', notes: string) => {
+    if (!notes.trim() && outcome === 'rejected') {
       return;
     }
     setExecutingTask(id);
@@ -119,7 +133,8 @@ export default function MyTasksPage() {
       } else {
         await adminPost(`/staff/requests/${id}/reject`, { notes });
       }
-      alert(`Marked as ${outcome}!`);
+      setResponseModal(null);
+      setResponseNotes('');
       await fetchTasks();
     } catch (error) {
       console.error(error);
@@ -313,14 +328,14 @@ export default function MyTasksPage() {
                   </button>
                   <div className="pt-2 border-t border-blue-200">
                     <button 
-                      onClick={() => handleStaffResponse(req.id, 'accepted')}
+                      onClick={() => setResponseModal({ id: req.id, outcome: 'accepted' })}
                       disabled={executingTask === req.id}
                       className="w-full py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2 mb-2"
                     >
                       <CheckCircle2 size={16} /> Mark Accepted
                     </button>
                     <button 
-                      onClick={() => handleStaffResponse(req.id, 'rejected')}
+                      onClick={() => setResponseModal({ id: req.id, outcome: 'rejected' })}
                       disabled={executingTask === req.id}
                       className="w-full py-2 bg-white border border-red-200 hover:border-red-500 hover:text-red-600 text-gray-700 text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
                     >
@@ -390,6 +405,81 @@ export default function MyTasksPage() {
               >
                 {executingTask === confirmSendReq.id ? <Loader2 size={16} className="animate-spin" /> : null}
                 Confirm Send
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Response Note Modal */}
+      {responseModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col scale-in-center border border-gray-100">
+            <div className={`px-6 py-4 border-b flex items-center gap-3 ${responseModal.outcome === 'accepted' ? 'bg-green-50/80 border-green-100' : 'bg-red-50/80 border-red-100'}`}>
+              {responseModal.outcome === 'accepted' ? (
+                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 shadow-sm">
+                  <CheckCircle2 size={20} />
+                </div>
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 shadow-sm">
+                  <Trash2 size={20} />
+                </div>
+              )}
+              <div>
+                <h3 className={`font-bold text-lg ${responseModal.outcome === 'accepted' ? 'text-green-900' : 'text-red-900'}`}>
+                  {responseModal.outcome === 'accepted' ? 'Mark as Accepted' : 'Mark as Rejected'}
+                </h3>
+                <p className="text-xs font-medium text-gray-500 mt-0.5">
+                  {responseModal.outcome === 'accepted' ? 'Confirm completion of this request' : 'Provide a reason for rejection'}
+                </p>
+              </div>
+            </div>
+            
+            <div className="p-6 bg-white">
+              <label className="block text-sm font-bold text-gray-800 mb-2">
+                Add a note {responseModal.outcome === 'rejected' && <span className="text-red-500">*</span>}
+              </label>
+              <textarea
+                value={responseNotes}
+                onChange={(e) => setResponseNotes(e.target.value)}
+                placeholder={responseModal.outcome === 'accepted' ? "Optional notes about this acceptance..." : "Please provide a reason for rejection (this will be logged)..."}
+                className="w-full rounded-xl border border-gray-200 p-4 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none shadow-inner bg-gray-50/50 placeholder:text-gray-400"
+                rows={4}
+                autoFocus
+              />
+              {responseModal.outcome === 'rejected' && !responseNotes.trim() && (
+                <p className="text-xs text-red-500 mt-2 font-medium flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-red-500"></span> Rejection reason is required
+                </p>
+              )}
+            </div>
+
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
+              <button
+                onClick={() => {
+                  setResponseModal(null);
+                  setResponseNotes('');
+                }}
+                disabled={executingTask === responseModal.id}
+                className="px-5 py-2.5 text-sm font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-200 bg-white border border-gray-200 rounded-xl transition-colors shadow-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => submitStaffResponse(responseModal.id, responseModal.outcome, responseNotes)}
+                disabled={executingTask === responseModal.id || (responseModal.outcome === 'rejected' && !responseNotes.trim())}
+                className={`px-6 py-2.5 text-sm font-bold text-white rounded-xl flex items-center gap-2 transition-all shadow-md
+                  ${responseModal.outcome === 'accepted' 
+                    ? 'bg-green-600 hover:bg-green-700 shadow-green-600/20 hover:shadow-green-600/40' 
+                    : 'bg-red-600 hover:bg-red-700 shadow-red-600/20 hover:shadow-red-600/40'} 
+                  disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {executingTask === responseModal.id ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  responseModal.outcome === 'accepted' ? <CheckCircle2 size={18} /> : <Trash2 size={18} />
+                )}
+                Confirm {responseModal.outcome === 'accepted' ? 'Acceptance' : 'Rejection'}
               </button>
             </div>
           </div>

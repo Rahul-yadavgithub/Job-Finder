@@ -149,7 +149,7 @@ export default function SyncCenterPage() {
             <div className="h-16 bg-slate-100 rounded-xl animate-pulse"></div>
             <div className="h-16 bg-slate-100 rounded-xl animate-pulse"></div>
           </div>
-        ) : pendingCompanies?.length === 0 ? (
+        ) : (!pendingCompanies || pendingCompanies.length === 0) ? (
           <div className="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-12 text-center text-slate-500">
             <CheckCircle className="w-10 h-10 mx-auto text-green-500 mb-3" />
             <h3 className="font-bold text-lg text-slate-700">All Caught Up!</h3>
@@ -165,7 +165,7 @@ export default function SyncCenterPage() {
                       <input 
                         type="checkbox" 
                         className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
-                        checked={pendingCompanies.length > 0 && selectedIds.length === pendingCompanies.length}
+                        checked={!!pendingCompanies && pendingCompanies.length > 0 && selectedIds.length === pendingCompanies.length}
                         onChange={toggleAll}
                       />
                     </th>

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Building2, User, Phone, Mail, Calendar, Clock, BookOpen, AlertCircle, Users, Send, Network, Lock, Activity } from 'lucide-react';
+import { ArrowLeft, Building2, User, Phone, Mail, Calendar, Clock, BookOpen, AlertCircle, Users, Send, Network, Lock, Activity, XCircle } from 'lucide-react';
 import { companyApi } from '../services/company.api';
 import { CompanyActivity } from '../types/activity';
 import { DetailedCompany } from '../types/company';
@@ -25,6 +25,8 @@ export function CompanyDetailPage() {
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
   const [isTransferring, setIsTransferring] = useState(false);
+  const [revertNotes, setRevertNotes] = useState('');
+  const [isReverting, setIsReverting] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -143,23 +145,6 @@ export function CompanyDetailPage() {
             </button>
           )}
 
-          {!isLocked && company.currentStatus.midStatus === 'interested' && (
-             <button
-               onClick={() => {
-                 const notes = prompt('Enter reason for reverting back to the branch:');
-                 if (notes) {
-                   companyApi.updateStage(company.id, 'revoked').then(() => {
-                     // In a real app we'd also post the note to history. Let's rely on the backend doing it or do it here.
-                     alert('Reverted to branch.');
-                     router.push('/communication-tpr/companies');
-                   });
-                 }
-               }}
-               className="inline-flex items-center justify-center rounded-lg bg-red-50 text-red-700 px-4 py-2.5 text-sm font-semibold shadow-sm ring-1 ring-inset ring-red-300 hover:bg-red-100 transition-colors"
-             >
-               Revert ↩
-             </button>
-          )}
 
           {!isLocked && (company.currentStatus.midStatus === 'interested' || company.currentStatus.midStatus === 'under_communication') && (
             <button
@@ -178,6 +163,65 @@ export function CompanyDetailPage() {
         {/* Main Column */}
         <div className="xl:col-span-3 space-y-6">
           
+          {/* Rejection Resolution Section */}
+          {company.currentStatus.midStatus === 'rejected' && (
+            <div className="bg-white rounded-xl border border-red-200 shadow-sm overflow-hidden animate-in slide-in-from-top-4">
+              <div className="border-b border-red-100 px-6 py-4 bg-red-50 flex items-center gap-2">
+                <XCircle className="w-5 h-5 text-red-600" />
+                <h3 className="text-base font-bold leading-6 text-red-900">
+                  Rejected by Head TPO
+                </h3>
+              </div>
+              <div className="p-6">
+                <div className="mb-6">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Rejection Notes from Head Team:</h4>
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                      {company.rejectionReason || <span className="italic text-gray-400">No notes provided.</span>}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-100 pt-6">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3">Revert to Base TPR</h4>
+                  <p className="text-xs text-gray-500 mb-4">
+                    Please provide detailed feedback for the Base TPR so they understand why this company was reverted and what steps to take next.
+                  </p>
+                  <textarea
+                    rows={4}
+                    className="block w-full rounded-xl border-0 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6 mb-4"
+                    placeholder="Enter notes for the branch TPR..."
+                    value={revertNotes}
+                    onChange={(e) => setRevertNotes(e.target.value)}
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      onClick={async () => {
+                        if (!revertNotes.trim()) {
+                          alert('Please provide notes before reverting.');
+                          return;
+                        }
+                        setIsReverting(true);
+                        try {
+                          await companyApi.updateStage(company.id, 'revoked', revertNotes);
+                          router.push('/communication-tpr/pipeline');
+                        } catch (err) {
+                          alert('Failed to revert company.');
+                        } finally {
+                          setIsReverting(false);
+                        }
+                      }}
+                      disabled={isReverting || !revertNotes.trim()}
+                      className="inline-flex items-center justify-center rounded-lg bg-green-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-500 transition-colors disabled:opacity-50"
+                    >
+                      {isReverting ? 'Reverting...' : 'Revert to Base TPR'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Activity Timeline Card */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden p-6 md:p-8">
             <div className="flex items-center gap-2 mb-8">

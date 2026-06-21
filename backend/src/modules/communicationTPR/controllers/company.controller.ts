@@ -57,7 +57,7 @@ export class CompanyController {
   updateStage = async (req: CommunicationTPRRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const { status } = req.body;
+      const { status, notes } = req.body;
       const data = await this.companyService.updateMidStatus(id as string, status);
       
       let eventType = 'status_updated';
@@ -71,6 +71,7 @@ export class CompanyController {
         performedBy: req.user?.userId,
         performedByLayer: 'comm',
         title: `Communication TPR marked status as ${status}`,
+        description: notes,
         visibilityScope: status === 'revoked' ? 'all_roles' : 'communication_tpr_and_above'
       });
 

@@ -1,5 +1,5 @@
 export type RequestType = 'brochure' | 'officialCommunication';
-export type RequestStatus = 'pending' | 'submitted' | 'completed' | 'rejected';
+export type RequestStatus = 'pending' | 'submitted' | 'completed' | 'rejected' | 'draft' | 'pending_approval' | 'pending_staff_review' | 'sent' | 'waiting_response' | string;
 
 export interface CommunicationRequest {
   id: string;

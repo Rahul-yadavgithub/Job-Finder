@@ -17,8 +17,8 @@ export const companyApi = {
     return data;
   },
 
-  updateStage: async (id: string, status: string) => {
-    const { data } = await commApi.patch<{ success: boolean; data: any }>(`/companies/${id}/stage`, { status });
+  updateStage: async (id: string, status: string, notes?: string) => {
+    const { data } = await commApi.patch<{ success: boolean; data: any }>(`/companies/${id}/stage`, { status, notes });
     return data;
   },
 
