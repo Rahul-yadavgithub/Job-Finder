@@ -8,6 +8,7 @@ export interface AdminJWTPayload {
   isSuperAdmin: boolean;
   isDesignatedSuccessor: boolean;
   tokenVersion: number;
+  jumpedIn?: boolean;
 }
 
 export interface AdminRequest extends Request {

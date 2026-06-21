@@ -1,29 +1,48 @@
 import { Router } from 'express';
-import { 
-  getAllRequests, 
-  getRequestStats, 
-  approveBranchTpr, 
-  rejectBranchTpr 
+import { verifyAdminToken, requireAdminRole } from '../middleware/adminAuth.middleware';
+import { requireJumpedIn } from '../middleware/jumpedIn.middleware';
+import {
+  getRequests,
+  previewRequest,
+  actionRequest,
+  logCompanyResponse,
+  confirmDrive,
+  openRegistration,
+  getDriveDetails,
+  getAllDrives
 } from '../controllers/adminRequests.controller';
-import { 
-  approveWorker, 
-  rejectWorker 
-} from '../controllers/workerManagement.controller';
-import { verifyAdminToken, requireSuperAdmin } from '../middleware/adminAuth.middleware';
+import { jumpIn, jumpOut } from '../controllers/adminAuth.controller';
+import { getTimeline } from '../services/timeline.service';
 
 const router = Router();
 
-// Approvals are strictly for Head TPO
 router.use(verifyAdminToken);
-router.use(requireSuperAdmin);
+router.use(requireAdminRole('head', 'caller', 'coordinator'));
 
-router.get('/requests', getAllRequests);
-router.get('/requests/stats', getRequestStats);
+// Auth Overrides
+router.post('/auth/jump-in', jumpIn);
+router.post('/auth/jump-out', jumpOut);
 
-router.post('/requests/workers/:requestId/approve', approveWorker);
-router.post('/requests/workers/:requestId/reject', rejectWorker);
+// Admin Requests
+router.get('/requests', getRequests);
+router.get('/requests/:id/preview', previewRequest);
+router.post('/requests/:id/action', actionRequest);
+router.post('/requests/log-response', logCompanyResponse);
 
-router.post('/requests/tprs/:userId/approve', approveBranchTpr);
-router.post('/requests/tprs/:userId/reject', rejectBranchTpr);
+// Drives
+router.post('/drives/confirm', requireJumpedIn, confirmDrive);
+router.post('/drives/:id/open-registration', requireJumpedIn, openRegistration);
+router.get('/drives/all', getAllDrives);
+router.get('/drives/:assignmentId', getDriveDetails);
+
+// Timeline
+router.get('/timeline/:companyId', async (req, res) => {
+  try {
+    const events = await getTimeline(req.params.companyId, 'admin');
+    res.json({ success: true, data: events });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch timeline' });
+  }
+});
 
 export default router;

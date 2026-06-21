@@ -362,7 +362,7 @@ export default function AdminPeoplePage() {
                           <td className="px-6 py-4">
                             <div className="font-bold text-gray-900 flex items-center gap-2">
                               {tpr.name}
-                              <ShieldCheck size={14} className="text-indigo-600" title="Communication TPR" />
+                              {tpr.role === 'communication_tpr' && <ShieldCheck size={14} className="text-indigo-600" />}
                             </div>
                             <div className="text-xs text-gray-500">{tpr.roll_number}</div>
                           </td>

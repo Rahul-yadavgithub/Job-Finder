@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { CompanyService } from '../services/company.service';
 import { CommunicationTPRRequest } from '../types';
+import { appendTimeline } from '../../../services/timeline.service';
 
 export class CompanyController {
   private companyService: CompanyService;
@@ -58,6 +59,23 @@ export class CompanyController {
       const { id } = req.params;
       const { status } = req.body;
       const data = await this.companyService.updateMidStatus(id as string, status);
+      
+      let eventType = 'status_updated';
+      if (status === 'accepted') eventType = 'accepted_by_comm_tpr';
+      else if (status === 'revoked') eventType = 'reverted_to_branch';
+      
+      await appendTimeline({
+        companyId: id as string,
+        assignmentId: data.id,
+        eventType,
+        performedBy: req.user?.userId,
+        performedByLayer: 'comm',
+        title: `Communication TPR marked status as ${status}`,
+        isVisibleToBase: status === 'revoked',
+        isVisibleToComm: true,
+        isVisibleToAdmin: true
+      });
+
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error('updateStage Error:', error);

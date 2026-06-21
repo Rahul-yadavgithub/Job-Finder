@@ -348,11 +348,12 @@ export async function getAdminCompanyList({
     .from('companies')
     .select(`
       id, company_name, hr_name, email, phone_number, data_source, created_at,
-      company_status(base_status, mid_status, top_status, locked, next_followup_date),
+      company_status!inner(base_status, mid_status, top_status, locked, next_followup_date),
       branches(name),
       users!created_by(name),
       status_history(new_status, changed_at)
-    `, { count: 'exact' });
+    `, { count: 'exact' })
+    .or('locked.eq.true,base_status.eq.interested', { referencedTable: 'company_status' });
 
   if (branchId) {
     query = query.eq('branch_id', branchId);
