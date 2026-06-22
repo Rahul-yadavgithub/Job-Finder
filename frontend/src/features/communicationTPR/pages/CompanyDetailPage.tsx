@@ -89,7 +89,7 @@ export function CompanyDetailPage() {
       return 'completed';
     }
 
-    const hasEmailSent = activities.some(a => a.eventType === 'email_sent_to_company');
+    const hasEmailSent = activities.some(a => a.activityType === 'email');
 
     if (primaryStatus.midStatus === 'pending_staff_review' || primaryStatus.midStatus === 'ready_for_head_review' || primaryStatus.midStatus === 'pending_review') {
       return hasEmailSent ? 'email_sent' : 'email_drafted';
