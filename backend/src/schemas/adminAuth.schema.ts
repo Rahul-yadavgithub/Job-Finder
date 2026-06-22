@@ -15,5 +15,5 @@ export const requestAccessSchema = z.object({
     password: z.string().min(8, 'Password must be at least 8 characters long'),
     designation: z.enum(['caller', 'coordinator', 'assistant_tpo']),
     selfNote: z.string().optional(),
-  }).strict(),
+  }),
 });

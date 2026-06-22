@@ -31,10 +31,10 @@ export const loginLimiter = rateLimit({
   message: { success: false, message: 'Too many login attempts, please try again after 15 minutes' },
 });
 
-// Register limit: 3 requests per hour per IP
+// Register limit: 3 requests per hour per IP (50 in dev)
 export const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  limit: 5,
+  limit: process.env.NODE_ENV !== 'production' ? 50 : 5,
   standardHeaders: true,
   legacyHeaders: false,
   store: new RedisStore({
@@ -45,10 +45,10 @@ export const registerLimiter = rateLimit({
   message: { success: false, message: 'Too many registration attempts, please try again after an hour' },
 });
 
-// Forgot password limit: 3 requests per hour per IP
+// Forgot password limit: 3 requests per hour per IP (50 in dev)
 export const forgotPasswordLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  limit: 5,
+  limit: process.env.NODE_ENV !== 'production' ? 50 : 5,
   standardHeaders: true,
   legacyHeaders: false,
   store: new RedisStore({
