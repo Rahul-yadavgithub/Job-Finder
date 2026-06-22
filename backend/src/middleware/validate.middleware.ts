@@ -11,12 +11,13 @@ export const validate = (schema: ZodObject<any, any>) => {
       });
       next();
     } catch (error: any) {
-      if (error instanceof ZodError) {
+      if (error instanceof ZodError || (error && (error as any).name === 'ZodError')) {
+        const issues = (error as any).issues || (error as any).errors || [];
         res.status(400).json({
           success: false,
           message: 'Validation failed',
-          errors: (error as any).errors.map((e: any) => ({
-            path: e.path.join('.'),
+          errors: issues.map((e: any) => ({
+            path: e.path ? e.path.join('.') : 'unknown',
             message: e.message,
           })),
         });
