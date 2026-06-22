@@ -26,7 +26,7 @@ export class AuthController {
       res.cookie('communication_tpr_token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
         maxAge: 12 * 60 * 60 * 1000 // 12 hours
       });
 
@@ -61,7 +61,7 @@ export class AuthController {
       res.clearCookie('communication_tpr_token', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict'
       });
       res.status(200).json({ success: true, message: 'Logged out successfully' });
     } catch (error) {

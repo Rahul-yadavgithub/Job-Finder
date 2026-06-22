@@ -27,12 +27,29 @@ app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 app.use(cookieParser());
 app.use(compression());
 
-const frontendUrl = process.env.FRONTEND_URL 
-  ? (process.env.FRONTEND_URL.startsWith('http') ? process.env.FRONTEND_URL : `https://${process.env.FRONTEND_URL}`)
-  : 'http://localhost:3000';
+const getAllowedOrigins = () => {
+  const origins: string[] = ['http://localhost:3000', 'http://localhost:3001'];
+  
+  const parseEnvUrl = (envVar: string | undefined) => {
+    if (!envVar) return;
+    const urls = envVar.split(',').map(url => url.trim());
+    urls.forEach(url => {
+      if (!url) return;
+      origins.push(url.startsWith('http') ? url : `https://${url}`);
+    });
+  };
+
+  parseEnvUrl(process.env.FRONTEND_URL);
+  parseEnvUrl(process.env.ADMIN_BASE_URL);
+  parseEnvUrl(process.env.TPO_ADMIN_BASE_URL);
+
+  return [...new Set(origins)]; // Remove duplicates
+};
+
+const allowedOrigins = getAllowedOrigins();
 
 app.use(cors({
-  origin: true,
+  origin: allowedOrigins,
   credentials: true
 }));
 
