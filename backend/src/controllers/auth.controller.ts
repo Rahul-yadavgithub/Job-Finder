@@ -152,7 +152,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     res.cookie('tpr_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
       maxAge: 8 * 60 * 60 * 1000
     });
 
@@ -181,7 +181,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       res.cookie('communication_tpr_token', commToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
         maxAge: 12 * 60 * 60 * 1000
       });
     }
@@ -251,12 +251,12 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
   res.clearCookie('tpr_token', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict'
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict'
   });
   res.clearCookie('communication_tpr_token', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict'
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict'
   });
   res.status(200).json({ success: true, message: 'Logged out' });
 };
@@ -331,7 +331,8 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
     const secret = process.env.JWT_SECRET + user.password_hash;
     const token = jwt.sign({ id: user.id, email: user.email }, secret, { expiresIn: '15m' });
 
-    const frontendUrl = process.env.ADMIN_BASE_URL || 'http://localhost:3000';
+    const baseUrl = process.env.ADMIN_BASE_URL || 'http://localhost:3000';
+    const frontendUrl = baseUrl.split(',')[0].trim();
     const resetLink = `${frontendUrl}/reset-password?id=${user.id}&token=${token}`;
 
     await sendResetEmail(user.email, resetLink);
