@@ -11,7 +11,12 @@ commApi.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+      if (
+        typeof window !== 'undefined' && 
+        !window.location.pathname.includes('/login') &&
+        !window.location.pathname.includes('/reset-password') &&
+        !window.location.pathname.includes('/forgot-password')
+      ) {
         window.location.href = '/login';
       }
     }
