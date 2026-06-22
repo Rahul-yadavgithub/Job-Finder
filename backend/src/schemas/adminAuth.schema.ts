@@ -4,7 +4,7 @@ export const adminLoginSchema = z.object({
   body: z.object({
     email: z.string().email('Invalid email format'),
     password: z.string().min(1, 'Password is required'),
-  }).strict(),
+  }),
 });
 
 export const requestAccessSchema = z.object({
@@ -14,5 +14,5 @@ export const requestAccessSchema = z.object({
     password: z.string().min(8, 'Password must be at least 8 characters long'),
     designation: z.enum(['caller', 'coordinator', 'assistant_tpo']),
     selfNote: z.string().optional(),
-  }).strict(),
+  }),
 });

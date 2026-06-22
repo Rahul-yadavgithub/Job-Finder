@@ -7,20 +7,20 @@ export const registerSchema = z.object({
     email: z.string().email('Invalid email format'),
     password: z.string().min(8, 'Password must be at least 8 characters long'),
     branchId: z.string().uuid('Invalid branch selected'),
-  }).strict(),
+  }),
 });
 
 export const loginSchema = z.object({
   body: z.object({
     email: z.string().email('Invalid email format'),
     password: z.string().min(1, 'Password is required'),
-  }).strict(),
+  }),
 });
 
 export const forgotPasswordSchema = z.object({
   body: z.object({
     email: z.string().email('Invalid email format'),
-  }).strict(),
+  }),
 });
 
 export const resetPasswordSchema = z.object({
@@ -28,5 +28,5 @@ export const resetPasswordSchema = z.object({
     id: z.string().uuid(),
     token: z.string(),
     newPassword: z.string().min(8, 'Password must be at least 8 characters long'),
-  }).strict(),
+  }),
 });
