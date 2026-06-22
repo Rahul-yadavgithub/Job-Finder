@@ -25,5 +25,10 @@ export const companyApi = {
   transferToHead: async (id: string) => {
     const { data } = await commApi.post<{ success: boolean; data: any }>(`/companies/${id}/transfer`);
     return data;
+  },
+
+  getDashboardStats: async () => {
+    const { data } = await commApi.get<{ success: boolean; data: { active: number; newIncoming: number; confirmed: number } }>('/companies/dashboard/stats');
+    return data;
   }
 };

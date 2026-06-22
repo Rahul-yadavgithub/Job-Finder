@@ -82,17 +82,14 @@ export function CompanyDetailPage() {
   const getLifecyclePhase = (): CommPhase => {
     const primaryStatus = company.currentStatus;
     
-    if (primaryStatus.midStatus === 'rejected' || primaryStatus.baseStatus === 'rejected' || primaryStatus.midStatus === 'revoked') {
+    if (primaryStatus.midStatus === 'rejected') {
       return 'rejected';
     }
-    if (primaryStatus.editingLocked || primaryStatus.midStatus === 'transferred_to_head' || primaryStatus.midStatus === 'accepted') {
+    if (primaryStatus.editingLocked || primaryStatus.midStatus === 'transferred_to_head' || primaryStatus.midStatus === 'accepted' || primaryStatus.baseStatus === 'rejected' || primaryStatus.midStatus === 'revoked') {
       return 'completed';
     }
-
-    const hasEmailSent = activities.some(a => a.eventType === 'email_sent_to_company');
-
     if (primaryStatus.midStatus === 'pending_staff_review' || primaryStatus.midStatus === 'ready_for_head_review' || primaryStatus.midStatus === 'pending_review') {
-      return hasEmailSent ? 'email_sent' : 'email_drafted';
+      return 'tpo_staff_review';
     }
     if (primaryStatus.midStatus === 'under_communication') {
       return 'email_drafted';
@@ -101,25 +98,6 @@ export function CompanyDetailPage() {
   };
 
   const currentPhase = getLifecyclePhase();
-
-  const getPipelineStageLabel = () => {
-    switch (currentPhase) {
-      case 'new_arrival':
-        return 'New Commer';
-      case 'email_drafted':
-        return 'Drafted';
-      case 'email_sent':
-        return 'Transferred to TPO Office - Review Pending';
-      case 'completed':
-        if (company.currentStatus.midStatus === 'accepted') return 'Accepted (Confirmed)';
-        if (company.currentStatus.midStatus === 'transferred_to_head') return 'Transferred to Head Portal';
-        return 'Completed';
-      case 'rejected':
-        return 'Rejected / Revoked';
-      default:
-        return (company.currentStatus.midStatus || 'interested').replace(/_/g, ' ');
-    }
-  };
 
   return (
     <div className="space-y-6 w-full max-w-none px-4 sm:px-6 lg:px-8 pb-12">
@@ -161,7 +139,7 @@ export function CompanyDetailPage() {
                   <span>Added by: <b>{company.assignedTPR || 'Unknown'}</b></span>
                 </div>
                 <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-lg border border-white/20 backdrop-blur-sm capitalize">
-                  Pipeline Stage: {getPipelineStageLabel()}
+                  Pipeline Stage: {(company.currentStatus.midStatus || 'interested').replace(/_/g, ' ')}
                 </div>
               </div>
             </div>
@@ -271,21 +249,6 @@ export function CompanyDetailPage() {
                 <BookOpen className="w-5 h-5 text-blue-500" />
                 Company Overview
               </h3>
-            </div>
-            <div className="p-6">
-              <div className="text-sm text-gray-500 italic">
-                General company overview information can be placed here.
-              </div>
-            </div>
-          </div>
-
-          {/* Expanded Communication Timeline */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="border-b border-gray-200 px-6 py-4 bg-gray-50 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Activity className="w-5 h-5 text-green-600" />
-                <h2 className="text-base font-bold text-gray-900 uppercase tracking-wider">Communication Phase</h2>
-              </div>
             </div>
             <div className="p-6">
               <CompanyTimeline companyId={company.id} />

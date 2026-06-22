@@ -11,5 +11,6 @@ router.get('/my-followups', followUpController.getMyFollowUps);
 router.get('/company/:companyId', followUpController.getCompanyFollowUps);
 router.post('/company/:companyId', followUpController.createFollowUp);
 router.patch('/:id/status', followUpController.updateFollowUpStatus);
+router.delete('/:id', followUpController.deleteFollowUp);
 
 export default router;

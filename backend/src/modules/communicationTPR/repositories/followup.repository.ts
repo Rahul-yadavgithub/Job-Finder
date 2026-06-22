@@ -56,4 +56,14 @@ export class FollowUpRepository {
     if (error) throw error;
     return data;
   }
+
+  async deleteFollowUp(followUpId: string) {
+    const { error } = await supabase
+      .from('follow_ups')
+      .delete()
+      .eq('id', followUpId);
+
+    if (error) throw error;
+    return true;
+  }
 }

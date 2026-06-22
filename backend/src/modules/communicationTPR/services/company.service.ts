@@ -43,7 +43,7 @@ export class CompanyService {
         hrName: row.hr_name,
         email: row.email,
         phone: row.phone_number,
-        assignedTPR: user?.name,
+        assignedTPR: (status?.users as any)?.[0]?.name || (status?.users as any)?.name || user?.name,
         branch: branch?.name,
         branchId: branch?.id,
         interestDate,
@@ -108,7 +108,7 @@ export class CompanyService {
       description: row.description,
       dataSource: row.data_source,
       createdAt: row.created_at,
-      assignedTPR: user?.name,
+      assignedTPR: (status?.users as any)?.[0]?.name || (status?.users as any)?.name || user?.name,
       branch: branch?.name,
       interestDate,
       currentStatus: {
@@ -132,7 +132,11 @@ export class CompanyService {
     return this.companyRepository.updateMidStatus(companyId, status);
   }
 
-  async transferToHead(companyId: string, userId: string) {
-    return this.companyRepository.transferToHead(companyId, userId);
+  async transferToHead(companyId: string, userId: string): Promise<any> {
+    return await this.companyRepository.transferToHead(companyId, userId);
+  }
+
+  async getDashboardStats() {
+    return await this.companyRepository.getDashboardStats();
   }
 }

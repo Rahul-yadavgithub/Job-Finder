@@ -177,13 +177,13 @@ export default function AdminRequestsPage() {
       {/* Stats Row - Only visible for Super Admins */}
       {user.isSuperAdmin && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl p-6 border border-coral-100 shadow-sm flex items-center justify-between">
+          <div className="bg-white rounded-xl p-6 border border-red-100 shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-coral-600 uppercase tracking-wider mb-1">Staff Requests</p>
+              <p className="text-sm font-bold text-red-600 uppercase tracking-wider mb-1">Staff Requests</p>
               <p className="text-3xl font-bold text-gray-900">{stats.worker}</p>
             </div>
-            <div className={`p-4 rounded-full ${stats.worker > 0 ? 'bg-coral-50' : 'bg-gray-50'}`}>
-              <UserCheck size={32} className={stats.worker > 0 ? 'text-coral-500' : 'text-gray-300'} />
+            <div className={`p-4 rounded-full ${stats.worker > 0 ? 'bg-red-50' : 'bg-gray-50'}`}>
+              <UserCheck size={32} className={stats.worker > 0 ? 'text-red-500' : 'text-gray-300'} />
             </div>
           </div>
 
@@ -216,7 +216,7 @@ export default function AdminRequestsPage() {
                 className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${tab === 'coworker-requests' ? 'bg-white text-[#15335b] shadow border border-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}
               >
                 TPO Staff Requests 
-                {stats.worker > 0 && <span className="bg-coral-100 text-coral-700 py-0.5 px-2 rounded-full text-[10px]">{stats.worker}</span>}
+                {stats.worker > 0 && <span className="bg-red-100 text-red-700 py-0.5 px-2 rounded-full text-[10px]">{stats.worker}</span>}
               </button>
               
               <button
@@ -272,7 +272,7 @@ export default function AdminRequestsPage() {
                       <div className="font-bold text-gray-900">{req.name}</div>
                       <div className="text-xs text-gray-500">{req.email}</div>
                       {req.request_type === 'branch_tpr' && <div className="text-[10px] uppercase font-bold text-blue-500 mt-0.5">TPR REQUEST</div>}
-                      {req.request_type === 'worker' && <div className="text-[10px] uppercase font-bold text-coral-500 mt-0.5">STAFF REQUEST</div>}
+                      {req.request_type === 'worker' && <div className="text-[10px] uppercase font-bold text-red-500 mt-0.5">STAFF REQUEST</div>}
                     </td>
                     <td className="px-6 py-4">
                       {req.request_type === 'worker' ? (

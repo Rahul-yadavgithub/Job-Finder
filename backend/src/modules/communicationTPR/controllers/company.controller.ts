@@ -107,4 +107,14 @@ export class CompanyController {
       res.status(500).json({ success: false, message: 'Failed to fetch company timeline' });
     }
   };
+
+  getDashboardStats = async (req: CommunicationTPRRequest, res: Response): Promise<void> => {
+    try {
+      const data = await this.companyService.getDashboardStats();
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error('getDashboardStats Error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch dashboard stats' });
+    }
+  };
 }

@@ -6,6 +6,31 @@ import { Bell, Building2, User, ClipboardList, Settings, Check } from 'lucide-re
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
+
+const playNotificationSound = () => {
+  try {
+    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+    oscillator.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.1); // A6
+    
+    gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.05);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+    
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + 0.2);
+  } catch (e) {
+    console.log('Audio play failed', e);
+  }
+};
 
 interface Notification {
   id: string;
@@ -35,6 +60,11 @@ export function NotificationBell() {
     socket.on('new_notification', (newNotif: Notification) => {
       setUnreadCount(prev => prev + 1);
       setNotifications(prev => [newNotif, ...prev]);
+      playNotificationSound();
+      toast(newNotif.title, {
+        description: newNotif.message,
+        duration: 5000,
+      });
     });
 
     return () => {

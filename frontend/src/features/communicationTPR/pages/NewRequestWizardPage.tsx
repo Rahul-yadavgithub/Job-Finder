@@ -221,25 +221,25 @@ export function NewRequestWizardPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
               {/* Left Side Metadata */}
-              <div className="space-y-4 lg:col-span-1 border-r border-gray-100 pr-4">
-                <div>
-                  <label className="block text-sm font-medium leading-6 text-gray-900 mb-1">To Email</label>
+              <div className="space-y-6 lg:col-span-1 border-r border-gray-100 pr-6">
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-semibold tracking-wide text-gray-700">To Email</label>
                   <input
                     type="email"
                     value={formData.emailTo}
                     onChange={e => setFormData({...formData, emailTo: e.target.value})}
                     placeholder="hr@company.com"
-                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+                    className="block w-full rounded-xl border border-gray-200 bg-gray-50/50 py-3 px-4 text-gray-900 shadow-sm transition-all duration-200 focus:border-[#1b4376] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#1b4376]/10 sm:text-sm placeholder:text-gray-400"
                   />
-                  <p className="mt-1 text-xs text-gray-500">Leave blank to use the contact person's email automatically</p>
+                  <p className="mt-2 text-xs text-gray-500 italic">Leave blank to use the contact person's email automatically</p>
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium leading-6 text-gray-900 mb-1">Urgency</label>
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-semibold tracking-wide text-gray-700">Urgency</label>
                   <select
                     value={formData.urgency}
                     onChange={e => setFormData({...formData, urgency: e.target.value})}
-                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+                    className="block w-full rounded-xl border border-gray-200 bg-gray-50/50 py-3 px-4 text-gray-900 shadow-sm transition-all duration-200 focus:border-[#1b4376] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#1b4376]/10 sm:text-sm"
                   >
                     <option value="normal">Normal</option>
                     <option value="urgent">Urgent</option>
@@ -253,23 +253,23 @@ export function NewRequestWizardPage() {
               </div>
 
               {/* Right Side Composition */}
-              <div className="lg:col-span-2 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium leading-6 text-gray-900 mb-1">Subject</label>
+              <div className="lg:col-span-2 space-y-6">
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-semibold tracking-wide text-gray-700">Subject</label>
                   <input
                     type="text"
                     value={formData.emailSubject}
                     onChange={e => setFormData({...formData, emailSubject: e.target.value})}
-                    className="block w-full rounded-md border-0 py-1.5 font-medium text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+                    className="block w-full rounded-xl border border-gray-200 bg-gray-50/50 py-3 px-4 font-medium text-gray-900 shadow-sm transition-all duration-200 focus:border-[#1b4376] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#1b4376]/10 sm:text-sm"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium leading-6 text-gray-900 mb-1">Body</label>
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-semibold tracking-wide text-gray-700">Message Body</label>
                   <textarea
                     rows={12}
                     value={formData.emailBody}
                     onChange={e => setFormData({...formData, emailBody: e.target.value})}
-                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 font-mono"
+                    className="block w-full rounded-xl border border-gray-200 bg-gray-50/50 py-4 px-4 text-gray-900 shadow-sm transition-all duration-200 focus:border-[#1b4376] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#1b4376]/10 sm:text-sm font-mono leading-relaxed"
                   />
                 </div>
               </div>

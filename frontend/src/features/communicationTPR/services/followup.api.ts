@@ -20,5 +20,10 @@ export const followUpApi = {
   updateStatus: async (followUpId: string, status: 'completed' | 'cancelled') => {
     const { data } = await commApi.patch<{ success: boolean; data: FollowUp }>(`/follow-ups/${followUpId}/status`, { status });
     return data;
+  },
+
+  deleteFollowUp: async (followUpId: string) => {
+    const { data } = await commApi.delete<{ success: boolean }>(`/follow-ups/${followUpId}`);
+    return data;
   }
 };
