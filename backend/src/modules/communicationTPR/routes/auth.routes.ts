@@ -9,5 +9,6 @@ router.post('/login', authController.login);
 router.post('/logout', verifyCommunicationTPRToken, authController.logout);
 router.get('/me', verifyCommunicationTPRToken, authController.me);
 router.patch('/profile', verifyCommunicationTPRToken, authController.updateProfile);
+router.get('/branches', authController.getBranches);
 
 export default router;

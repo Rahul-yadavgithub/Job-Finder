@@ -7,6 +7,9 @@ export interface CommunicationTPRUser {
   profilePhotoUrl?: string;
   displayName?: string;
   branchName?: string;
+  branchId?: string;
+  rollNumber?: string;
+  mobileNo?: string;
 }
 
 export interface ApiResponse<T = any> {

@@ -217,7 +217,7 @@ export const me = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { data: user } = await supabase
       .from('users')
-      .select('id, name, role, email, branch_id, branches(name), profile_photo_url, display_name')
+      .select('id, name, role, email, branch_id, branches(name), profile_photo_url, display_name, roll_number, mobile_no')
       .eq('id', req.user!.userId)
       .single();
 
@@ -236,7 +236,9 @@ export const me = async (req: AuthRequest, res: Response): Promise<void> => {
         branchId: user.branch_id,
         branchName: (user.branches as any)?.name ?? null,
         profile_photo_url: user.profile_photo_url,
-        display_name: user.display_name
+        display_name: user.display_name,
+        rollNumber: user.roll_number,
+        mobileNo: user.mobile_no
       }
     });
   } catch (error) {
@@ -344,14 +346,33 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
 
 export const updateProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { profilePhotoUrl, displayName } = req.body;
+    const { profilePhotoUrl, displayName, name, rollNumber, branchId, email, mobileNo } = req.body;
     const updates: any = {};
 
-    if (profilePhotoUrl !== undefined) {
-      updates.profile_photo_url = profilePhotoUrl;
-    }
-    if (displayName !== undefined) {
-      updates.display_name = displayName;
+    if (profilePhotoUrl !== undefined) updates.profile_photo_url = profilePhotoUrl;
+    if (displayName !== undefined) updates.display_name = displayName;
+    if (name !== undefined) updates.name = name;
+    if (rollNumber !== undefined) updates.roll_number = rollNumber;
+    if (branchId !== undefined) updates.branch_id = branchId;
+    if (email !== undefined) updates.email = email;
+    if (mobileNo !== undefined) updates.mobile_no = mobileNo;
+
+    if (email !== undefined || rollNumber !== undefined) {
+      const { data: existingUsers } = await supabase
+        .from('users')
+        .select('id, email, roll_number')
+        .neq('id', req.user!.userId);
+
+      if (existingUsers) {
+        if (email !== undefined && existingUsers.some(u => u.email === email)) {
+          res.status(409).json({ success: false, message: 'Email already in use by another user' });
+          return;
+        }
+        if (rollNumber !== undefined && existingUsers.some(u => u.roll_number === rollNumber)) {
+          res.status(409).json({ success: false, message: 'Roll number already in use by another user' });
+          return;
+        }
+      }
     }
 
     if (Object.keys(updates).length === 0) {
