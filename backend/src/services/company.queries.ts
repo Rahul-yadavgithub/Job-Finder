@@ -322,7 +322,7 @@ export async function getAdminCompanyStats() {
     reachedTopRes
   ] = await Promise.all([
     supabase.from('companies').select('*', { count: 'exact', head: true }).eq('brochure_completed', true),
-    supabase.from('companies').select('*, company_status!inner(top_status)', { count: 'exact', head: true }).eq('brochure_completed', true).eq('company_status.top_status', 'completed'),
+    supabase.from('drive_details').select('id', { count: 'exact', head: true }),
     supabase.from('companies').select('*, company_status!inner(top_status)', { count: 'exact', head: true }).eq('brochure_completed', true).not('company_status.top_status', 'is', null).neq('company_status.top_status', 'completed'),
     supabase.from('companies').select('*, company_status!inner(top_status)', { count: 'exact', head: true }).eq('brochure_completed', true).is('company_status.top_status', null),
     supabase.from('companies').select('*', { count: 'exact', head: true }).eq('brochure_completed', true).gte('brochure_completed_at', `${currentDate}T00:00:00.000Z`),

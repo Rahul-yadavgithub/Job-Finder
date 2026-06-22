@@ -262,9 +262,6 @@ export default function MyTasksPage() {
           </div>
         </div>
       </div>
-          </div>
-        </div>
-      </div>
 
       {/* Head TPO Tasks Loop (unchanged) */}
       {user?.role === 'head' && tasks.length > 0 && (
