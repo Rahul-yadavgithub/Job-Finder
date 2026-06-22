@@ -71,6 +71,17 @@ export const sendStaffRequest = async (req: AdminRequest, res: Response): Promis
       })
       .eq('id', id);
 
+    await appendTimeline({
+      companyId: request.company_id,
+      assignmentId: request.assignment_id,
+      eventType: 'email_sent_to_company',
+      performedBy: req.admin?.userId,
+      performedByLayer: 'admin',
+      title: 'Email Sent to Company by TPO Staff',
+      description: `Subject: ${request.email_subject}`,
+      visibilityScope: 'all_roles'
+    });
+
     // Note: communication_requests status remains 'approved' while staff is handling it
 
     res.status(200).json({ success: true, message: 'Email sent successfully' });

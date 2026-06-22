@@ -54,35 +54,27 @@ export default function MyTasksPage() {
   const [responseModal, setResponseModal] = useState<{ id: string, outcome: 'accepted' | 'rejected' } | null>(null);
   const [responseNotes, setResponseNotes] = useState('');
   const [errorState, setErrorState] = useState<Record<string, string>>({});
+
   const { user } = useAdminAuth();
 
   const fetchTasks = async () => {
     try {
-      const isHead = user?.role === 'head' && !user?.jumpedIn;
-      
-      const promises: Promise<any>[] = [
-        adminGet<{ data: Task[] }>('/tasks/my-tasks')
-      ];
-      
-      if (!isHead) {
-        promises.push(adminGet<{ data: StaffRequest[] }>('/staff/requests'));
+      setLoading(true);
+      const tasksRes = await adminGet<{ success: boolean; data: Task[] }>('/tasks/my-tasks');
+      if (tasksRes.success) {
+        setTasks(tasksRes.data || []);
       }
-
-      const results = await Promise.all(promises);
-      const res = results[0];
-      const staffRes = !isHead ? results[1] : { data: [] };
-
-      if (res.data) setTasks(res.data);
-      if (staffRes.data) {
-        const activeRequests = staffRes.data.filter((r: StaffRequest) => r.rejection_reason !== 'ARCHIVED');
-        setNewStaffRequests(activeRequests.filter((r: StaffRequest) => r.status === 'pending_send'));
-        setInProgressStaffRequests(activeRequests.filter((r: StaffRequest) => r.status === 'waiting_response' || r.status === 'accepted'));
-      } else {
-        setNewStaffRequests([]);
-        setInProgressStaffRequests([]);
+      
+      if (user?.role !== 'head') {
+        const staffRes = await adminGet<{ success: boolean; data: StaffRequest[] }>('/staff/requests');
+        if (staffRes.success) {
+          const reqs = staffRes.data || [];
+          setNewStaffRequests(reqs.filter(r => r.status === 'pending'));
+          setInProgressStaffRequests(reqs.filter(r => r.status !== 'pending' && r.status !== 'completed' && r.status !== 'rejected'));
+        }
       }
     } catch (error) {
-      console.error('Failed to fetch tasks', error);
+      console.error('Failed to fetch tasks:', error);
     } finally {
       setLoading(false);
     }
@@ -92,33 +84,33 @@ export default function MyTasksPage() {
     if (user) {
       fetchTasks();
     }
-  }, [user?.role, user?.jumpedIn]);
+  }, [user]);
 
-  const handleExecute = async (taskId: string, newStatus: string, notes: string = '') => {
-    setExecutingTask(taskId);
-    setExecutingAction(newStatus === 'in_progress' ? 'start' : newStatus === 'waiting_response' ? 'send' : 'complete');
+  const handleDeleteTask = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this task?')) return;
+    setExecutingTask(id);
     try {
-      await adminPatch(`/tasks/${taskId}/execute`, { status: newStatus, notes });
-      await fetchTasks();
-    } catch (error) {
-      console.error('Failed to execute task', error);
-      alert('Failed to update task status.');
-    } finally {
-      setExecutingTask(null);
-      setExecutingAction(null);
-    }
-  };
-
-  const handleDeleteTask = async (taskId: string) => {
-    if (!confirm('Are you sure you want to delete this task? This action cannot be undone.')) return;
-    
-    setExecutingTask(taskId);
-    try {
-      await adminDelete(`/tasks/${taskId}`);
+      await adminDelete(`/tasks/${id}`);
       await fetchTasks();
     } catch (error) {
       console.error('Failed to delete task', error);
-      alert('Failed to delete task.');
+      alert('Failed to delete task');
+    } finally {
+      setExecutingTask(null);
+    }
+  };
+
+  const handleExecute = async (id: string, status: string, notes: string) => {
+    setExecutingTask(id);
+    const actionMap: Record<string, string> = { 'in_progress': 'start', 'waiting_response': 'send', 'completed': 'complete' };
+    setExecutingAction(actionMap[status] || 'action');
+    
+    try {
+      await adminPatch(`/tasks/${id}/execute`, { status, notes });
+      await fetchTasks();
+    } catch (error) {
+      console.error('Failed to execute task', error);
+      alert('Failed to update task status');
     } finally {
       setExecutingTask(null);
       setExecutingAction(null);
@@ -127,31 +119,21 @@ export default function MyTasksPage() {
 
   const handleSendStaffEmail = async (id: string) => {
     setExecutingTask(id);
-    setErrorState(prev => ({ ...prev, [id]: '' }));
+    setExecutingAction('send');
     try {
       await adminPost(`/staff/requests/${id}/send`, {});
-      
-      // Move from new to inProgress
-      const sentReq = newStaffRequests.find(r => r.id === id);
-      if (sentReq) {
-        setNewStaffRequests(prev => prev.filter(r => r.id !== id));
-        setInProgressStaffRequests(prev => [{ ...sentReq, status: 'waiting_response' }, ...prev]);
-      }
-      
       setConfirmSendReq(null);
-    } catch (error) {
-      console.error(error);
-      setErrorState(prev => ({ ...prev, [id]: 'Failed to send email. Please try again.' }));
+      await fetchTasks();
+    } catch (error: any) {
+      console.error('Failed to send email:', error);
+      setErrorState(prev => ({ ...prev, [id]: error.response?.data?.message || 'Failed to send email' }));
     } finally {
       setExecutingTask(null);
       setExecutingAction(null);
     }
   };
 
-  const submitStaffResponse = async (id: string, outcome: 'accepted' | 'rejected', notes: string) => {
-    if (!notes.trim() && outcome === 'rejected') {
-      return;
-    }
+  const submitStaffResponse = async (id: string, outcome: string, notes: string) => {
     setExecutingTask(id);
     try {
       if (outcome === 'accepted') {
@@ -163,13 +145,13 @@ export default function MyTasksPage() {
       setResponseNotes('');
       await fetchTasks();
     } catch (error) {
-      console.error(error);
-      alert('Failed to update request.');
+      console.error('Failed to submit response', error);
+      alert('Failed to submit response');
     } finally {
       setExecutingTask(null);
-      setExecutingAction(null);
     }
   };
+
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto space-y-4 animate-pulse">

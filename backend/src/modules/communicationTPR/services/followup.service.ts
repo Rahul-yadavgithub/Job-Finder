@@ -49,4 +49,8 @@ export class FollowUpService {
     const data = await this.followUpRepository.updateFollowUpStatus(followUpId, input);
     return this.formatFollowUp(data);
   }
+
+  async deleteFollowUp(followUpId: string): Promise<boolean> {
+    return await this.followUpRepository.deleteFollowUp(followUpId);
+  }
 }

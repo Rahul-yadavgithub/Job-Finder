@@ -465,6 +465,33 @@ export default function AdminDashboard() {
 
       </div>
 
+      <div className={`rounded-xl p-4 border flex items-center justify-between ${
+        successor ? 'bg-blue-50 border-blue-100' : 'bg-amber-50 border-amber-200 shadow-sm'
+      }`}>
+        <div className="flex items-center gap-3">
+          {successor ? <ShieldCheck className="text-[#1b4376] w-6 h-6" /> : <AlertTriangle className="text-amber-600 w-6 h-6" />}
+          <div>
+            {successor ? (
+              <p className="text-sm font-medium text-indigo-900">
+                Succession Plan Active. Designated to: <span className="font-bold">{successor.name}</span> <span className="opacity-75">({successor.designation.replace('_', ' ')})</span>
+              </p>
+            ) : (
+              <p className="text-sm font-medium text-amber-900">
+                Warning: No successor designated. Set one in Succession Settings to ensure operational continuity.
+              </p>
+            )}
+          </div>
+        </div>
+        <Link 
+          href="/admin/settings/succession"
+          className={`text-sm font-bold px-4 py-2 rounded-lg transition-colors whitespace-nowrap ml-4 ${
+            successor ? 'bg-[#1b4376] text-white hover:bg-[#15335b]' : 'bg-amber-600 text-white hover:bg-amber-700'
+          }`}
+        >
+          {successor ? 'Manage Settings' : 'Set Successor Now'}
+        </Link>
+      </div>
+
     </div>
   );
 }

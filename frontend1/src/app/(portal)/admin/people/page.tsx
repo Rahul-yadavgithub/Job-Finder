@@ -336,6 +336,13 @@ export default function AdminPeoplePage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 font-bold text-[#15335b]">{tpr.branch_code}</td>
+                        <td className="px-6 py-4 text-gray-600">{tpr.email}</td>
+                        <td className="px-6 py-4">
+                          {tpr.status === 'approved' ? <span className="text-green-600 font-bold">Active</span> :
+                           tpr.status === 'pending' ? <span className="text-amber-600 font-bold">Pending</span> :
+                           <span className="text-red-600 font-bold">Suspended</span>}
+                        </td>
+                        <td className="px-6 py-4 text-center font-medium">{tpr.companies_added}</td>
                         <td className="px-6 py-4 text-gray-500">
                           {tpr.last_login_at ? formatDistanceToNow(new Date(tpr.last_login_at), { addSuffix: true }) : 'Never'}
                         </td>

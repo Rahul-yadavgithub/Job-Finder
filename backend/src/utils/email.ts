@@ -44,6 +44,15 @@ export const sendResetEmail = async (to: string, resetLink: string) => {
   };
 
   try {
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.log('\n=============================================');
+      console.log('⚠️ SMTP Credentials missing in .env!');
+      console.log('Skipping actual email sending.');
+      console.log('🔗 PASSWORD RESET LINK:', resetLink);
+      console.log('=============================================\n');
+      return;
+    }
+    
     await transporter.sendMail(mailOptions);
     console.log(`Password reset email sent to ${to}`);
   } catch (error) {

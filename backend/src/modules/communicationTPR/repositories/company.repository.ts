@@ -9,7 +9,7 @@ export class CompanyRepository {
       .from('companies')
       .select(`
         id, company_name, hr_name, email, phone_number,
-        company_status!inner(base_status, mid_status, updated_at),
+        company_status!inner(base_status, mid_status, updated_at, original_marked_by, users!company_status_original_marked_by_fkey(name)),
         branches!inner(id, name),
         users!created_by(name),
         status_history(new_status, changed_at)
@@ -42,7 +42,7 @@ export class CompanyRepository {
       .from('companies')
       .select(`
         id, company_name, hr_name, email, phone_number, description, data_source, created_at,
-        company_status(base_status, mid_status, updated_at, locked),
+        company_status(base_status, mid_status, updated_at, locked, original_marked_by, users!company_status_original_marked_by_fkey(name)),
         branches(id, name),
         users!created_by(name),
         status_history(new_status, changed_at, users!changed_by(name)),
@@ -115,5 +115,52 @@ export class CompanyRepository {
     if (activityError) throw activityError;
 
     return data;
+  }
+
+  async getDashboardStats() {
+    const { data: companies, error } = await supabase
+      .from('company_status')
+      .select('mid_status, base_status, companies!inner(brochure_completed)');
+
+    if (error) throw error;
+
+    // EXACT LOGIC MATCH: Use the same query logic as the "Completed Queue" page
+    const { count: confirmedCount } = await supabase
+      .from('communication_requests')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'completed');
+
+    let active = 0;
+    let newIncoming = 0;
+    let confirmed = confirmedCount || 0;
+
+    for (const c of companies) {
+      if (c.base_status !== 'interested') continue; // We only care about companies that reached the interested phase
+
+      const isCompleted = (Array.isArray(c.companies) ? c.companies[0]?.brochure_completed : (c.companies as any)?.brochure_completed) || false;
+      const status = c.mid_status;
+      
+      // If the brochure is completed, it's already counted in the Confirmed bucket above.
+      if (isCompleted || status === 'accepted') {
+        continue;
+      }
+      
+      // 3. Rejected/Revoked: Pipeline ends (removed from active)
+      if (status === 'rejected' || status === 'revoked') {
+        continue;
+      } 
+      
+      // 1. New Incoming: No action taken yet (pending_review)
+      if (!status || status === 'interested' || status === 'pending_review') {
+        newIncoming++;
+        active++; // Active includes new companies
+      } 
+      // 4. Active: Drafted, sent to TPO staff (transferred_to_head), under communication, etc.
+      else {
+        active++;
+      }
+    }
+
+    return { active, newIncoming, confirmed };
   }
 }

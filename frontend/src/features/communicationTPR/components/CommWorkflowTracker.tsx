@@ -1,7 +1,7 @@
 import React from 'react';
 import { CheckCircle2, CircleDot, XCircle } from 'lucide-react';
 
-export type CommPhase = 'new_arrival' | 'email_drafted' | 'tpo_staff_review' | 'completed' | 'rejected';
+export type CommPhase = 'new_arrival' | 'email_drafted' | 'email_sent' | 'completed' | 'rejected';
 
 interface Props {
   currentPhase: CommPhase;
@@ -11,10 +11,10 @@ export function CommWorkflowTracker({ currentPhase }: Props) {
   const isRejected = currentPhase === 'rejected';
   
   const PHASES = [
-    { id: 'new_arrival', label: 'New Arrival' },
-    { id: 'email_drafted', label: 'Under Communication' },
-    { id: 'tpo_staff_review', label: 'Ready for Staff Review' },
-    { id: 'completed', label: isRejected ? 'Rejected' : 'Comm. Complete' }
+    { id: 'new_arrival', label: 'At the Arrival' },
+    { id: 'email_drafted', label: 'Email Drafted' },
+    { id: 'email_sent', label: 'Email Sent' },
+    { id: 'completed', label: isRejected ? 'Rejected' : 'Completed' }
   ];
 
   const activeIndex = isRejected ? PHASES.length - 1 : (PHASES.findIndex(p => p.id === currentPhase) === -1 ? 0 : PHASES.findIndex(p => p.id === currentPhase));

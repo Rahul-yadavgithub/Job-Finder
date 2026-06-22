@@ -74,4 +74,15 @@ export class FollowUpController {
       res.status(500).json({ success: false, message: 'Failed to update follow-up status' });
     }
   };
+
+  deleteFollowUp = async (req: CommunicationTPRRequest, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      await this.followUpService.deleteFollowUp(id as string);
+      res.status(200).json({ success: true, message: 'Follow-up deleted successfully' });
+    } catch (error: any) {
+      console.error('deleteFollowUp Error:', error);
+      res.status(500).json({ success: false, message: 'Failed to delete follow-up' });
+    }
+  };
 }
