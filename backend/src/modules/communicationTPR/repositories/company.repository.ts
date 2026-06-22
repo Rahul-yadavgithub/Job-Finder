@@ -67,9 +67,17 @@ export class CompanyRepository {
   }
 
   async updateMidStatus(companyId: string, status: string) {
+    const payload: any = { mid_status: status, updated_at: new Date().toISOString() };
+    if (status === 'revoked') {
+      payload.locked = false;
+      payload.locked_by = null;
+      payload.locked_at = null;
+      payload.base_status = 'call_again';
+    }
+
     const { data, error } = await supabase
       .from('company_status')
-      .update({ mid_status: status })
+      .update(payload)
       .eq('company_id', companyId)
       .select()
       .single();

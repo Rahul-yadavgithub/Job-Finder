@@ -64,7 +64,7 @@ export default function DashboardPage() {
       const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/tpr/companies?status=reverted&limit=1000`, { withCredentials: true });
       return res.data.data?.rows || [];
     },
-    enabled: !!user && (activeView === 'dashboard' || activeView === 'reverted')
+    enabled: !!user && (activeView === 'dashboard' || activeView === 'reverted' || activeView === 'single_contact')
   });
 
   const { data: notConfirmedList, isLoading: notConfirmedLoading } = useQuery({
@@ -73,7 +73,7 @@ export default function DashboardPage() {
       const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/tpr/companies?status=pending&limit=1000`, { withCredentials: true });
       return res.data.data?.rows || [];
     },
-    enabled: !!user && (activeView === 'dashboard' || activeView === 'not_confirmed')
+    enabled: !!user && (activeView === 'dashboard' || activeView === 'not_confirmed' || activeView === 'single_contact')
   });
 
   const { data: noResponseList, isLoading: noResponseLoading } = useQuery({
@@ -775,8 +775,11 @@ export default function DashboardPage() {
                   <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 shadow-sm">
                     {activeCompanyId === cid ? (() => {
                       const isLocked = company.base_status === 'interested' && company.mid_status !== 'rejected' && company.top_status !== 'rejected';
-                      const revertedHistory = (historyData?.data || []).find((h: any) => h.layer === 'mid' && h.new_status === 'revoked');
-                      const revertedNote = revertedHistory?.reason;
+                      const revertedHistory = (historyData?.data || []).find((h: any) => 
+                        (h.layer === 'mid' && h.new_status === 'revoked') || 
+                        (h.performed_by_layer === 'comm' && h.event_type === 'reverted_to_branch')
+                      );
+                      const revertedNote = revertedHistory?.reason || revertedHistory?.description;
 
                       return (
                       <div className="space-y-5">
@@ -875,12 +878,12 @@ export default function DashboardPage() {
                               {historyData.data.map((log: any) => (
                                 <div key={log.id} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col gap-2">
                                   <div className="flex items-center justify-between">
-                                    <span className="text-xs font-bold text-slate-500 uppercase">{format(new Date(log.changed_at), 'MMM d, yyyy h:mm a')}</span>
+                                    <span className="text-xs font-bold text-slate-500 uppercase">{format(new Date(log.changed_at || log.created_at), 'MMM d, yyyy h:mm a')}</span>
                                     <span className="inline-block bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                      {log.new_status?.replace(/_/g, ' ')}
+                                      {(log.new_status || log.event_type)?.replace(/_/g, ' ')}
                                     </span>
                                   </div>
-                                  {log.notes && <p className="text-sm text-slate-700 mt-1">{log.notes}</p>}
+                                  {(log.notes || log.description) && <p className="text-sm text-slate-700 mt-1">{log.notes || log.description}</p>}
                                 </div>
                               ))}
                             </div>
@@ -939,26 +942,36 @@ export default function DashboardPage() {
             </h2>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-            {revertedLoading ? (
-              <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-amber-600" /></div>
-            ) : (
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="px-6 py-4">Company Name</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {revertedList?.map((company: any) => {
-                    const cid = company.company_id || company._id || company.id;
-                    return (
-                    <tr key={cid} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 font-semibold text-slate-900">{company.companies?.company_name || company.company_name || company.companyName || 'Unknown Company'}</td>
-                      <td className="px-6 py-4 text-amber-600 font-medium">Reverted Back</td>
-                      <td className="px-6 py-4 text-right">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="p-5 border-b flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-amber-50 border-amber-100">
+              <h3 className="text-xl font-bold flex items-center gap-2.5 text-amber-900">
+                <AlertCircle className="w-6 h-6 text-amber-600" />
+                Reverted Queue
+                <span className="text-xs font-bold px-3 py-1 rounded-full border bg-white shadow-sm text-amber-700 border-amber-200">
+                  {revertedList?.length || 0} Companies
+                </span>
+              </h3>
+            </div>
+
+            <div className="p-6 bg-slate-50/30">
+              {revertedLoading ? (
+                <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-amber-600" /></div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 xl:grid-cols-3 lg:grid-cols-2 gap-6">
+                    {revertedList?.map((company: any) => {
+                      const cid = company.company_id || company._id || company.id;
+                      return (
+                      <div 
+                        key={cid} 
+                        className={`bg-white border rounded-xl p-5 flex flex-col justify-between transition-all duration-300 shadow-sm hover:shadow-md ${
+                          lastVisitedCompanyId === cid ? 'border-amber-400 ring-4 ring-amber-500/10' : 'border-amber-100 hover:border-amber-300'
+                        }`}
+                      >
+                        <div className="mb-6">
+                          <h4 className="font-bold text-slate-900 text-lg">{company.companies?.company_name || company.company_name || company.companyName || 'Unknown Company'}</h4>
+                          <p className="text-xs text-amber-600 mt-2 uppercase tracking-wider font-semibold flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5" /> Status: Reverted Back</p>
+                        </div>
                         <button 
                           onClick={() => {
                             setPreviousView(activeView);
@@ -966,19 +979,22 @@ export default function DashboardPage() {
                             setActiveView('single_contact');
                             setActiveCompanyId(cid);
                           }}
-                          className="text-blue-600 hover:text-blue-800 font-medium"
+                          className="w-full font-semibold py-2.5 rounded-lg transition-colors text-sm border flex items-center justify-center gap-2 text-amber-700 bg-amber-50/80 hover:bg-amber-100 border-amber-100"
                         >
-                          View Details
+                          Contact Details <ArrowRight className="w-3.5 h-3.5" />
                         </button>
-                      </td>
-                    </tr>
-                  )})}
+                      </div>
+                    )})}
+                  </div>
                   {revertedList?.length === 0 && (
-                    <tr><td colSpan={3} className="px-6 py-12 text-center text-slate-500">No reverted companies yet.</td></tr>
+                    <div className="flex flex-col items-center justify-center py-16 text-slate-400 bg-white rounded-xl border border-dashed border-slate-200">
+                      <AlertCircle className="w-12 h-12 mb-3 text-slate-300" />
+                      <p className="text-sm font-medium">No reverted companies.</p>
+                    </div>
                   )}
-                </tbody>
-              </table>
-            )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -1,8 +1,9 @@
 import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AuthRequest, JWTPayload } from '../types/auth.types';
+import { connection as redisConnection } from '../config/redis';
 
-export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction): void => {
+export const verifyToken = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const token = req.cookies?.tpr_token;
     if (!token) {
@@ -10,7 +11,16 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
       return;
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload & { jti?: string };
+    
+    if (decoded.jti) {
+      const isBlacklisted = await redisConnection.exists(`bl_${decoded.jti}`);
+      if (isBlacklisted) {
+        res.status(401).json({ success: false, message: 'Token has been invalidated' });
+        return;
+      }
+    }
+
     req.user = decoded;
     next();
   } catch (error) {

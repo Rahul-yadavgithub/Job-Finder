@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
+import compression from 'compression';
+import { globalLimiter } from './middleware/rateLimit.middleware';
 import http from 'http';
 import { connectDB } from './config/db';
 import { initSocket } from './config/socket';
@@ -19,8 +21,11 @@ initSocket(httpServer);
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 app.use(cookieParser());
+app.use(compression());
+
 const frontendUrl = process.env.FRONTEND_URL 
   ? (process.env.FRONTEND_URL.startsWith('http') ? process.env.FRONTEND_URL : `https://${process.env.FRONTEND_URL}`)
   : 'http://localhost:3000';
@@ -29,7 +34,25 @@ app.use(cors({
   origin: true,
   credentials: true
 }));
-app.use(helmet());
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
+app.use(helmet.noSniff());
+app.use(helmet.frameguard({ action: 'deny' }));
+app.use(helmet.referrerPolicy({ policy: 'no-referrer' }));
+
+// Apply global rate limiter to all /api routes
+app.use('/api/', globalLimiter);
+
 app.use(morgan('dev'));
 
 

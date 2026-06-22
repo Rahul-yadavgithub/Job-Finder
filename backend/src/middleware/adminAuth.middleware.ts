@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AdminRequest, AdminJWTPayload } from '../types/admin.types';
 import { supabase } from '../config/supabase';
+import { connection as redisConnection } from '../config/redis';
 
 export const verifyAdminToken = async (req: AdminRequest, res: Response, next: NextFunction): Promise<void> => {
   const token = req.cookies.admin_token;
@@ -10,8 +11,16 @@ export const verifyAdminToken = async (req: AdminRequest, res: Response, next: N
     return;
   }
   try {
-    const decoded = jwt.verify(token, process.env.ADMIN_JWT_SECRET as string) as AdminJWTPayload;
+    const decoded = jwt.verify(token, process.env.ADMIN_JWT_SECRET as string) as AdminJWTPayload & { jti?: string };
     
+    if (decoded.jti) {
+      const isBlacklisted = await redisConnection.exists(`bl_${decoded.jti}`);
+      if (isBlacklisted) {
+        res.status(401).json({ success: false, message: 'Token has been invalidated' });
+        return;
+      }
+    }
+
     const { data } = await supabase
       .from('users')
       .select('token_version, status')

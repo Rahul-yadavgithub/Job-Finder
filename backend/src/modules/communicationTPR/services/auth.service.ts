@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { UserRepository } from '../repositories/user.repository';
 import { LoginInput } from '../validators/auth.validator';
+import { v4 as uuidv4 } from 'uuid';
 import { CommunicationTPRJWTPayload } from '../types';
 
 export class AuthService {
@@ -38,7 +39,7 @@ export class AuthService {
     const token = jwt.sign(
       payload,
       process.env.ADMIN_JWT_SECRET as string,
-      { expiresIn: '12h' }
+      { expiresIn: '12h', jwtid: uuidv4() }
     );
 
     return { token, user: payload };

@@ -2,15 +2,50 @@
 
 import { useState, useEffect } from 'react';
 import { adminGet } from '@/lib/admin/api';
-import { Calendar, Building2, MapPin, Search, CalendarDays, ExternalLink, Activity } from 'lucide-react';
+import { Calendar, Building2, MapPin, Search, CalendarDays, ExternalLink, Activity, Edit2 } from 'lucide-react';
 import { format, isPast, isToday, formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
+import { adminPatch } from '@/lib/admin/api';
 
 export default function DrivesManagementPage() {
   const [drives, setDrives] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+
+  const [editingDrive, setEditingDrive] = useState<any>(null);
+  const [editDate, setEditDate] = useState('');
+  const [editPackage, setEditPackage] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleEditClick = (drive: any) => {
+    setEditingDrive(drive);
+    setEditDate(drive.scheduled_date || '');
+    setEditPackage(drive.salary_package || '');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingDrive) return;
+    setIsSaving(true);
+    try {
+      const payload = {
+        date: editDate || undefined,
+        salaryPackage: editPackage || undefined
+      };
+      const res = await adminPatch<{ success: boolean }>(`/drives/${editingDrive.id}/date`, payload);
+      
+      if (res.success) {
+        setEditingDrive(null);
+        fetchDrives();
+      } else {
+        alert('Failed to update drive details');
+      }
+    } catch (error) {
+      alert('An error occurred while updating the drive');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   useEffect(() => {
     fetchDrives();
@@ -170,12 +205,20 @@ export default function DrivesManagementPage() {
                       <div className="text-xs text-gray-500">
                         Package: <span className="font-bold text-gray-900">{drive.salary_package || 'Not Disclosed'}</span>
                       </div>
-                      <Link 
-                        href={`/admin/companies/${drive.assignment_id}`}
-                        className="text-sm font-bold text-[#1b4376] hover:text-[#15335b] flex items-center gap-1 group-hover:translate-x-1 transition-transform"
-                      >
-                        View Details <ExternalLink size={14} />
-                      </Link>
+                      <div className="flex items-center gap-3">
+                        <button 
+                          onClick={() => handleEditClick(drive)}
+                          className="text-xs font-bold text-gray-500 hover:text-[#1b4376] flex items-center gap-1 transition-colors"
+                        >
+                          <Edit2 size={12} /> Quick Edit
+                        </button>
+                        <Link 
+                          href={`/admin/companies/${drive.assignment_id}`}
+                          className="text-sm font-bold text-[#1b4376] hover:text-[#15335b] flex items-center gap-1 group-hover:translate-x-1 transition-transform"
+                        >
+                          Details <ExternalLink size={14} />
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 );
@@ -184,6 +227,54 @@ export default function DrivesManagementPage() {
           )}
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {editingDrive && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Edit Drive Details</h3>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Drive Date</label>
+                <input 
+                  type="date" 
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b4376] focus:border-transparent outline-none text-gray-800"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Salary Package <span className="font-normal text-gray-400">(Optional)</span></label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. 12 LPA"
+                  value={editPackage}
+                  onChange={(e) => setEditPackage(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b4376] focus:border-transparent outline-none text-gray-800"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setEditingDrive(null)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors"
+                disabled={isSaving}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveEdit}
+                disabled={isSaving || (!editDate && !editPackage)}
+                className="px-4 py-2 bg-[#1b4376] text-white rounded-lg font-medium hover:bg-[#15335b] transition-colors disabled:opacity-50"
+              >
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

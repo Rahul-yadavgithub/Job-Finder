@@ -1,10 +1,12 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '../config/supabase';
 import { AuthRequest } from '../types/auth.types';
 import { sendResetEmail } from '../utils/email';
 import { v2 as cloudinary } from 'cloudinary';
+import { connection as redisConnection } from '../config/redis';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -123,7 +125,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         branchName: (user.branches as any)?.name ?? null
       },
       process.env.JWT_SECRET!,
-      { expiresIn: '8h' }
+      { expiresIn: '8h', jwtid: uuidv4() }
     );
 
     res.cookie('tpr_token', token, {
@@ -152,7 +154,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       commToken = jwt.sign(
         commPayload,
         process.env.ADMIN_JWT_SECRET as string,
-        { expiresIn: '12h' }
+        { expiresIn: '12h', jwtid: uuidv4() }
       );
 
       res.cookie('communication_tpr_token', commToken, {
@@ -209,8 +211,32 @@ export const checkRoleByEmail = async (req: Request, res: Response): Promise<voi
   }
 };
 
-export const logout = (req: Request, res: Response): void => {
-  res.clearCookie('tpr_token');
+export const logout = async (req: Request, res: Response): Promise<void> => {
+  const token = req.cookies?.tpr_token;
+  if (token) {
+    try {
+      const decoded = jwt.decode(token) as any;
+      if (decoded && decoded.jti && decoded.exp) {
+        const expiresIn = decoded.exp - Math.floor(Date.now() / 1000);
+        if (expiresIn > 0) {
+          await redisConnection.setex(`bl_${decoded.jti}`, expiresIn, 'blacklisted');
+        }
+      }
+    } catch (e) {
+      console.error('Logout blacklist error', e);
+    }
+  }
+  
+  res.clearCookie('tpr_token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  });
+  res.clearCookie('communication_tpr_token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  });
   res.status(200).json({ success: true, message: 'Logged out' });
 };
 

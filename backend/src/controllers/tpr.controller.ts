@@ -121,19 +121,20 @@ export const getCompanyHistory = async (req: AuthRequest, res: Response): Promis
     }
 
     let query = supabase
-      .from('status_history')
-      .select('*')
+      .from('company_timeline')
+      .select('*, users!performed_by(name)')
       .eq('company_id', id)
-      .order('changed_at', { ascending: false });
+      .in('event_type', ['status_updated', 'marked_interested', 'accepted_by_comm_tpr', 'reverted_to_branch', 'transferred_to_head'])
+      .order('created_at', { ascending: false });
 
     if (userRole === 'branch_tpr') {
       if (statusData.mid_status === 'revoked') {
-        query = query.in('layer', ['base', 'mid']);
+        query = query.in('performed_by_layer', ['base', 'comm']);
       } else {
-        query = query.eq('layer', 'base');
+        query = query.eq('performed_by_layer', 'base');
       }
     } else if (userRole === 'communication_tpr') {
-      query = query.in('layer', ['base', 'mid']);
+      query = query.in('performed_by_layer', ['base', 'comm']);
     }
 
     const { data, error } = await query;

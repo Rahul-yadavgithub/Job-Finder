@@ -1,18 +1,21 @@
 import { Router } from 'express';
 import { verifyAdminToken, requireAdminRole } from '../middleware/adminAuth.middleware';
 import { requireJumpedIn } from '../middleware/jumpedIn.middleware';
+import { cache } from '../middleware/cache.middleware';
 import {
   getRequests,
   previewRequest,
   actionRequest,
   logCompanyResponse,
   confirmDrive,
+  updateDriveDate,
   openRegistration,
   getDriveDetails,
   getAllDrives,
   getWorkflowTemplates,
   getCompanyWorkflows,
   transitionWorkflowState,
+  addCustomWorkflowStage,
   addCustomTimelineEvent,
   delegateTask,
   getMyTasks,
@@ -27,7 +30,8 @@ import {
   getStaffRequests,
   sendStaffRequest,
   markResponse,
-  rejectStaffRequest
+  rejectStaffRequest,
+  archiveStaffRequest
 } from '../controllers/staffRequests.controller';
 
 const router = Router();
@@ -47,6 +51,7 @@ router.post('/requests/log-response', logCompanyResponse);
 
 // Drives
 router.post('/drives/confirm', requireJumpedIn, confirmDrive);
+router.patch('/drives/:id/date', requireJumpedIn, updateDriveDate);
 router.post('/drives/:id/open-registration', requireJumpedIn, openRegistration);
 router.get('/drives/all', getAllDrives);
 router.get('/drives/:assignmentId', getDriveDetails);
@@ -54,6 +59,7 @@ router.get('/drives/:assignmentId', getDriveDetails);
 // Timeline & Workflows
 router.get('/workflow-templates', getWorkflowTemplates);
 router.get('/companies/:companyId/workflows', getCompanyWorkflows);
+router.post('/companies/:companyId/workflows/custom', addCustomWorkflowStage);
 router.patch('/workflow/:assignmentId/:workflowType', transitionWorkflowState);
 router.post('/timeline/:companyId/custom', addCustomTimelineEvent);
 
@@ -67,9 +73,10 @@ router.get('/staff/requests', getStaffRequests);
 router.post('/staff/requests/:id/send', sendStaffRequest);
 router.post('/staff/requests/:id/mark-response', markResponse);
 router.post('/staff/requests/:id/reject', rejectStaffRequest);
+router.patch('/staff/requests/:id/archive', archiveStaffRequest);
 
 // Dashboard
-router.get('/dashboard-stats', getCoworkerDashboardStats);
+router.get('/dashboard-stats', cache(60), getCoworkerDashboardStats);
 
 // Settings
 router.get('/settings/templates', getTemplates);

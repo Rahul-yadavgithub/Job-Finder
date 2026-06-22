@@ -23,6 +23,7 @@ import {
   markAllNotificationsRead
 } from '../controllers/tpr.controller';
 import { verifyToken, requireRole, requireBranch } from '../middleware/auth.middleware';
+import { cache } from '../middleware/cache.middleware';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -30,7 +31,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 // All routes here are protected and branch-scoped
 router.use(verifyToken, requireRole('branch_tpr'), requireBranch);
 
-router.get('/dashboard', getDashboard);
+router.get('/dashboard', cache(60), getDashboard);
 router.get('/companies', getCompanies);
 router.get('/companies/today', getTodayCompanies);
 router.get('/companies/:id/history', getCompanyHistory);

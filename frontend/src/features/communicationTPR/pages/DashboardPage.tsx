@@ -1,19 +1,45 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { requestApi } from '../services/request.api';
 import { useCommunicationAuth } from '../hooks/useCommunicationAuth';
-import { MessageSquare, Users, Building2, Bell, ArrowRight, ShieldCheck } from 'lucide-react';
+import { MessageSquare, Users, Building2, Bell, ArrowRight, ShieldCheck, CheckCircle, Clock } from 'lucide-react';
 import { FollowUpWidgets } from '../components/FollowUpWidgets';
 import Link from 'next/link';
 
 export function DashboardPage() {
   const { user } = useCommunicationAuth();
+  const [counts, setCounts] = useState({
+    active: 0,
+    pending_followups: 0, // This could be fetched from followups API if needed, for now 0
+    pending_review: 0,
+    completed: 0
+  });
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const res = await requestApi.getQueueCounts();
+        if (res.success && res.data) {
+          setCounts(prev => ({
+            ...prev,
+            active: res.data.approved || 0,
+            pending_review: res.data.pending_review || 0,
+            completed: res.data.completed || 0
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching queue counts:', error);
+      }
+    };
+    fetchCounts();
+  }, []);
 
   const stats = [
-    { id: 1, name: 'Active Communications', stat: '0', icon: MessageSquare, gradient: 'from-[#1e3c72] to-[#2a5298]', shadow: 'shadow-blue-900/20' },
-    { id: 2, name: 'Pending Follow-ups', stat: '0', icon: Bell, gradient: 'from-[#b45309] to-[#d97706]', shadow: 'shadow-amber-900/20' },
-    { id: 3, name: 'Companies Contacted', stat: '0', icon: Building2, gradient: 'from-[#064e3b] to-[#047857]', shadow: 'shadow-emerald-900/20' },
-    { id: 4, name: 'Team Members', stat: '0', icon: Users, gradient: 'from-[#1e293b] to-[#334155]', shadow: 'shadow-slate-900/20' },
+    { id: 1, name: 'Active Communications', stat: counts.active.toString(), icon: MessageSquare, gradient: 'from-[#1e3c72] to-[#2a5298]', shadow: 'shadow-blue-900/20' },
+    { id: 2, name: 'Pending Follow-ups', stat: counts.pending_followups.toString(), icon: Bell, gradient: 'from-[#b45309] to-[#d97706]', shadow: 'shadow-amber-900/20' },
+    { id: 3, name: 'New Incoming Company', stat: counts.pending_review.toString(), icon: Clock, gradient: 'from-[#064e3b] to-[#047857]', shadow: 'shadow-emerald-900/20' },
+    { id: 4, name: 'Confirmed Company', stat: counts.completed.toString(), icon: CheckCircle, gradient: 'from-[#1e293b] to-[#334155]', shadow: 'shadow-slate-900/20' },
   ];
 
   return (

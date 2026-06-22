@@ -161,6 +161,18 @@ export class RequestController {
       }
       
       const data = await this.requestService.revertRequest(id as string, notes, req.user.userId);
+      
+      // Add the revert note to the timeline so the Base TPR can see it!
+      await appendTimeline({
+        companyId: data.companyId,
+        eventType: 'reverted_to_branch',
+        performedBy: req.user.userId,
+        performedByLayer: 'comm',
+        title: `Communication TPR reverted the company`,
+        description: notes,
+        visibilityScope: 'all_roles'
+      });
+      
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error('revertRequest Error:', error);

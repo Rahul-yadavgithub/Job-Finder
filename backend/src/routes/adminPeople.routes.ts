@@ -10,12 +10,13 @@ import {
   getPersonDetails
 } from '../controllers/adminPeople.controller';
 import { verifyAdminToken, requireAdminRole, requireSuperAdmin } from '../middleware/adminAuth.middleware';
+import { cache } from '../middleware/cache.middleware';
 
 const router = Router();
 
 router.use(verifyAdminToken);
 
-router.get('/people/overview', requireAdminRole('head', 'caller', 'coordinator'), getPeopleStats);
+router.get('/people/overview', requireAdminRole('head', 'caller', 'coordinator'), cache(60), getPeopleStats);
 router.get('/people/coworkers', requireAdminRole('head', 'caller', 'coordinator'), getCoworkers);
 router.get('/people/branch-tprs', requireAdminRole('head', 'caller', 'coordinator'), getBranchTprs);
 router.get('/people/communication-tprs', requireAdminRole('head', 'caller', 'coordinator'), getCommunicationTprs);

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { adminGet } from '@/lib/admin/api';
 import { useParams, useRouter } from 'next/navigation';
-import { Building2, MapPin, Mail, Phone, Calendar, ArrowLeft, Clock, History, ExternalLink, Activity, CheckCircle2 } from 'lucide-react';
+import { Building2, MapPin, Mail, Phone, Calendar, ArrowLeft, Clock, History, ExternalLink, Activity, CheckCircle2, Plus } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { CompanyTimeline } from '@/components/companies/CompanyTimeline';
 import { WorkflowProgressTracker } from '@/components/companies/WorkflowProgressTracker';
@@ -19,6 +19,62 @@ export default function CompanyDetailPage() {
   const [company, setCompany] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const [showAddStage, setShowAddStage] = useState(false);
+  const [newStageName, setNewStageName] = useState('');
+  const [isAddingStage, setIsAddingStage] = useState(false);
+
+  const [showDriveDatePicker, setShowDriveDatePicker] = useState(false);
+  const [newDriveDate, setNewDriveDate] = useState('');
+  const [newPackage, setNewPackage] = useState('');
+  const [isSavingDriveDate, setIsSavingDriveDate] = useState(false);
+
+  const handleSaveDriveDate = async () => {
+    if ((!newDriveDate && !newPackage) || !company?.company_status?.[0]?.id) return;
+    setIsSavingDriveDate(true);
+    try {
+      const { adminPatch } = await import('@/lib/admin/api');
+      const primaryStatus = company.company_status[0];
+      const payload = {
+        date: newDriveDate || undefined,
+        salaryPackage: newPackage || undefined,
+        assignmentId: primaryStatus.id,
+        companyId: company.id
+      };
+      
+      const driveIdToUpdate = primaryStatus.drive_id || 'new';
+      const res = await adminPatch<{ success: boolean }>(`/drives/${driveIdToUpdate}/date`, payload);
+      
+      if (res.success) {
+        setShowDriveDatePicker(false);
+        setNewDriveDate('');
+        setNewPackage('');
+        window.location.reload();
+      } else {
+        alert('Failed to save drive date');
+      }
+    } catch(err) {
+      alert('An error occurred while saving the drive date');
+    } finally {
+      setIsSavingDriveDate(false);
+    }
+  };
+
+  const handleAddStage = async () => {
+    if (!newStageName.trim()) return;
+    setIsAddingStage(true);
+    try {
+      const { adminPost } = await import('@/lib/admin/api');
+      await adminPost(`/companies/${companyId}/workflows/custom`, { stageName: newStageName.trim() });
+      setNewStageName('');
+      setShowAddStage(false);
+      window.location.reload();
+    } catch(err) {
+      alert('Failed to add custom stage');
+    } finally {
+      setIsAddingStage(false);
+    }
+  };
 
   useEffect(() => {
     if (companyId) {
@@ -120,17 +176,33 @@ export default function CompanyDetailPage() {
           </div>
           
           <div className="flex flex-col items-end gap-2 shrink-0">
-            {primaryStatus?.drive_id && (
-              <Link 
-                href="/admin/drives"
-                className="flex items-center gap-2 px-5 py-2.5 bg-white text-[#15335b] rounded-xl hover:bg-blue-50 font-bold text-sm transition-colors shadow-lg border border-white/20"
-              >
-                <Calendar size={16} /> View Drive Schedule
-              </Link>
-            )}
-            {!primaryStatus?.drive_id && (
-              <div className="text-xs text-blue-100 italic bg-white/10 px-4 py-2.5 rounded-xl border border-white/20 backdrop-blur-sm">
-                No active drive scheduled yet
+            {primaryStatus?.drive_id ? (
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setShowDriveDatePicker(true)}
+                  className="flex items-center justify-center p-2.5 text-blue-100 bg-white/10 border border-white/20 rounded-xl hover:text-white hover:bg-white/20 transition-colors shadow-sm backdrop-blur-sm"
+                  title="Change Drive Date"
+                >
+                  <Calendar size={16} />
+                </button>
+                <Link 
+                  href="/admin/drives"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-white text-[#15335b] rounded-xl hover:bg-blue-50 font-bold text-sm transition-colors shadow-lg border border-white/20"
+                >
+                  <Calendar size={16} /> View Drive Schedule
+                </Link>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="text-xs text-blue-100 italic bg-white/10 px-4 py-2.5 rounded-xl border border-white/20 backdrop-blur-sm hidden sm:block">
+                  No active drive scheduled yet
+                </div>
+                <button 
+                  onClick={() => setShowDriveDatePicker(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-green-500 text-white rounded-xl hover:bg-green-600 font-bold text-sm transition-colors shadow-lg border border-green-400"
+                >
+                  <Calendar size={16} /> Schedule Drive
+                </button>
               </div>
             )}
           </div>
@@ -150,13 +222,28 @@ export default function CompanyDetailPage() {
           )}
 
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
-              <Activity size={18} className="text-gray-500" />
-              <h2 className="text-lg font-bold text-gray-900">Activity Timeline</h2>
+            <div className="px-6 py-4 flex items-center justify-between">
+              <h2 className="text-[17px] text-gray-800 tracking-wide">Activity timeline</h2>
+              <button 
+                onClick={() => setShowAddStage(true)}
+                disabled={getLifecyclePhase() === 'completed' || getLifecyclePhase() === 'closed'}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 bg-white hover:bg-gray-50 transition-colors shadow-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Add custom stage
+              </button>
             </div>
+            
+            <div className="px-6">
+              <div className="h-px w-full bg-gray-200"></div>
+            </div>
+
             <div className="p-6">
-              <div className="mb-6">
+              <div className="mb-10 mt-6">
                 <WorkflowProgressTracker companyId={company.id} currentPhase={getLifecyclePhase() as any} />
+              </div>
+              
+              <div className="flex items-center justify-center mb-8 opacity-50">
+                <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent w-3/4"></div>
               </div>
               {primaryStatus ? (
                 <CompanyTimeline companyId={company.id} />
@@ -271,6 +358,87 @@ export default function CompanyDetailPage() {
 
         </div>
       </div>
+
+      {showAddStage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Add Custom Stage</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Enter a name for the new custom workflow stage.
+            </p>
+            <input 
+              type="text" 
+              value={newStageName}
+              onChange={(e) => setNewStageName(e.target.value)}
+              placeholder="e.g. Technical Interview"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-6 focus:ring-2 focus:ring-[#1b4376] focus:border-transparent outline-none text-gray-800"
+            />
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setShowAddStage(false)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors"
+                disabled={isAddingStage}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleAddStage}
+                disabled={isAddingStage || !newStageName.trim()}
+                className="px-4 py-2 bg-[#1b4376] text-white rounded-lg font-medium hover:bg-[#15335b] transition-colors disabled:opacity-50"
+              >
+                {isAddingStage ? 'Adding...' : 'Add Stage'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDriveDatePicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">{primaryStatus?.drive_id ? 'Change Drive Date' : 'Schedule Drive Date'}</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Select the date for the campus drive.
+            </p>
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Drive Date</label>
+                <input 
+                  type="date" 
+                  value={newDriveDate}
+                  onChange={(e) => setNewDriveDate(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b4376] focus:border-transparent outline-none text-gray-800"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Salary Package <span className="font-normal text-gray-400">(Optional)</span></label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. 12 LPA"
+                  value={newPackage}
+                  onChange={(e) => setNewPackage(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b4376] focus:border-transparent outline-none text-gray-800"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setShowDriveDatePicker(false)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors"
+                disabled={isSavingDriveDate}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveDriveDate}
+                disabled={isSavingDriveDate || (!newDriveDate && !newPackage)}
+                className="px-4 py-2 bg-[#1b4376] text-white rounded-lg font-medium hover:bg-[#15335b] transition-colors disabled:opacity-50"
+              >
+                {isSavingDriveDate ? 'Saving...' : 'Save Date'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

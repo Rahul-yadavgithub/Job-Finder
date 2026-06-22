@@ -359,6 +359,82 @@ export const confirmDrive = async (req: AdminRequest, res: Response): Promise<vo
   }
 };
 
+export const updateDriveDate = async (req: AdminRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { date, salaryPackage, assignmentId, companyId } = req.body;
+
+    if (!id || id === 'new') {
+      const { data: drive, error } = await supabase
+        .from('drive_details')
+        .insert({
+          company_id: companyId,
+          assignment_id: assignmentId,
+          drive_type: 'in_campus',
+          scheduled_date: date || null,
+          salary_package: salaryPackage || null,
+          confirmed_by: req.admin?.userId,
+          confirmed_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+        
+      if (error || !drive) throw error || new Error('Failed to create drive');
+
+      await supabase
+        .from('company_status')
+        .update({
+          top_stage: 'drive_confirmed',
+          drive_id: drive.id
+        })
+        .eq('id', assignmentId);
+
+      await appendTimeline({
+        companyId,
+        assignmentId,
+        eventType: 'drive_confirmed',
+        title: 'Drive Scheduled',
+        description: `Scheduled for ${date || 'TBA'}, Package: ${salaryPackage || 'TBA'}`,
+        performedBy: req.admin?.userId,
+        performedByLayer: 'admin',
+        visibilityScope: 'communication_tpr_and_above'
+      });
+
+      res.status(200).json({ success: true, driveId: drive.id });
+      return;
+    }
+
+    const updates: any = {};
+    if (date !== undefined) updates.scheduled_date = date || null;
+    if (salaryPackage !== undefined) updates.salary_package = salaryPackage || null;
+
+    const { data: drive, error } = await supabase
+      .from('drive_details')
+      .update(updates)
+      .eq('id', id)
+      .select('company_id, assignment_id')
+      .single();
+
+    if (error || !drive) throw error || new Error('Failed to update drive');
+
+    await appendTimeline({
+      companyId: drive.company_id,
+      assignmentId: drive.assignment_id,
+      eventType: 'note_added',
+      title: 'Drive Details Updated',
+      description: `Drive details updated. Date: ${date || 'TBA'}, Package: ${salaryPackage || 'TBA'}`,
+      performedBy: req.admin?.userId,
+      performedByLayer: 'admin',
+      visibilityScope: 'communication_tpr_and_above'
+    });
+
+    res.status(200).json({ success: true, driveId: id });
+  } catch (error: any) {
+    console.error('updateDriveDate Error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
 export const openRegistration = async (req: AdminRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
@@ -495,7 +571,31 @@ export const getCompanyWorkflows = async (req: AdminRequest, res: Response): Pro
       };
     }) || [];
 
-    res.status(200).json({ success: true, data: formatted });
+    // ADD CUSTOM STAGES
+    const customInstances = instances?.filter(i => !templates?.some(t => t.workflow_type === i.workflow_type)) || [];
+    const customFormatted = customInstances.map(instance => {
+       return {
+         workflow_type: instance.workflow_type,
+         display_name: instance.workflow_type.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
+         status: instance.status,
+         allowed_states: ['not_started', 'in_progress', 'completed'], // Simple generic states for custom
+         updated_at: instance.updated_at || new Date().toISOString()
+       };
+    });
+
+    const combined: any[] = [];
+    formatted.forEach(f => {
+      combined.push(f);
+      if (f.workflow_type === 'brochure') {
+        combined.push(...customFormatted);
+      }
+    });
+    // Fallback if brochure template is somehow missing
+    if (!formatted.some(f => f.workflow_type === 'brochure')) {
+      combined.push(...customFormatted);
+    }
+
+    res.status(200).json({ success: true, data: combined });
   } catch (error: any) {
     console.error('getCompanyWorkflows Error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
@@ -670,7 +770,7 @@ export const getMyTasks = async (req: AdminRequest, res: Response): Promise<void
 export const updateTaskStatus = async (req: AdminRequest, res: Response): Promise<void> => {
   try {
     const { taskId } = req.params;
-    const { status, notes } = req.body; // status can be 'in_progress', 'waiting_response', 'completed', 'cancelled'
+    const { status, notes, salaryPackage, driveDate } = req.body; // status can be 'in_progress', 'waiting_response', 'completed', 'cancelled'
 
     const { data: task, error: taskError } = await supabase
       .from('workflow_tasks')
@@ -679,6 +779,39 @@ export const updateTaskStatus = async (req: AdminRequest, res: Response): Promis
       .single();
 
     if (taskError || !task) throw taskError || new Error('Task not found');
+
+    if (salaryPackage || driveDate) {
+       const { data: existingDrive } = await supabase
+          .from('drive_details')
+          .select('id')
+          .eq('assignment_id', task.assignment_id)
+          .single();
+       
+       if (existingDrive) {
+          const updates: any = {};
+          if (salaryPackage) updates.salary_package = salaryPackage;
+          if (driveDate) updates.scheduled_date = driveDate;
+          
+          await supabase.from('drive_details').update(updates).eq('id', existingDrive.id);
+       } else {
+          const { data: newDrive, error: driveErr } = await supabase.from('drive_details').insert({
+             company_id: task.company_id,
+             assignment_id: task.assignment_id,
+             drive_type: 'in_campus',
+             salary_package: salaryPackage || null,
+             scheduled_date: driveDate || null,
+             confirmed_by: req.admin?.userId,
+             confirmed_at: new Date().toISOString()
+          }).select().single();
+
+          if (!driveErr && newDrive) {
+             await supabase.from('company_status').update({
+                top_stage: 'drive_confirmed',
+                drive_id: newDrive.id
+             }).eq('id', task.assignment_id);
+          }
+       }
+    }
 
     const updateData: any = { status };
     if (status === 'completed') {
@@ -795,11 +928,18 @@ export const getCoworkerDashboardStats = async (req: AdminRequest, res: Response
       }
     });
 
+    const { count: confirmedDrivesCount, error: driveError } = await supabase
+      .from('drive_details')
+      .select('id', { count: 'exact', head: true });
+
+    if (driveError) throw driveError;
+
     res.status(200).json({
       success: true,
       data: {
         taskStats,
-        pipelineStats
+        pipelineStats,
+        confirmedDrivesCount: confirmedDrivesCount || 0
       }
     });
   } catch (error) {
@@ -849,6 +989,70 @@ export const deleteTask = async (req: AdminRequest, res: Response): Promise<void
     res.status(200).json({ success: true, message: 'Task deleted successfully' });
   } catch (error: any) {
     console.error('deleteTask Error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const addCustomWorkflowStage = async (req: AdminRequest, res: Response): Promise<void> => {
+  try {
+    const { companyId } = req.params;
+    const { stageName } = req.body;
+
+    if (!stageName) {
+      res.status(400).json({ success: false, message: 'stageName is required' });
+      return;
+    }
+
+    const { data: statusData, error: statusError } = await supabase
+      .from('company_status')
+      .select('id')
+      .eq('company_id', companyId)
+      .single();
+      
+    if (statusError || !statusData) {
+      res.status(404).json({ success: false, message: 'Assignment not found' });
+      return;
+    }
+
+    const workflowType = stageName.toLowerCase().replace(/\s+/g, '_');
+
+    // Ensure template exists to satisfy foreign key constraint
+    const { error: templateError } = await supabase
+      .from('company_workflow_templates')
+      .upsert({
+        workflow_type: workflowType,
+        display_name: stageName,
+        allowed_states: ['not_started', 'in_progress', 'completed'],
+        is_active: false // Keep it false so it doesn't appear globally by default
+      }, { onConflict: 'workflow_type', ignoreDuplicates: true });
+
+    if (templateError) throw templateError;
+
+    const { error: upsertError } = await supabase
+      .from('company_workflows')
+      .upsert({
+        assignment_id: statusData.id,
+        workflow_type: workflowType,
+        status: 'not_started',
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'assignment_id, workflow_type' });
+
+    if (upsertError) throw upsertError;
+
+    await appendTimeline({
+      companyId: companyId as string,
+      assignmentId: statusData.id,
+      eventType: 'note_added',
+      title: `Custom Phase Added: ${stageName}`,
+      description: 'A new workflow phase was added.',
+      performedBy: req.admin?.userId,
+      performedByLayer: 'admin',
+      visibilityScope: 'all_roles'
+    });
+
+    res.status(200).json({ success: true, message: 'Custom stage added successfully' });
+  } catch (error: any) {
+    console.error('addCustomWorkflowStage Error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };

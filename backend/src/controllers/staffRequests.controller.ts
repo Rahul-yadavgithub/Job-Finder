@@ -12,6 +12,8 @@ export const getStaffRequests = async (req: AdminRequest, res: Response): Promis
         *,
         companies:company_id(
           company_name,
+          hr_name,
+          phone_number,
           branches(name)
         ),
         users:raised_by(name)
@@ -23,6 +25,8 @@ export const getStaffRequests = async (req: AdminRequest, res: Response): Promis
     const formatted = data.map(item => ({
       ...item,
       company_name: item.companies?.company_name,
+      hr_name: item.companies?.hr_name,
+      phone_number: item.companies?.phone_number,
       branch_name: item.companies?.branches?.name,
       raised_by_name: item.users?.name,
     }));
@@ -207,6 +211,68 @@ export const rejectStaffRequest = async (req: AdminRequest, res: Response): Prom
     res.status(200).json({ success: true });
   } catch (error: any) {
     console.error('rejectStaffRequest Error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const archiveStaffRequest = async (req: AdminRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { salaryPackage, driveDate } = req.body || {};
+
+    const { data: request, error: fetchError } = await supabase
+      .from('staff_requests')
+      .select('company_id, assignment_id')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !request) throw fetchError || new Error('Request not found');
+
+    if (salaryPackage || driveDate) {
+       const { data: existingDrive } = await supabase
+          .from('drive_details')
+          .select('id')
+          .eq('assignment_id', request.assignment_id)
+          .single();
+       
+       if (existingDrive) {
+          const updates: any = {};
+          if (salaryPackage) updates.salary_package = salaryPackage;
+          if (driveDate) updates.scheduled_date = driveDate;
+          
+          await supabase.from('drive_details').update(updates).eq('id', existingDrive.id);
+       } else {
+          const { data: newDrive, error: driveErr } = await supabase.from('drive_details').insert({
+             company_id: request.company_id,
+             assignment_id: request.assignment_id,
+             drive_type: 'in_campus',
+             salary_package: salaryPackage || null,
+             scheduled_date: driveDate || null,
+             confirmed_by: req.admin?.userId,
+             confirmed_at: new Date().toISOString()
+          }).select().single();
+
+          if (!driveErr && newDrive) {
+             await supabase.from('company_status').update({
+                top_stage: 'drive_confirmed',
+                drive_id: newDrive.id
+             }).eq('id', request.assignment_id);
+          }
+       }
+    }
+
+    // We use rejection_reason = 'ARCHIVED' as a workaround to archive tasks 
+    // since 'completed' is restricted by Postgres constraints.
+    const { error } = await supabase
+      .from('staff_requests')
+      .update({ rejection_reason: 'ARCHIVED' })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true, message: 'Request archived successfully' });
+  } catch (error: any) {
+    console.error('archiveStaffRequest Error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };

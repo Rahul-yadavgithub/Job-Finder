@@ -152,17 +152,17 @@ export default function AdminDashboard() {
               </div>
             </Link>
             
-            {/* In Progress */}
-            <Link href="/admin/tasks" className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1e3c72] to-[#2a5298] p-6 shadow-lg shadow-blue-900/20 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between h-[180px] border border-white/10">
-              <Compass className="absolute -right-4 -bottom-4 w-32 h-32 text-white opacity-10 group-hover:scale-110 transition-transform duration-500" />
+            {/* Confirmed Drives */}
+            <Link href="/admin/drives" className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1e3c72] to-[#2a5298] p-6 shadow-lg shadow-blue-900/20 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between h-[180px] border border-white/10">
+              <Building2 className="absolute -right-4 -bottom-4 w-32 h-32 text-white opacity-10 group-hover:scale-110 transition-transform duration-500" />
               <div className="relative z-10">
                 <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3">
-                  <Compass className="w-5 h-5 text-white" />
+                  <Building2 className="w-5 h-5 text-white" />
                 </div>
-                <p className="text-sm font-bold text-white/80 uppercase tracking-widest mb-1">In Progress</p>
+                <p className="text-sm font-bold text-white/80 uppercase tracking-widest mb-1">Confirmed Drives</p>
               </div>
               <div className="relative z-10 flex items-end justify-between">
-                <p className="text-4xl font-black text-white">{ts.inProgress}</p>
+                <p className="text-4xl font-black text-white">{workerStats?.confirmedDrivesCount || 0}</p>
               </div>
             </Link>
 
@@ -288,6 +288,7 @@ export default function AdminDashboard() {
               Global administration dashboard. Monitor platform health, manage users, and review pending requests.
             </p>
           </div>
+<<<<<<< HEAD
           
           {successor ? (
             <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 min-w-[200px]">
@@ -301,6 +302,42 @@ export default function AdminDashboard() {
             </Link>
           )}
         </div>
+=======
+          <div className={`p-3 rounded-lg transition-colors ${totalPending > 0 ? 'bg-red-50 text-red-600 group-hover:bg-red-100' : 'bg-gray-50 text-gray-400 group-hover:text-blue-500'}`}>
+            <UserPlus size={24} />
+          </div>
+        </Link>
+
+        <Link href="/admin/people" className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm flex items-center justify-between hover:border-indigo-300 transition-colors group cursor-pointer">
+          <div>
+            <p className="text-sm font-medium text-gray-500 mb-1">Active Workers</p>
+            <p className="text-2xl font-bold text-gray-900">{peopleStats.activeCoworkers}</p>
+          </div>
+          <div className="p-3 rounded-lg bg-blue-50 text-[#1b4376] group-hover:bg-blue-100 transition-colors">
+            <Users size={24} />
+          </div>
+        </Link>
+
+        <Link href="/admin/companies" className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm flex items-center justify-between hover:border-indigo-300 transition-colors group cursor-pointer">
+          <div>
+            <p className="text-sm font-medium text-gray-500 mb-1">Total Companies</p>
+            <p className="text-2xl font-bold text-gray-900">{compStats.total}</p>
+          </div>
+          <div className="p-3 rounded-lg bg-green-50 text-green-600 group-hover:bg-green-100 transition-colors">
+            <Building2 size={24} />
+          </div>
+        </Link>
+
+        <Link href="/admin/drives" className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm flex items-center justify-between hover:border-indigo-300 transition-colors group cursor-pointer">
+          <div>
+            <p className="text-sm font-medium text-gray-500 mb-1">Confirmed Drives</p>
+            <p className="text-2xl font-bold text-gray-900">{compStats.confirmed}</p>
+          </div>
+          <div className="p-3 rounded-lg bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 transition-colors">
+            <Building2 size={24} />
+          </div>
+        </Link>
+>>>>>>> 9669482 (almost finish the function)
       </div>
 
       {/* Main Metric Cards */}

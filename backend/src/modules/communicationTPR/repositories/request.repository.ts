@@ -148,7 +148,7 @@ export class RequestRepository {
   }
 
   async getQueueCounts() {
-    const statuses = ['draft', 'pending_review', 'approved', 'rejected', 'reverted', 'completed'];
+    const statuses = ['draft', 'pending_review', 'approved', 'rejected', 'completed']; // Removed 'reverted' from raw query
     const counts: Record<string, number> = {};
 
     const queries = statuses.map(status => 
@@ -162,6 +162,15 @@ export class RequestRepository {
     statuses.forEach((status, index) => {
       counts[status] = results[index].count || 0;
     });
+
+    // Manually calculate the precise reverted count using the same filtering logic as the list view
+    try {
+      const revertedList = await this.getRequestsByQueueStatus('reverted');
+      counts['reverted'] = revertedList.length;
+    } catch (e) {
+      console.error('Failed to count reverted queue:', e);
+      counts['reverted'] = 0;
+    }
 
     return counts;
   }
@@ -178,7 +187,8 @@ export class RequestRepository {
           email,
           company_status (
             interested_by_name,
-            original_marked_by
+            original_marked_by,
+            mid_status
           )
         ),
         users!requested_by (name),
@@ -189,7 +199,31 @@ export class RequestRepository {
       .order('updated_at', { ascending: false });
 
     if (error) throw error;
-    return data;
+    
+    let filteredData = data;
+    if (status === 'reverted') {
+      const seenCompanies = new Set();
+      filteredData = data.filter((row: any) => {
+        // Find mid_status properly 
+        let midStatus = null;
+        if (Array.isArray(row.companies?.company_status)) {
+          midStatus = row.companies.company_status[0]?.mid_status;
+        } else if (row.companies?.company_status) {
+          midStatus = row.companies.company_status.mid_status;
+        }
+        
+        // Exclude if it's no longer revoked
+        if (midStatus !== 'revoked') return false;
+        
+        // Deduplicate
+        if (seenCompanies.has(row.company_id)) return false;
+        seenCompanies.add(row.company_id);
+        
+        return true;
+      });
+    }
+
+    return filteredData;
   }
 
   async revertRequest(requestId: string, notes: string, revertedToUserId: string) {
@@ -209,7 +243,13 @@ export class RequestRepository {
     
     if (data?.company_id) {
        await supabase.from('company_status')
-         .update({ mid_status: 'revoked' })
+         .update({ 
+           mid_status: 'revoked',
+           locked: false,
+           locked_by: null,
+           locked_at: null,
+           base_status: 'call_again'
+         })
          .eq('company_id', data.company_id);
     }
 

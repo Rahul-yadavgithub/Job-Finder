@@ -2,9 +2,11 @@ import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
 import { AdminRequest, AdminJWTPayload } from '../types/admin.types';
 import { sendResetEmail } from '../utils/email';
 import { v2 as cloudinary } from 'cloudinary';
+import { connection as redisConnection } from '../config/redis';
 export const adminLogin = async (req: AdminRequest, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
@@ -62,7 +64,7 @@ export const adminLogin = async (req: AdminRequest, res: Response): Promise<void
       tokenVersion: user.token_version || 0
     };
     
-    const token = jwt.sign(payload, process.env.ADMIN_JWT_SECRET as string, { expiresIn: '12h' });
+    const token = jwt.sign(payload, process.env.ADMIN_JWT_SECRET as string, { expiresIn: '12h', jwtid: uuidv4() });
     
     res.cookie('admin_token', token, {
       httpOnly: true,
@@ -164,7 +166,25 @@ export const requestAccess = async (req: AdminRequest, res: Response): Promise<v
 };
 
 export const adminLogout = async (req: AdminRequest, res: Response): Promise<void> => {
-  res.clearCookie('admin_token');
+  const token = req.cookies?.admin_token;
+  if (token) {
+    try {
+      const decoded = jwt.decode(token) as any;
+      if (decoded && decoded.jti && decoded.exp) {
+        const expiresIn = decoded.exp - Math.floor(Date.now() / 1000);
+        if (expiresIn > 0) {
+          await redisConnection.setex(`bl_${decoded.jti}`, expiresIn, 'blacklisted');
+        }
+      }
+    } catch (e) {
+      console.error('Admin Logout blacklist error', e);
+    }
+  }
+  res.clearCookie('admin_token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  });
   res.status(200).json({ success: true });
 };
 
@@ -239,7 +259,7 @@ export const jumpIn = async (req: AdminRequest, res: Response): Promise<void> =>
       originalUserId: req.admin.userId // Store original ID to jump back out
     };
 
-    const token = jwt.sign(payload, process.env.ADMIN_JWT_SECRET as string, { expiresIn: '12h' });
+    const token = jwt.sign(payload, process.env.ADMIN_JWT_SECRET as string, { expiresIn: '12h', jwtid: uuidv4() });
     res.cookie('admin_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -292,7 +312,7 @@ export const jumpOut = async (req: AdminRequest, res: Response): Promise<void> =
       jumpedIn: false
     };
 
-    const token = jwt.sign(payload, process.env.ADMIN_JWT_SECRET as string, { expiresIn: '12h' });
+    const token = jwt.sign(payload, process.env.ADMIN_JWT_SECRET as string, { expiresIn: '12h', jwtid: uuidv4() });
     res.cookie('admin_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

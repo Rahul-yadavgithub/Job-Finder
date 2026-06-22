@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, CircleDot } from 'lucide-react';
+import { CheckCircle2, CircleDot, Plus, Check } from 'lucide-react';
 import { adminGet } from '@/lib/admin/api';
 
 interface Props {
@@ -7,20 +7,12 @@ interface Props {
   currentPhase: string;
 }
 
-const PHASES = [
-  { id: 'interested', label: 'Interested' },
-  { id: 'under_communication', label: 'Communication' },
-  { id: 'ready_for_head_review', label: 'Head Review' },
-  { id: 'brochure_acknowledged', label: 'Brochure Ack' },
-  { id: 'jnf_acknowledged', label: 'JNF Ack' },
-  { id: 'database_acknowledged', label: 'Database Ack' },
-  { id: 'completed', label: 'Completed' }
-];
+
 
 export function WorkflowProgressTracker({ companyId, currentPhase }: Props) {
   const [workflows, setWorkflows] = useState<any[]>([]);
 
-  useEffect(() => {
+  const fetchWorkflows = () => {
     if (companyId) {
       adminGet<{ data: any[] }>(`/companies/${companyId}/workflows`)
         .then(res => {
@@ -28,7 +20,12 @@ export function WorkflowProgressTracker({ companyId, currentPhase }: Props) {
         })
         .catch(() => {});
     }
+  };
+
+  useEffect(() => {
+    fetchWorkflows();
   }, [companyId]);
+
 
   if (currentPhase === 'closed') {
     return (
@@ -44,67 +41,113 @@ export function WorkflowProgressTracker({ companyId, currentPhase }: Props) {
     );
   }
 
-  // Calculate dynamic index based on rules
-  let activeIndex = 0;
-  
-  if (currentPhase !== 'interested') activeIndex = 1; // Communication
-  if (currentPhase === 'ready_for_head_review' || currentPhase === 'completed' || currentPhase === 'transferred_to_head' || currentPhase === 'recruitment_in_progress') activeIndex = 2; // Head Review
-
   const getWorkflowProgress = (type: string) => {
     const wf = workflows.find(w => w.workflow_type === type);
     if (!wf) return 0;
     const status = wf.status.toUpperCase();
     if (['ACKNOWLEDGED', 'COMPLETED', 'RECEIVED'].includes(status)) return 1;
     if (['IN_PROGRESS', 'SENT_TO_MARK', 'WAITING_RESPONSE', 'SENT', 'REQUESTED', 'PREPARED'].includes(status)) return 0.5;
-    return 0; // Default fallback to 0 for initial states like PENDING or NOT_STARTED
+    return 0;
   };
 
+  // Build dynamic PHASES array based on existing workflows
+  const basePhases = [{ id: 'interested', label: 'Interested' }];
+  
   const brochureProg = getWorkflowProgress('brochure');
-  if (brochureProg > 0) activeIndex = Math.max(activeIndex, 2 + brochureProg);
+  basePhases.push({ id: 'brochure', label: 'Brochure Ack' });
+
+  // Add any custom workflows that are NOT standard
+  const standardTypes = ['brochure', 'jnf', 'database', 'drive'];
+  const customWorkflows = workflows.filter(w => !standardTypes.includes(w.workflow_type));
+  
+  customWorkflows.forEach(cw => {
+    basePhases.push({ id: cw.workflow_type, label: cw.display_name });
+  });
 
   const jnfProg = getWorkflowProgress('jnf');
-  if (jnfProg > 0 && brochureProg === 1) activeIndex = Math.max(activeIndex, 3 + jnfProg);
+  basePhases.push({ id: 'jnf', label: 'JNF Ack' });
 
   const dbProg = getWorkflowProgress('database');
-  if (dbProg > 0 && jnfProg === 1) activeIndex = Math.max(activeIndex, 4 + dbProg);
+  basePhases.push({ id: 'database', label: 'Database Ack' });
 
   const driveProg = getWorkflowProgress('drive');
+  basePhases.push({ id: 'completed', label: 'Completed' });
+
+  const PHASES = basePhases;
+
+  // Calculate dynamic activeIndex
+  let activeIndex = 0;
+  
+  if (currentPhase !== 'interested') {
+    activeIndex = 1; // Passed Interested, now at Brochure (or custom)
+  }
+
+  let currentIndexTracker = 1;
+
+  if (brochureProg > 0) {
+    activeIndex = Math.max(activeIndex, currentIndexTracker + brochureProg);
+  }
+  currentIndexTracker++;
+
+  // Custom workflows progress
+  customWorkflows.forEach(cw => {
+    const prog = getWorkflowProgress(cw.workflow_type);
+    if (prog > 0 && brochureProg === 1) {
+       activeIndex = Math.max(activeIndex, currentIndexTracker + prog);
+    }
+    currentIndexTracker++;
+  });
+
+  if (jnfProg > 0 && brochureProg === 1) {
+    activeIndex = Math.max(activeIndex, currentIndexTracker + jnfProg);
+  }
+  currentIndexTracker++;
+
+  if (dbProg > 0 && jnfProg === 1) {
+    activeIndex = Math.max(activeIndex, currentIndexTracker + dbProg);
+  }
+  currentIndexTracker++;
+
   if ((driveProg > 0 && dbProg === 1) || currentPhase === 'completed') {
-    if (currentPhase === 'completed' || driveProg === 1) activeIndex = 6;
-    else activeIndex = Math.max(activeIndex, 5 + driveProg);
+    if (currentPhase === 'completed' || driveProg === 1) activeIndex = PHASES.length - 1;
+    else activeIndex = Math.max(activeIndex, currentIndexTracker + driveProg);
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full relative px-2">
       <div className="flex items-center justify-between relative">
-        {/* Background Line */}
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-gray-200 rounded-full z-0"></div>
-        
-        {/* Active Line */}
-        <div 
-          className="absolute left-0 top-1/2 -translate-y-1/2 h-1.5 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full z-0 transition-all duration-700 ease-out"
-          style={{ width: `${(activeIndex / (PHASES.length - 1)) * 100}%` }}
-        ></div>
+        {/* Background Line Container spanning exactly between centers */}
+        <div className="absolute left-[16px] right-[16px] top-1/2 -translate-y-1/2 h-[2px] z-0">
+          <div className="w-full h-full bg-gray-200 absolute top-0 left-0"></div>
+          {/* Active Line */}
+          <div 
+            className="h-full bg-[#27ae60] absolute top-0 left-0 transition-all duration-700 ease-out"
+            style={{ width: `${Math.min(100, (activeIndex / Math.max(1, PHASES.length - 1)) * 100)}%` }}
+          ></div>
+        </div>
 
         {/* Steps */}
         {PHASES.map((phase, idx) => {
-          const isCompleted = idx <= Math.floor(activeIndex);
-          const isCurrent = idx === Math.floor(activeIndex);
+          const isCompleted = idx < Math.floor(activeIndex) || (idx === Math.floor(activeIndex) && activeIndex >= PHASES.length - 1 && currentPhase === 'completed');
+          const isCurrent = idx === Math.floor(activeIndex) && !isCompleted;
+          const isPending = !isCompleted && !isCurrent;
 
           return (
             <div key={phase.id} className="relative z-10 flex flex-col items-center gap-2">
               <div 
-                className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-500 bg-white relative z-10
-                  ${isCompleted && !isCurrent ? 'border-green-500 text-green-600' : ''}
-                  ${isCurrent ? 'border-green-500 text-white bg-gradient-to-br from-green-500 to-emerald-600 ring-4 ring-green-100 shadow-[0_0_15px_rgba(16,185,129,0.5)]' : ''}
-                  ${!isCompleted && !isCurrent ? 'border-gray-300 text-gray-400' : ''}
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500 relative z-10
+                  ${isCompleted ? 'border-2 border-[#27ae60] bg-white text-[#27ae60]' : ''}
+                  ${isCurrent ? 'bg-[#27ae60] text-white shadow-[0_0_15px_rgba(39,174,96,0.5)]' : ''}
+                  ${isPending ? 'border-2 border-gray-300 bg-white text-gray-300' : ''}
                 `}
               >
-                {isCompleted && !isCurrent ? <CheckCircle2 size={16} /> : <CircleDot size={16} />}
+                 {isCompleted && <Check size={16} strokeWidth={3} />}
+                 {isCurrent && <CircleDot size={16} strokeWidth={3} />}
+                 {isPending && <CircleDot size={16} strokeWidth={3} />}
               </div>
               
-              <span className={`text-xs font-bold whitespace-nowrap absolute -bottom-6
-                ${isCurrent ? 'text-green-900' : isCompleted ? 'text-gray-700' : 'text-gray-400'}
+              <span className={`text-[13px] font-medium whitespace-nowrap absolute -bottom-8
+                ${isCurrent || isCompleted ? 'text-gray-700' : 'text-gray-500'}
               `}>
                 {phase.label}
               </span>
@@ -112,7 +155,7 @@ export function WorkflowProgressTracker({ companyId, currentPhase }: Props) {
           );
         })}
       </div>
-      <div className="h-8"></div> {/* Spacer for the absolute labels */}
+      <div className="h-10"></div> {/* Spacer for the absolute labels */}
     </div>
   );
 }

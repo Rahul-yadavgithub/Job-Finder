@@ -3,6 +3,8 @@ import { AuthService } from '../services/auth.service';
 import { loginSchema } from '../validators/auth.validator';
 import { CommunicationTPRRequest } from '../types';
 import { supabase } from '../../../config/supabase';
+import { connection as redisConnection } from '../../../config/redis';
+import jwt from 'jsonwebtoken';
 
 export class AuthController {
   private authService: AuthService;
@@ -40,7 +42,27 @@ export class AuthController {
       if (req.user) {
         await this.authService.logout(req.user.userId);
       }
-      res.clearCookie('communication_tpr_token');
+      
+      const token = req.cookies?.communication_tpr_token;
+      if (token) {
+        try {
+          const decoded = jwt.decode(token) as any;
+          if (decoded && decoded.jti && decoded.exp) {
+            const expiresIn = decoded.exp - Math.floor(Date.now() / 1000);
+            if (expiresIn > 0) {
+              await redisConnection.setex(`bl_${decoded.jti}`, expiresIn, 'blacklisted');
+            }
+          }
+        } catch (e) {
+          console.error('Comm TPR Logout blacklist error', e);
+        }
+      }
+
+      res.clearCookie('communication_tpr_token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      });
       res.status(200).json({ success: true, message: 'Logged out successfully' });
     } catch (error) {
       console.error('Communication TPR Logout Error:', error);

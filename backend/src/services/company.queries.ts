@@ -66,7 +66,7 @@ export async function getCompaniesByBranch({
 
 export async function getTodayCompaniesByBranch(branchId: string) {
   const currentDate = new Date().toISOString().split('T')[0];
-  const { data, error } = await supabase
+  let query = supabase
     .from('company_status')
     .select('*, companies!inner(*)')
     .eq('branch_id', branchId)
@@ -74,6 +74,14 @@ export async function getTodayCompaniesByBranch(branchId: string) {
     .eq('base_status', 'call_again') // "whose status and followup data is mentioned"
     .order('next_followup_date', { ascending: true, nullsFirst: false });
 
+  // Exclude reverted companies. 
+  // In Supabase js, to do .neq with a null column, we must use an 'or' statement, 
+  // or explicitly filter using .is('mid_status', null) if that's easier.
+  // Actually, .neq('mid_status', 'revoked') should work as long as mid_status is not null. 
+  // Better: .or('mid_status.neq.revoked,mid_status.is.null')
+  query = query.or('mid_status.neq.revoked,mid_status.is.null');
+
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 }
@@ -87,7 +95,7 @@ export async function getDashboardCounts(branchId: string) {
     supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('branch_id', branchId),
     supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('branch_id', branchId).or('base_status.eq.not_contacted,base_status.eq.pending,base_status.is.null'), // "status is either nothing"
     supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('branch_id', branchId).eq('mid_status', 'revoked'),
-    supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('branch_id', branchId).eq('base_status', 'call_again')
+    supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('branch_id', branchId).eq('base_status', 'call_again').or('mid_status.neq.revoked,mid_status.is.null')
   ]);
 
   return {
