@@ -135,14 +135,22 @@ export default function SettingsPage() {
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto space-y-6 pb-12">
-        <div>
-          <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight flex items-center gap-3">
-            <SettingsIcon className="w-8 h-8 text-blue-600" />
-            System Settings
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage templates, follow-up rules, and integrations.
-          </p>
+        {/* Premium Header */}
+        <div className="bg-gradient-to-r from-[#15335b] to-[#1b4376] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden mb-8">
+          <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
+            <SettingsIcon size={300} className="-mt-10 -mr-10" />
+          </div>
+          <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-widest text-blue-100 mb-4 backdrop-blur-sm">
+                <SettingsIcon size={14} /> Official Workspace
+              </div>
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">System Settings</h1>
+              <p className="text-blue-100 max-w-xl text-sm md:text-base opacity-90 leading-relaxed">
+                Manage templates, configure follow-up rules, and maintain database integrations.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="border-b border-gray-200">

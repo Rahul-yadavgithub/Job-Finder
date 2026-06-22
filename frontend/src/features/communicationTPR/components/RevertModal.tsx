@@ -39,7 +39,7 @@ export function RevertModal({ isOpen, onClose, onConfirm }: RevertModalProps) {
         onClick={onClose}
       />
       
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-[95vw] md:max-w-md overflow-y-auto custom-scrollbar flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50/50">
           <h2 className="text-xl font-bold text-gray-900">Add note for Base TPR</h2>
           <button 

@@ -78,14 +78,22 @@ export default function AuditLog() {
   if (!user?.isSuperAdmin) return null;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center gap-4 mb-2">
-        <div className="w-12 h-12 bg-gray-900 text-white rounded-xl flex items-center justify-center shadow-sm">
-          <Shield size={24} />
+    <div className="w-full max-w-none space-y-6">
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-[#15335b] to-[#1b4376] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden mb-8">
+        <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
+          <Shield size={300} className="-mt-10 -mr-10" />
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Audit Log</h1>
-          <p className="text-sm text-gray-500 font-medium">Permanent record of all administrative actions</p>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-widest text-blue-100 mb-4 backdrop-blur-sm">
+              <Shield size={14} /> Official Workspace
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">Audit Log</h1>
+            <p className="text-blue-100 max-w-xl text-sm md:text-base opacity-90 leading-relaxed">
+              Permanent record of all administrative actions. Track changes, monitor access, and maintain compliance.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -126,7 +134,8 @@ export default function AuditLog() {
               <p className="text-sm">Try adjusting your filters.</p>
             </div>
           ) : (
-            <table className="w-full text-left text-sm whitespace-nowrap">
+            <div className="overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-white text-gray-500 font-semibold border-b border-gray-200 text-xs uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-4">Action</th>
@@ -155,7 +164,8 @@ export default function AuditLog() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           )}
         </div>
 

@@ -84,14 +84,27 @@ export default function PersonDetailsPage({ params }: { params: Promise<{ id: st
   if (!person) return null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/admin/people?tab=branch" className="p-2 text-gray-500 hover:text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Person Details</h1>
-          <p className="text-gray-500">View and manage profile information</p>
+    <div className="w-full max-w-none space-y-6">
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-[#15335b] to-[#1b4376] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden mb-8">
+        <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
+          <User size={300} className="-mt-10 -mr-10" />
+        </div>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+            <Link href="/admin/people?tab=branch" className="p-3 text-[#1b4376] bg-white rounded-xl hover:bg-blue-50 transition-colors shadow-lg shrink-0 flex items-center justify-center">
+              <ArrowLeft className="w-6 h-6" />
+            </Link>
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-widest text-blue-100 mb-3 backdrop-blur-sm">
+                <User size={14} /> Official Workspace
+              </div>
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">Person Details</h1>
+              <p className="text-blue-100 max-w-xl text-sm md:text-base opacity-90 leading-relaxed">
+                View and manage profile information. Monitor activity and roles.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 

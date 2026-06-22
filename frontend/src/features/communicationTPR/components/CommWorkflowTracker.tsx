@@ -12,9 +12,9 @@ export function CommWorkflowTracker({ currentPhase }: Props) {
   
   const PHASES = [
     { id: 'new_arrival', label: 'New Arrival' },
-    { id: 'email_drafted', label: 'Email Drafted' },
-    { id: 'tpo_staff_review', label: 'TPO Staff Review' },
-    { id: 'completed', label: isRejected ? 'Rejected' : 'Completed' }
+    { id: 'email_drafted', label: 'Under Communication' },
+    { id: 'tpo_staff_review', label: 'Ready for Staff Review' },
+    { id: 'completed', label: isRejected ? 'Rejected' : 'Comm. Complete' }
   ];
 
   const activeIndex = isRejected ? PHASES.length - 1 : (PHASES.findIndex(p => p.id === currentPhase) === -1 ? 0 : PHASES.findIndex(p => p.id === currentPhase));

@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { supabase } from '../config/supabase';
 import { AuthRequest } from '../types/auth.types';
 import { sendResetEmail } from '../utils/email';
+import { v2 as cloudinary } from 'cloudinary';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -378,6 +379,45 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
     if (Object.keys(updates).length === 0) {
       res.status(400).json({ success: false, message: 'No valid fields to update' });
       return;
+    }
+
+    // Handle Cloudinary Deletion if profile photo is being changed or removed
+    if (profilePhotoUrl !== undefined) {
+      const { data: currentUser } = await supabase
+        .from('users')
+        .select('profile_photo_url')
+        .eq('id', req.user!.userId)
+        .single();
+        
+      if (currentUser?.profile_photo_url && currentUser.profile_photo_url !== profilePhotoUrl) {
+        try {
+          const uploadIndex = currentUser.profile_photo_url.indexOf('/upload/');
+          let publicId = '';
+          if (uploadIndex !== -1) {
+            const afterUpload = currentUser.profile_photo_url.substring(uploadIndex + 8);
+            const pathParts = afterUpload.split('/');
+            if (pathParts[0].startsWith('v') && !isNaN(parseInt(pathParts[0].substring(1)))) {
+              pathParts.shift();
+            }
+            const publicIdWithExt = pathParts.join('/');
+            publicId = publicIdWithExt.substring(0, publicIdWithExt.lastIndexOf('.')) || publicIdWithExt;
+          }
+
+          if (publicId && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET && process.env.CLOUDINARY_CLOUD_NAME) {
+            cloudinary.config({
+              cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+              api_key: process.env.CLOUDINARY_API_KEY,
+              api_secret: process.env.CLOUDINARY_API_SECRET
+            });
+            await cloudinary.uploader.destroy(publicId);
+            console.log(`Deleted old profile photo from Cloudinary: ${publicId}`);
+          } else {
+            console.warn('Cloudinary credentials missing. Could not delete old profile photo.');
+          }
+        } catch (delError) {
+          console.error('Failed to delete old profile photo from Cloudinary', delError);
+        }
+      }
     }
 
     const { error } = await supabase

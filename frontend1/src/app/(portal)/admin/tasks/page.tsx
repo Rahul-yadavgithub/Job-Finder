@@ -153,18 +153,27 @@ export default function MyTasksPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sm:p-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <CheckSquare className="text-[#1b4376]" size={32} />
-            My Workflow Tasks
-          </h1>
-          <p className="text-gray-500 mt-2">Manage and execute operations delegated to you.</p>
+    <div className="w-full max-w-none space-y-8 pb-10">
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-[#15335b] to-[#1b4376] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
+          <CheckSquare size={300} className="-mt-10 -mr-10" />
         </div>
-        <div className="bg-blue-50 border border-blue-100 px-4 py-2 rounded-lg flex flex-col items-center">
-          <span className="text-2xl font-black text-[#15335b]">{tasks.length + staffRequests.length}</span>
-          <span className="text-xs font-bold text-blue-500 uppercase tracking-wider">Pending</span>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-widest text-blue-100 mb-4 backdrop-blur-sm">
+              <CheckSquare size={14} /> Official Workspace
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">My Workflow Tasks</h1>
+            <p className="text-blue-100 max-w-xl text-sm md:text-base opacity-90 leading-relaxed">
+              Manage and execute operations delegated to you. Ensure tasks are completed promptly to keep the pipeline moving.
+            </p>
+          </div>
+          
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-5 min-w-[150px] text-center">
+            <p className="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">Pending Tasks</p>
+            <p className="text-4xl font-black">{tasks.length + staffRequests.length}</p>
+          </div>
         </div>
       </div>
 
@@ -351,7 +360,7 @@ export default function MyTasksPage() {
       {/* Overview Modal */}
       {overviewModalReq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-[95vw] md:max-w-3xl overflow-y-auto custom-scrollbar flex flex-col max-h-[90vh]">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
               <h3 className="font-bold text-gray-900 text-lg">Email Overview</h3>
               <button onClick={() => setOverviewModalReq(null)} className="text-gray-400 hover:text-gray-600">
@@ -381,7 +390,7 @@ export default function MyTasksPage() {
       {/* Confirm Send Dialog */}
       {confirmSendReq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden p-6 text-center">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-[95vw] md:max-w-md overflow-y-auto custom-scrollbar p-6 text-center max-h-[90vh] flex flex-col">
             <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
               <UploadCloud size={32} />
             </div>
@@ -413,7 +422,7 @@ export default function MyTasksPage() {
       {/* Response Note Modal */}
       {responseModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col scale-in-center border border-gray-100">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[95vw] md:max-w-md overflow-y-auto custom-scrollbar max-h-[90vh] flex flex-col scale-in-center border border-gray-100">
             <div className={`px-6 py-4 border-b flex items-center gap-3 ${responseModal.outcome === 'accepted' ? 'bg-green-50/80 border-green-100' : 'bg-red-50/80 border-red-100'}`}>
               {responseModal.outcome === 'accepted' ? (
                 <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 shadow-sm">

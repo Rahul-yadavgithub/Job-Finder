@@ -14,6 +14,9 @@ interface ManageProfileModalProps {
 export function ManageProfileModal({ isOpen, onClose }: ManageProfileModalProps) {
   const { user, refreshUser } = useAdminAuth();
   const [displayName, setDisplayName] = useState(user?.displayName || user?.name || '');
+  const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [mobileNo, setMobileNo] = useState(user?.mobileNo || '');
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -94,9 +97,9 @@ export function ManageProfileModal({ isOpen, onClose }: ManageProfileModalProps)
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      await adminPatch('/auth/profile', { displayName });
+      await adminPatch('/auth/profile', { displayName, name, email, mobileNo });
       await refreshUser();
-      toast.success('Display name updated successfully');
+      toast.success('Profile updated successfully');
       onClose();
     } catch (error: any) {
       toast.error(error.message || 'Failed to update profile');
@@ -154,15 +157,50 @@ export function ManageProfileModal({ isOpen, onClose }: ManageProfileModalProps)
             </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">Display Name</label>
-            <input 
-              type="text" 
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder={user.name}
-            />
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Display Name</label>
+              <input 
+                type="text" 
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="How your name appears in comments"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Full Name</label>
+              <input 
+                type="text" 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Your full legal name"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Email Address</label>
+              <input 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="your.email@example.com"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Mobile Number</label>
+              <input 
+                type="tel" 
+                value={mobileNo}
+                onChange={(e) => setMobileNo(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="+91 9876543210"
+              />
+            </div>
           </div>
         </div>
 

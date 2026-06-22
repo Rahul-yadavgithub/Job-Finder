@@ -50,7 +50,7 @@ export function WorkflowActionCenter({ companyId, assignmentId, onTaskDelegated 
   }, [companyId]);
 
   const handleDelegate = async (workflowType: string, taskName: string) => {
-    if (!selectedCoworker) return alert('Please select a coworker first.');
+    if (!selectedCoworker) return alert('Please select a staff member first.');
     setIsDelegating(true);
     try {
       await adminPost('/tasks', {
@@ -77,14 +77,14 @@ export function WorkflowActionCenter({ companyId, assignmentId, onTaskDelegated 
 
   return (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden mb-8 border border-gray-200">
-      <div className="px-8 py-5 bg-gray-50/80 flex items-center justify-between border-b border-gray-200">
+      <div className="px-8 py-5 bg-gradient-to-r from-[#15335b] to-[#1b4376] text-white flex items-center justify-between border-b border-blue-900">
         <div className="flex items-center gap-3">
-          <div className="bg-blue-100 p-2 rounded-lg">
-            <Briefcase size={20} className="text-[#1b4376]" />
+          <div className="bg-white/10 p-2 rounded-lg backdrop-blur-sm border border-white/20">
+            <Briefcase size={20} className="text-blue-100" />
           </div>
-          <h2 className="text-base font-bold text-gray-900 uppercase tracking-wider">WORKFLOW ACTION CENTER</h2>
+          <h2 className="text-base font-bold uppercase tracking-wider">WORKFLOW ACTION CENTER</h2>
         </div>
-        <span className="text-xs font-bold text-[#15335b] bg-blue-50 px-3 py-1.5 rounded-full uppercase tracking-wider border border-indigo-200">
+        <span className="text-xs font-bold text-[#1b4376] bg-white px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm">
           Head TPO View
         </span>
       </div>

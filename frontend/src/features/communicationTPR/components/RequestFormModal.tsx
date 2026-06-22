@@ -44,7 +44,7 @@ export function RequestFormModal({ companyId, isOpen, onClose, onSuccess }: Requ
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-[95vw] md:max-w-md max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col animate-in fade-in zoom-in-95 duration-200">
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             <Send className="w-5 h-5 text-blue-500" />

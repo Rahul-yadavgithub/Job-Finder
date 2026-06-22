@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { format } from 'date-fns';
-import { Clock, CheckCircle2, XCircle, Activity, Trash2, List, BarChart3, Building2, Calendar as CalendarIcon, Briefcase, GraduationCap, Building } from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, Activity, Trash2, List, BarChart3, Building2, Calendar as CalendarIcon, Briefcase, GraduationCap, Building, History as HistoryIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { DeleteConfirmationModal } from '@/components/ui/DeleteConfirmationModal';
 import { useState } from 'react';
@@ -90,11 +90,24 @@ export default function HistoryPage() {
 
   return (
     <div className="p-8 w-full max-w-none space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Scanned History</h1>
-        <p className="text-muted-foreground mt-1">
-          Historical read-only views over all past data and background jobs.
-        </p>
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-[#15335b] to-[#1b4376] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden mb-8">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-2xl"></div>
+        <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-400/10 rounded-full translate-y-1/3 -translate-x-1/4 blur-xl"></div>
+        <div className="absolute right-8 top-1/2 -translate-y-1/2 opacity-10 pointer-events-none md:block hidden">
+          <HistoryIcon className="w-48 h-48" />
+        </div>
+        
+        <div className="relative z-10">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/10 border border-white/20 text-blue-100 text-[10px] font-bold tracking-wide uppercase shadow-sm mb-4">
+            <HistoryIcon className="w-3.5 h-3.5" />
+            Official Workspace
+          </div>
+          <h1 className="text-3xl font-bold mb-2 tracking-tight">Scanned History</h1>
+          <p className="text-blue-100/80 max-w-2xl text-sm leading-relaxed">
+            Historical read-only views over all past data and background jobs.
+          </p>
+        </div>
       </div>
 
       <div className="flex bg-slate-100 p-1.5 rounded-xl w-full overflow-x-auto no-scrollbar shadow-sm border border-slate-200/60">

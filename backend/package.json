@@ -21,6 +21,7 @@
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.78.1",
     "cheerio": "^1.2.0",
+    "cloudinary": "^2.10.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "csv-parse": "^7.0.0",

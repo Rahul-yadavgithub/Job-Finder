@@ -80,7 +80,7 @@ export default function AdminRequestsPage() {
     setActionLoading(true);
     try {
       await adminPost(`/user-requests/workers/${approveWorkerModal.request.id}/approve`, { role: approveRole });
-      toast.success('Worker account created successfully');
+      toast.success('Staff account created successfully');
       setApproveWorkerModal({ isOpen: false, request: null });
       fetchData();
     } catch (error: any) {
@@ -95,7 +95,7 @@ export default function AdminRequestsPage() {
     setActionLoading(true);
     try {
       await adminPost(`/user-requests/workers/${rejectWorkerModal.request.id}/reject`, { reason: rejectReason });
-      toast.success('Worker request rejected');
+      toast.success('Staff request rejected');
       setRejectWorkerModal({ isOpen: false, request: null });
       setRejectReason('');
       fetchData();
@@ -147,19 +147,31 @@ export default function AdminRequestsPage() {
   const totalPending = stats.worker + stats.tpr;
 
   return (
-    <div className="w-full max-w-none space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Access Requests</h1>
-          <p className="text-gray-500">Review and approve access for TPO Staff and Department Representatives</p>
+    <div className="w-full max-w-none space-y-8 pb-10">
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-[#15335b] to-[#1b4376] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
+          <ShieldAlert size={300} className="-mt-10 -mr-10" />
         </div>
-        <button 
-          onClick={fetchData}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors shadow-sm disabled:opacity-50"
-        >
-          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> Refresh
-        </button>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-widest text-blue-100 mb-4 backdrop-blur-sm">
+              <ShieldAlert size={14} /> Official Workspace
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">Access Requests</h1>
+            <p className="text-blue-100 max-w-xl text-sm md:text-base opacity-90 leading-relaxed">
+              Review and approve access for TPO Staff and Department Representatives.
+            </p>
+          </div>
+          
+          <button 
+            onClick={fetchData}
+            disabled={loading}
+            className="flex items-center gap-2 px-5 py-3 bg-white/10 border border-white/20 text-white rounded-xl hover:bg-white/20 font-bold text-sm transition-colors shadow-sm disabled:opacity-50 backdrop-blur-md"
+          >
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> Refresh Data
+          </button>
+        </div>
       </div>
 
       {/* Stats Row - Only visible for Super Admins */}
@@ -167,7 +179,7 @@ export default function AdminRequestsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl p-6 border border-coral-100 shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-coral-600 uppercase tracking-wider mb-1">Worker Requests</p>
+              <p className="text-sm font-bold text-coral-600 uppercase tracking-wider mb-1">Staff Requests</p>
               <p className="text-3xl font-bold text-gray-900">{stats.worker}</p>
             </div>
             <div className={`p-4 rounded-full ${stats.worker > 0 ? 'bg-coral-50' : 'bg-gray-50'}`}>
@@ -241,7 +253,8 @@ export default function AdminRequestsPage() {
               <p className="text-gray-500 mt-1">No pending requests found in this category.</p>
             </div>
           ) : (
-            <table className="w-full text-left text-sm whitespace-nowrap">
+            <div className="overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-white text-gray-500 font-medium border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-4">Name</th>
@@ -259,11 +272,11 @@ export default function AdminRequestsPage() {
                       <div className="font-bold text-gray-900">{req.name}</div>
                       <div className="text-xs text-gray-500">{req.email}</div>
                       {req.request_type === 'branch_tpr' && <div className="text-[10px] uppercase font-bold text-blue-500 mt-0.5">TPR REQUEST</div>}
-                      {req.request_type === 'worker' && <div className="text-[10px] uppercase font-bold text-coral-500 mt-0.5">WORKER REQUEST</div>}
+                      {req.request_type === 'worker' && <div className="text-[10px] uppercase font-bold text-coral-500 mt-0.5">STAFF REQUEST</div>}
                     </td>
                     <td className="px-6 py-4">
                       {req.request_type === 'worker' ? (
-                        <span className="font-medium capitalize text-gray-700">{req.designation.replace('_', ' ')}</span>
+                        <span className="font-medium capitalize text-gray-700">{req.designation === 'coordinator' ? 'staff' : req.designation.replace('_', ' ')}</span>
                       ) : (
                         <div className="flex flex-col">
                           <span className="font-bold text-[#15335b]">{req.branch_code}</span>
@@ -307,7 +320,8 @@ export default function AdminRequestsPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           )}
         </div>
       </div>
@@ -317,7 +331,7 @@ export default function AdminRequestsPage() {
       {/* Approve Worker Modal */}
       {approveWorkerModal.isOpen && approveWorkerModal.request && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
+          <div className="bg-white rounded-xl shadow-2xl max-w-[95vw] md:max-w-md w-full max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col">
             <div className="p-6 border-b border-gray-100 bg-gray-50/50">
               <h3 className="text-xl font-bold text-gray-900">Approve Staff Access</h3>
             </div>
@@ -325,7 +339,7 @@ export default function AdminRequestsPage() {
               <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
                 <p className="text-sm font-bold text-gray-900">{approveWorkerModal.request.name}</p>
                 <p className="text-xs text-gray-500">{approveWorkerModal.request.email}</p>
-                <p className="text-xs text-[#1b4376] font-medium mt-1 uppercase tracking-wider">Requested: {approveWorkerModal.request.designation.replace('_', ' ')}</p>
+                <p className="text-xs text-[#1b4376] font-medium mt-1 uppercase tracking-wider">Requested: {approveWorkerModal.request.designation === 'coordinator' ? 'staff' : approveWorkerModal.request.designation.replace('_', ' ')}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Assign Role</label>
@@ -335,10 +349,10 @@ export default function AdminRequestsPage() {
                   className="w-full p-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="caller">Caller</option>
-                  <option value="coordinator">Coordinator</option>
+                  <option value="coordinator">Staff</option>
                 </select>
                 <p className="text-xs text-gray-500 mt-2 leading-relaxed">
-                  The caller role allows validating and tracking companies. The coordinator role grants broader approval powers over the database.
+                  The caller role allows validating and tracking companies. The staff role grants broader approval powers over the database.
                 </p>
               </div>
             </div>
@@ -366,7 +380,7 @@ export default function AdminRequestsPage() {
       {/* Reject Worker Modal */}
       {rejectWorkerModal.isOpen && rejectWorkerModal.request && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
+          <div className="bg-white rounded-xl shadow-2xl max-w-[95vw] md:max-w-md w-full max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col">
             <div className="p-6 border-b border-gray-100 bg-gray-50/50">
               <h3 className="text-xl font-bold text-red-600 flex items-center gap-2">
                 <ShieldAlert /> Reject Request

@@ -12,7 +12,7 @@ export function TopNavbar({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
 
   return (
     <>
-      <div className="sticky top-0 z-30 flex flex-col w-full bg-white/80 backdrop-blur-md border-b border-gray-200/80 shadow-sm">
+      <div className="sticky top-0 z-30 flex flex-col w-full bg-white/90 backdrop-blur-md border-b border-gray-200/80 rounded-b-[2rem] shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
         <header className="flex h-14 w-full items-center justify-between px-4 md:px-6">
           <div className="flex items-center gap-4">
             <button onClick={onOpenSidebar} className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg">

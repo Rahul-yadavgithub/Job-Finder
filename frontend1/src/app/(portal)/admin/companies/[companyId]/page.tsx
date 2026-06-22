@@ -88,30 +88,33 @@ export default function CompanyDetailPage() {
 
   return (
     <div className="w-full max-w-none space-y-6">
-      <button 
-        onClick={() => router.push('/admin/companies')}
-        className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors"
-      >
-        <ArrowLeft size={16} /> Back to Companies
-      </button>
-
-      {/* Header Card */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
-        <div className="h-2 bg-[#1b4376]"></div>
-        <div className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-start justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-gray-900">{company.company_name}</h1>
-            </div>
-            
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mt-4">
-              <div className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                <MapPin size={16} className="text-gray-400" />
-                <span className="font-medium text-gray-700">{company.branches?.name || 'Unknown Branch'}</span>
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-[#15335b] to-[#1b4376] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden mb-8">
+        <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
+          <Building2 size={300} className="-mt-10 -mr-10" />
+        </div>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-6">
+          <div className="flex flex-col md:flex-row items-start gap-6">
+            <button 
+              onClick={() => router.push('/admin/companies')}
+              className="p-3 text-[#1b4376] bg-white rounded-xl hover:bg-blue-50 transition-colors shadow-lg shrink-0 flex items-center justify-center mt-1"
+            >
+              <ArrowLeft className="w-6 h-6" />
+            </button>
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-widest text-blue-100 mb-3 backdrop-blur-sm">
+                <Building2 size={14} /> Official Workspace
               </div>
-              <div className="flex items-center gap-1.5">
-                <Clock size={16} className="text-gray-400" />
-                <span>Added {formatDistanceToNow(new Date(company.created_at), { addSuffix: true })} by <b>{company.users?.name || 'System'}</b></span>
+              <h1 className="text-3xl md:text-4xl font-bold mb-3">{company.company_name}</h1>
+              <div className="flex flex-wrap items-center gap-3 text-sm text-blue-100 opacity-90">
+                <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-lg border border-white/20 backdrop-blur-sm">
+                  <MapPin size={14} />
+                  <span className="font-medium">{company.branches?.name || 'Unknown Branch'}</span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-lg border border-white/20 backdrop-blur-sm">
+                  <Clock size={14} />
+                  <span>Added {formatDistanceToNow(new Date(company.created_at), { addSuffix: true })} by <b>{company.users?.name || 'System'}</b></span>
+                </div>
               </div>
             </div>
           </div>
@@ -120,13 +123,13 @@ export default function CompanyDetailPage() {
             {primaryStatus?.drive_id && (
               <Link 
                 href="/admin/drives"
-                className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-[#15335b] rounded-lg hover:bg-blue-100 font-bold text-sm transition-colors border border-blue-100"
+                className="flex items-center gap-2 px-5 py-2.5 bg-white text-[#15335b] rounded-xl hover:bg-blue-50 font-bold text-sm transition-colors shadow-lg border border-white/20"
               >
                 <Calendar size={16} /> View Drive Schedule
               </Link>
             )}
             {!primaryStatus?.drive_id && (
-              <div className="text-xs text-gray-500 italic bg-gray-50 px-3 py-2 rounded-lg border border-gray-100">
+              <div className="text-xs text-blue-100 italic bg-white/10 px-4 py-2.5 rounded-xl border border-white/20 backdrop-blur-sm">
                 No active drive scheduled yet
               </div>
             )}

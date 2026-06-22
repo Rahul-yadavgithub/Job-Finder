@@ -66,23 +66,34 @@ export default function ApiKeyConfigPage() {
   return (
     <div className="p-6 w-full max-w-none space-y-6">
       
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <div className="p-2 bg-blue-50 text-[#1b4376] rounded-lg border border-blue-100 shadow-sm">
-              <Key className="w-6 h-6" />
-            </div>
-            API Configuration Center
-          </h2>
-          <p className="text-gray-500 mt-2 text-base">Manage API keys and quotas for enrichment providers for the {user.branchName} branch.</p>
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-[#15335b] to-[#1b4376] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden mb-2 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-2xl"></div>
+        <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-400/10 rounded-full translate-y-1/3 -translate-x-1/4 blur-xl"></div>
+        <div className="absolute right-8 top-1/2 -translate-y-1/2 opacity-10 pointer-events-none md:block hidden">
+          <Key className="w-48 h-48" />
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-[#1b4376] to-blue-600 text-white rounded-xl hover:from-[#15335b] hover:to-blue-700 transition-all shadow-md hover:shadow-lg font-bold"
-        >
-          <Plus className="w-5 h-5" />
-          Add API Key
-        </button>
+        
+        <div className="relative z-10 flex-1">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/10 border border-white/20 text-blue-100 text-[10px] font-bold tracking-wide uppercase shadow-sm mb-4">
+            <Key className="w-3.5 h-3.5" />
+            Official Workspace
+          </div>
+          <h1 className="text-3xl font-bold mb-2 tracking-tight">API Configuration Center</h1>
+          <p className="text-blue-100/80 max-w-2xl text-sm leading-relaxed">
+            Manage API keys and quotas for enrichment providers for the {user.branchName} branch.
+          </p>
+        </div>
+
+        <div className="relative z-10">
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-white text-[#15335b] rounded-xl hover:bg-blue-50 transition-all shadow-[0_4px_12px_rgba(255,255,255,0.2)] hover:-translate-y-0.5 font-bold whitespace-nowrap"
+          >
+            <Plus className="w-5 h-5" />
+            Add API Key
+          </button>
+        </div>
       </div>
 
       {hasExhaustionAlert && (

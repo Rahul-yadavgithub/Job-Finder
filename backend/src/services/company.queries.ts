@@ -424,9 +424,9 @@ export async function getAdminCompanyList({
   if (filter === 'confirmed') {
     filteredRows = rows.filter(r => r.top_status === 'completed');
   } else if (filter === 'pending') {
-    filteredRows = rows.filter(r => r.top_status !== null && r.top_status !== 'completed');
+    filteredRows = rows.filter(r => r.mid_status === 'accepted' && r.top_status !== 'completed');
   } else if (filter === 'new' || filter === 'newly_added') {
-    filteredRows = rows.filter(r => r.top_status === null);
+    filteredRows = rows.filter(r => r.mid_status === 'pending_review');
   }
 
   return { rows: filteredRows, total: count || 0 };

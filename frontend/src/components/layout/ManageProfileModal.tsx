@@ -154,7 +154,7 @@ export function ManageProfileModal({ isOpen, onClose }: ManageProfileModalProps)
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden relative max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-[95vw] md:max-w-2xl overflow-hidden relative max-h-[90vh] flex flex-col">
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 flex-shrink-0">
           <h2 className="text-lg font-semibold text-gray-800">Manage Profile</h2>
           <button onClick={onClose} className="p-2 -mr-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">

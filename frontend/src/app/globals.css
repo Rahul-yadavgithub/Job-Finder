@@ -185,3 +185,13 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #cbd5e1;
 }
+
+@keyframes slow-zoom {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.animate-bg-zoom {
+  animation: slow-zoom 25s ease-in-out infinite;
+}

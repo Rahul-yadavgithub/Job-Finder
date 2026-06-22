@@ -95,22 +95,29 @@ export default function SourcesPage() {
   return (
     <>
       <div className="p-8 w-full max-w-none transition-all duration-300">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-          <div>
-            <h1 className="flex items-center gap-3 text-3xl font-extrabold text-slate-900 tracking-tight mb-2">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg border border-blue-100 shadow-sm">
-                <Activity className="w-6 h-6" />
-              </div>
-              Scan Center
-            </h1>
-            <p className="text-slate-500 max-w-2xl text-base">
+        {/* Premium Header */}
+        <div className="bg-gradient-to-r from-[#15335b] to-[#1b4376] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-2xl"></div>
+          <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-400/10 rounded-full translate-y-1/3 -translate-x-1/4 blur-xl"></div>
+          <div className="absolute right-8 top-1/2 -translate-y-1/2 opacity-10 pointer-events-none md:block hidden">
+            <Activity className="w-48 h-48" />
+          </div>
+          
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/10 border border-white/20 text-blue-100 text-[10px] font-bold tracking-wide uppercase shadow-sm mb-4">
+              <Activity className="w-3.5 h-3.5" />
+              Official Workspace
+            </div>
+            <h1 className="text-3xl font-bold mb-2 tracking-tight">Scan Center</h1>
+            <p className="text-blue-100/80 max-w-2xl text-sm">
               Add your favorite companies and platforms to automate the discovery process.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+
+          <div className="relative z-10 flex items-center gap-3">
             <button 
               onClick={() => setIsModalOpen(true)}
-              className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-5 py-2.5 rounded-lg flex items-center gap-2 font-medium transition-colors shadow-sm"
+              className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-5 py-2.5 rounded-lg flex items-center gap-2 font-medium transition-colors shadow-sm backdrop-blur-sm"
             >
               <Plus className="w-5 h-5" />
               Add Source
@@ -120,10 +127,10 @@ export default function SourcesPage() {
               disabled={isGlobalScanning}
               className={`px-6 py-2.5 rounded-lg flex items-center gap-2 font-bold transition-all shadow-lg ${
                 isGlobalScanning 
-                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none' 
+                  ? 'bg-white/10 text-white/50 cursor-not-allowed border border-white/10 shadow-none backdrop-blur-sm' 
                   : scanStatus === 'completed'
-                    ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/25'
-                    : 'bg-gradient-to-r from-blue-600 to-[#1b4376] hover:from-blue-700 hover:to-[#15335b] text-white shadow-blue-900/20 hover:shadow-blue-900/40 hover:-translate-y-0.5'
+                    ? 'bg-emerald-500 hover:bg-emerald-600 text-white border border-emerald-400 shadow-emerald-500/25'
+                    : 'bg-white text-[#15335b] hover:bg-blue-50 hover:-translate-y-0.5 shadow-[0_4px_12px_rgba(255,255,255,0.2)]'
               }`}
             >
               {isGlobalScanning ? (
