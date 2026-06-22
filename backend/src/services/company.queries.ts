@@ -313,12 +313,12 @@ export async function getAdminCompanyStats() {
     addedTodayRes,
     reachedTopRes
   ] = await Promise.all([
-    supabase.from('company_status').select('*', { count: 'exact', head: true }).or('base_status.eq.interested,locked.eq.true'),
-    supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('mid_status', 'accepted'),
-    supabase.from('company_status').select('*', { count: 'exact', head: true }).eq('mid_status', 'pending_review').eq('locked', true),
-    supabase.from('company_status').select('*', { count: 'exact', head: true }).is('mid_status', null).eq('locked', false).eq('base_status', 'interested'),
-    supabase.from('company_status').select('id, companies!inner(id, created_at)', { count: 'exact', head: true }).or('base_status.eq.interested,locked.eq.true').gte('companies.created_at', `${currentDate}T00:00:00.000Z`),
-    supabase.from('company_status').select('*', { count: 'exact', head: true }).not('top_status', 'is', null)
+    supabase.from('companies').select('*', { count: 'exact', head: true }).eq('brochure_completed', true),
+    supabase.from('companies').select('*, company_status!inner(top_status)', { count: 'exact', head: true }).eq('brochure_completed', true).eq('company_status.top_status', 'completed'),
+    supabase.from('companies').select('*, company_status!inner(top_status)', { count: 'exact', head: true }).eq('brochure_completed', true).not('company_status.top_status', 'is', null).neq('company_status.top_status', 'completed'),
+    supabase.from('companies').select('*, company_status!inner(top_status)', { count: 'exact', head: true }).eq('brochure_completed', true).is('company_status.top_status', null),
+    supabase.from('companies').select('*', { count: 'exact', head: true }).eq('brochure_completed', true).gte('brochure_completed_at', `${currentDate}T00:00:00.000Z`),
+    supabase.from('companies').select('*, company_status!inner(top_status)', { count: 'exact', head: true }).eq('brochure_completed', true).not('company_status.top_status', 'is', null)
   ]);
 
   return {
@@ -347,13 +347,13 @@ export async function getAdminCompanyList({
   let query = supabase
     .from('companies')
     .select(`
-      id, company_name, hr_name, email, phone_number, data_source, created_at,
+      id, company_name, hr_name, email, phone_number, data_source, created_at, brochure_completed, brochure_completed_at,
       company_status!inner(base_status, mid_status, top_status, locked, next_followup_date, interested_by_name, interested_at),
       branches(name),
       users!created_by(name),
       status_history(new_status, changed_at)
     `, { count: 'exact' })
-    .or('locked.eq.true,base_status.eq.interested', { referencedTable: 'company_status' });
+    .eq('brochure_completed', true);
 
   if (branchId) {
     query = query.eq('branch_id', branchId);
@@ -411,6 +411,8 @@ export async function getAdminCompanyList({
       interested_at: row.company_status?.[0]?.interested_at,
       branch_name: row.branches?.name,
       added_by_name: row.users?.name,
+      brochure_completed: row.brochure_completed,
+      brochure_completed_at: row.brochure_completed_at,
       latest_status,
       last_updated
     };
@@ -422,9 +424,9 @@ export async function getAdminCompanyList({
   if (filter === 'confirmed') {
     filteredRows = rows.filter(r => r.top_status === 'completed');
   } else if (filter === 'pending') {
-    filteredRows = rows.filter(r => r.mid_status === 'accepted' && r.top_status !== 'completed');
+    filteredRows = rows.filter(r => r.top_status !== null && r.top_status !== 'completed');
   } else if (filter === 'new' || filter === 'newly_added') {
-    filteredRows = rows.filter(r => r.mid_status === 'pending_review');
+    filteredRows = rows.filter(r => r.top_status === null);
   }
 
   return { rows: filteredRows, total: count || 0 };

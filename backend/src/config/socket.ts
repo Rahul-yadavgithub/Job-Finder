@@ -12,7 +12,7 @@ export const initSocket = (server: HttpServer) => {
     }
   });
 
-  io.use((socket: Socket, next) => {
+  io.use((socket: Socket, next: (err?: Error) => void) => {
     try {
       const cookieHeader = socket.request.headers.cookie;
       if (!cookieHeader) {
@@ -20,7 +20,7 @@ export const initSocket = (server: HttpServer) => {
       }
 
       // Parse cookies manually
-      const cookies = cookieHeader.split(';').reduce((res: any, item) => {
+      const cookies = cookieHeader.split(';').reduce((res: any, item: string) => {
         const data = item.trim().split('=');
         res[data[0]] = data[1];
         return res;
@@ -59,7 +59,7 @@ export const initSocket = (server: HttpServer) => {
     }
   });
 
-  io.on('connection', (socket) => {
+  io.on('connection', (socket: Socket) => {
     console.log('Socket connected:', socket.id, 'User:', socket.data.user?.userId || socket.data.user?.branchId);
     
     socket.on('disconnect', () => {

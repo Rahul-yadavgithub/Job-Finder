@@ -41,6 +41,27 @@ export class RequestController {
     }
   };
 
+  getQueueCounts = async (req: CommunicationTPRRequest, res: Response): Promise<void> => {
+    try {
+      const data = await this.requestService.getQueueCounts();
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error('getQueueCounts Error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch queue counts' });
+    }
+  };
+
+  getRequestsByQueueStatus = async (req: CommunicationTPRRequest, res: Response): Promise<void> => {
+    try {
+      const { status } = req.params;
+      const data = await this.requestService.getRequestsByQueueStatus(status as string);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error('getRequestsByQueueStatus Error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch queue status' });
+    }
+  };
+
 
   createRequest = async (req: CommunicationTPRRequest, res: Response): Promise<void> => {
     try {
@@ -133,12 +154,13 @@ export class RequestController {
   revertRequest = async (req: CommunicationTPRRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
+      const { notes } = req.body;
       if (!req.user) {
         res.status(401).json({ success: false, message: 'Unauthorized' });
         return;
       }
       
-      const data = await this.requestService.revertRequest(id as string, req.user.userId);
+      const data = await this.requestService.revertRequest(id as string, notes, req.user.userId);
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error('revertRequest Error:', error);

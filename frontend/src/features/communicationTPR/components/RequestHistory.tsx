@@ -3,11 +3,15 @@ import { Send, FileText, CheckCircle2, XCircle, Clock, FileWarning, RotateCcw } 
 import { requestApi } from '../services/request.api';
 import { CommunicationRequest } from '../types/request';
 import { useRouter } from 'next/navigation';
+import { RevertModal } from './RevertModal';
 
 export function RequestHistory({ companyId, onRevert }: { companyId: string, onRevert?: () => void }) {
   const router = useRouter();
   const [requests, setRequests] = useState<CommunicationRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const [isRevertModalOpen, setIsRevertModalOpen] = useState(false);
+  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRequests();
@@ -36,10 +40,18 @@ export function RequestHistory({ companyId, onRevert }: { companyId: string, onR
     );
   }
 
-  const handleRevert = async (requestId: string) => {
+  const openRevertModal = (requestId: string) => {
+    setSelectedRequestId(requestId);
+    setIsRevertModalOpen(true);
+  };
+
+  const handleRevertConfirm = async (notes: string) => {
+    if (!selectedRequestId) return;
     try {
       setLoading(true);
-      await requestApi.revertRequest(requestId);
+      await requestApi.revertRequest(selectedRequestId, notes);
+      setIsRevertModalOpen(false);
+      setSelectedRequestId(null);
       if (onRevert) onRevert();
       else fetchRequests();
       router.push('/communication-tpr/pipeline');
@@ -51,7 +63,7 @@ export function RequestHistory({ companyId, onRevert }: { companyId: string, onR
   };
 
   const getStatusConfig = (status: string) => {
-    switch(status) {
+    switch (status) {
       case 'completed': return { icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50 ring-green-600/20' };
       case 'rejected': return { icon: XCircle, color: 'text-red-600', bg: 'bg-red-50 ring-red-600/20' };
       case 'submitted': return { icon: FileText, color: 'text-blue-600', bg: 'bg-blue-50 ring-blue-600/20' };
@@ -60,11 +72,12 @@ export function RequestHistory({ companyId, onRevert }: { companyId: string, onR
   };
 
   return (
+    <>
     <ul role="list" className="divide-y divide-gray-100">
       {requests.map((request) => {
         const StatusIcon = getStatusConfig(request.status).icon;
         const config = getStatusConfig(request.status);
-        
+
         return (
           <li key={request.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-x-6 py-5 px-6 hover:bg-gray-50 transition-colors">
             <div className="min-w-0">
@@ -93,7 +106,7 @@ export function RequestHistory({ companyId, onRevert }: { companyId: string, onR
               {request.status === 'rejected' && (
                 <div className="mt-3">
                   <button
-                    onClick={() => handleRevert(request.id)}
+                    onClick={() => openRevertModal(request.id)}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-md border border-red-200 transition-colors"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
@@ -109,5 +122,14 @@ export function RequestHistory({ companyId, onRevert }: { companyId: string, onR
         );
       })}
     </ul>
+      
+      {isRevertModalOpen && (
+        <RevertModal 
+          isOpen={isRevertModalOpen} 
+          onClose={() => setIsRevertModalOpen(false)} 
+          onConfirm={handleRevertConfirm} 
+        />
+      )}
+    </>
   );
 }

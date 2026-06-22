@@ -182,6 +182,14 @@ export default function CompanyDetailPage() {
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Data Source</p>
                 <p className="text-sm text-gray-800 capitalize font-medium">{company.data_source?.replace('_', ' ')}</p>
               </div>
+              {company.brochure_completed && (
+                <div className="pt-2">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Brochure Status</p>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-green-50 border border-green-100 text-green-700 text-sm font-bold">
+                    <CheckCircle2 size={14} /> Already Sent
+                  </div>
+                </div>
+              )}
               {primaryStatus?.interested_by_name && (
                 <div className="pt-4 border-t border-gray-100 mt-2">
                   <p className="text-xs font-bold text-[#1b4376] uppercase tracking-wider mb-1 flex items-center gap-1.5">

@@ -168,7 +168,7 @@ export function NewRequestWizardPage() {
                   onChange={e => setFormData({...formData, companyId: e.target.value})}
                 >
                   <option value="">-- Choose a company --</option>
-                  {newArrivals?.filter((c: any) => !c.currentStatus?.midStatus || c.currentStatus.midStatus === 'interested' || c.currentStatus.midStatus === 'reverted').map((c: any) => (
+                  {newArrivals?.map((c: any) => (
                     <option key={c.id} value={c.id}>{c.companyName}</option>
                   ))}
                 </select>

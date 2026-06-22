@@ -42,6 +42,15 @@ export class RequestService {
     return data.map(this.formatRequest);
   }
 
+  async getQueueCounts(): Promise<Record<string, number>> {
+    return await this.requestRepository.getQueueCounts();
+  }
+
+  async getRequestsByQueueStatus(status: string): Promise<any[]> {
+    // Returns raw format suitable for UI list view
+    return await this.requestRepository.getRequestsByQueueStatus(status);
+  }
+
 
   async createRequest(input: CreateRequestInput, userId: string): Promise<CommunicationRequest> {
     if (!input.companyId || !input.requestType) {
@@ -71,8 +80,8 @@ export class RequestService {
     const requestDetails = await this.requestRepository.getRequestForEmail(requestId);
     
     if (!requestDetails) throw new Error('Request not found');
-    if (requestDetails.status !== 'pending_approval') {
-      throw new Error('Request must be in pending_approval state to approve');
+    if (requestDetails.status !== 'pending_review') {
+      throw new Error('Request must be in pending_review state to approve');
     }
 
     // 2. Fetch assignment_id from company_status
@@ -104,8 +113,8 @@ export class RequestService {
       });
     }
 
-    // 3. Update status to pending_staff_review (Wait for TPO Staff)
-    const data = await this.requestRepository.updateRequestStatus(requestId, { status: 'pending_staff_review' });
+    // 3. Update status to approved (Wait for TPO Staff)
+    const data = await this.requestRepository.updateRequestStatus(requestId, { status: 'approved' });
     return this.formatRequest(data);
   }
 
@@ -114,8 +123,7 @@ export class RequestService {
     return this.formatRequest(data);
   }
 
-  async revertRequest(requestId: string, currentUserId: string): Promise<CommunicationRequest> {
-    // Look up original_marked_by on the request's company record
+  async revertRequest(requestId: string, notes: string, currentUserId: string): Promise<CommunicationRequest> {
     const requestDetails = await this.requestRepository.getRequestForEmail(requestId);
     if (!requestDetails) throw new Error('Request not found');
 
@@ -134,23 +142,17 @@ export class RequestService {
       throw new Error('Original marking TPR not found for this company');
     }
 
-    // Only allow revert if the current user is the original_marked_by (though the requirement said "auto-assigns",
-    // wait, the API should probably just assign it to originalMarkedBy, but wait, who clicks "Revert"? The Mid TPR does.)
-    // "Mid TPR (original one) clicks Revert -> confirm task re-assigns specifically to them"
+    const data = await this.requestRepository.revertRequest(requestId, notes, originalMarkedBy);
 
-    // Reset company_status.top_stage to 'not_contacted' and mid_status to null so it goes back to calling
-    await supabase.from('company_status')
-      .update({ 
-        top_stage: null, 
-        mid_status: null, 
-        base_status: 'call_again', // or not_contacted
-        locked: false,
-        locked_by: null
-      })
-      .eq('company_id', requestDetails.company_id);
+    // Send notification to the Base TPR user
+    await supabase.from('admin_notifications').insert({
+      recipient_id: originalMarkedBy,
+      type: 'company_reverted',
+      title: 'Company Reverted',
+      message: `A company was reverted back to you. Notes: ${notes}`,
+      notification_category: 'company'
+    });
 
-    // Update request status
-    const data = await this.requestRepository.updateRequestStatus(requestId, { status: 'rejected' }); // Leave it as rejected but now they can re-contact
     return this.formatRequest(data);
   }
 }

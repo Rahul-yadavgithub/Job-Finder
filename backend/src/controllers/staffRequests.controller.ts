@@ -67,11 +67,7 @@ export const sendStaffRequest = async (req: AdminRequest, res: Response): Promis
       })
       .eq('id', id);
 
-    await supabase
-      .from('communication_requests')
-      .update({ status: 'waiting_response' })
-      .eq('company_id', request.company_id)
-      .eq('status', 'pending_staff_review');
+    // Note: communication_requests status remains 'approved' while staff is handling it
 
     res.status(200).json({ success: true, message: 'Email sent successfully' });
   } catch (error: any) {
@@ -99,10 +95,16 @@ export const markResponse = async (req: AdminRequest, res: Response): Promise<vo
     if (outcome === 'accepted') {
       const { error: statusError } = await supabase.from('company_status').update({ 
         mid_status: 'accepted',
+        locked: true,
         top_status: null // This puts it in the 'New' tab on the Admin Dashboard
       }).eq('id', request.assignment_id);
 
       if (statusError) console.error('Failed to update company_status:', statusError);
+
+      await supabase.from('companies').update({
+        brochure_completed: true,
+        brochure_completed_at: new Date().toISOString()
+      }).eq('id', request.company_id);
 
       await supabase.from('admin_requests').insert({
         company_id: request.company_id,
@@ -120,7 +122,7 @@ export const markResponse = async (req: AdminRequest, res: Response): Promise<vo
       });
 
       await supabase.from('staff_requests').update({ status: 'accepted' }).eq('id', id);
-      await supabase.from('communication_requests').update({ status: 'accepted' }).eq('company_id', request.company_id).eq('status', 'waiting_response');
+      await supabase.from('communication_requests').update({ status: 'completed' }).eq('company_id', request.company_id).eq('status', 'approved');
 
       // Update workflow state to show it's completed on Head TPR dashboard
       const { error: wfError } = await supabase.from('company_workflows').upsert({
@@ -185,7 +187,12 @@ export const rejectStaffRequest = async (req: AdminRequest, res: Response): Prom
       mid_status: 'rejected'
     }).eq('company_id', request.company_id);
 
-    await supabase.from('communication_requests').update({ status: 'rejected' }).eq('company_id', request.company_id).eq('status', 'waiting_response');
+    await supabase.from('communication_requests').update({ 
+      status: 'rejected',
+      rejection_notes: notes,
+      rejected_by: req.admin?.userId,
+      rejected_at: new Date().toISOString()
+    }).eq('company_id', request.company_id).eq('status', 'approved');
 
     if (statusData?.original_marked_by) {
       await supabase.from('admin_notifications').insert({
