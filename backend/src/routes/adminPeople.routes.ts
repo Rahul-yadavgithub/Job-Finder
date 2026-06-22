@@ -6,7 +6,8 @@ import {
   revokeApproval,
   getCommunicationTprs,
   promoteToCommunicationTpr,
-  demoteToBranchTpr
+  demoteToBranchTpr,
+  getPersonDetails
 } from '../controllers/adminPeople.controller';
 import { verifyAdminToken, requireAdminRole, requireSuperAdmin } from '../middleware/adminAuth.middleware';
 
@@ -18,6 +19,7 @@ router.get('/people/overview', requireAdminRole('head', 'caller', 'coordinator')
 router.get('/people/coworkers', requireAdminRole('head', 'caller', 'coordinator'), getCoworkers);
 router.get('/people/branch-tprs', requireAdminRole('head', 'caller', 'coordinator'), getBranchTprs);
 router.get('/people/communication-tprs', requireAdminRole('head', 'caller', 'coordinator'), getCommunicationTprs);
+router.get('/people/:id', requireAdminRole('head', 'caller', 'coordinator'), getPersonDetails);
 router.post('/people/:userId/revoke', requireSuperAdmin, revokeApproval);
 router.post('/people/:userId/promote-comm-tpr', requireSuperAdmin, promoteToCommunicationTpr);
 router.post('/people/:userId/demote-comm-tpr', requireSuperAdmin, demoteToBranchTpr);

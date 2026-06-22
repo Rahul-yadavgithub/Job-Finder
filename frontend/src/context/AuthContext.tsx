@@ -14,6 +14,8 @@ export interface AuthUser {
   branchName: string;
   profilePhotoUrl?: string;
   displayName?: string;
+  rollNumber?: string;
+  mobileNo?: string;
 }
 
 interface AuthContextValue {
@@ -54,7 +56,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             branchCode: data.branchName?.toLowerCase() || '',
             branchName: data.branchName || '',
             profilePhotoUrl: data.profile_photo_url,
-            displayName: data.display_name
+            displayName: data.display_name,
+            rollNumber: data.rollNumber,
+            mobileNo: data.mobileNo
           });
         }
       } catch (error: any) {
@@ -102,7 +106,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           branchCode: data.branchName?.toLowerCase() || '',
           branchName: data.branchName || '',
           profilePhotoUrl: data.profile_photo_url,
-          displayName: data.display_name
+          displayName: data.display_name,
+          rollNumber: data.rollNumber,
+          mobileNo: data.mobileNo
         });
       }
     } catch (error) {

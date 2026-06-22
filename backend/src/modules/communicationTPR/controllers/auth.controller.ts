@@ -57,7 +57,7 @@ export class AuthController {
     try {
       const { data } = await supabase
         .from('users')
-        .select('profile_photo_url, display_name, branches(name)')
+        .select('profile_photo_url, display_name, branch_id, branches(name, code), roll_number, mobile_no')
         .eq('id', req.user.userId)
         .single();
         
@@ -67,11 +67,28 @@ export class AuthController {
           ...req.user, 
           profilePhotoUrl: data?.profile_photo_url, 
           displayName: data?.display_name,
-          branchName: (data?.branches as any)?.name
+          branchId: data?.branch_id,
+          branchName: (data?.branches as any)?.name,
+          rollNumber: data?.roll_number,
+          mobileNo: data?.mobile_no
         } 
       });
     } catch (error) {
       res.status(500).json({ success: false, message: 'Failed to fetch user profile' });
+    }
+  };
+
+  getBranches = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { data: branches, error } = await supabase
+        .from('branches')
+        .select('id, name, code');
+
+      if (error) throw error;
+      res.status(200).json({ success: true, data: branches });
+    } catch (error) {
+      console.error('Supabase getBranches error:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch branches' });
     }
   };
 
@@ -82,14 +99,33 @@ export class AuthController {
     }
 
     try {
-      const { profilePhotoUrl, displayName } = req.body;
+      const { profilePhotoUrl, displayName, name, rollNumber, branchId, email, mobileNo } = req.body;
       const updates: any = {};
 
-      if (profilePhotoUrl !== undefined) {
-        updates.profile_photo_url = profilePhotoUrl;
-      }
-      if (displayName !== undefined) {
-        updates.display_name = displayName;
+      if (profilePhotoUrl !== undefined) updates.profile_photo_url = profilePhotoUrl;
+      if (displayName !== undefined) updates.display_name = displayName;
+      if (name !== undefined) updates.name = name;
+      if (rollNumber !== undefined) updates.roll_number = rollNumber;
+      if (branchId !== undefined) updates.branch_id = branchId;
+      if (email !== undefined) updates.email = email;
+      if (mobileNo !== undefined) updates.mobile_no = mobileNo;
+
+      if (email !== undefined || rollNumber !== undefined) {
+        const { data: existingUsers } = await supabase
+          .from('users')
+          .select('id, email, roll_number')
+          .neq('id', req.user.userId);
+
+        if (existingUsers) {
+          if (email !== undefined && existingUsers.some(u => u.email === email)) {
+            res.status(409).json({ success: false, message: 'Email already in use by another user' });
+            return;
+          }
+          if (rollNumber !== undefined && existingUsers.some(u => u.roll_number === rollNumber)) {
+            res.status(409).json({ success: false, message: 'Roll number already in use by another user' });
+            return;
+          }
+        }
       }
 
       if (Object.keys(updates).length === 0) {

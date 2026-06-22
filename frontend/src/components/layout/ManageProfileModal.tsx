@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
 import { X, Upload, Loader2, User } from 'lucide-react';
@@ -11,12 +11,52 @@ interface ManageProfileModalProps {
   onClose: () => void;
 }
 
+interface Branch {
+  id: string;
+  name: string;
+  code: string;
+}
+
 export function ManageProfileModal({ isOpen, onClose }: ManageProfileModalProps) {
   const { user, refreshUser } = useAuth();
-  const [displayName, setDisplayName] = useState(user?.displayName || user?.name || '');
+  
+  // State for form fields
+  const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [name, setName] = useState(user?.name || '');
+  const [rollNumber, setRollNumber] = useState(user?.rollNumber || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [mobileNo, setMobileNo] = useState(user?.mobileNo || '');
+  const [branchId, setBranchId] = useState(user?.branchId || '');
+  
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Initialize state when modal opens or user changes
+  useEffect(() => {
+    if (user && isOpen) {
+      setDisplayName(user.displayName || user.name || '');
+      setName(user.name || '');
+      setRollNumber(user.rollNumber || '');
+      setEmail(user.email || '');
+      setMobileNo(user.mobileNo || '');
+      setBranchId(user.branchId || '');
+    }
+  }, [user, isOpen]);
+
+  // Fetch branches
+  useEffect(() => {
+    if (isOpen) {
+      axios.get(`${process.env.NEXT_PUBLIC_API_URL}/auth/branches`)
+        .then(res => {
+          if (res.data.success) {
+            setBranches(res.data.data);
+          }
+        })
+        .catch(err => console.error('Failed to fetch branches', err));
+    }
+  }, [isOpen]);
 
   if (!isOpen || !user) return null;
 
@@ -94,9 +134,16 @@ export function ManageProfileModal({ isOpen, onClose }: ManageProfileModalProps)
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      await axios.patch(`${process.env.NEXT_PUBLIC_API_URL}/auth/profile`, { displayName }, { withCredentials: true });
+      await axios.patch(`${process.env.NEXT_PUBLIC_API_URL}/auth/profile`, {
+        displayName,
+        name,
+        rollNumber,
+        email,
+        mobileNo,
+        branchId
+      }, { withCredentials: true });
       if (refreshUser) await refreshUser();
-      toast.success('Display name updated successfully');
+      toast.success('Profile updated successfully');
       onClose();
     } catch (error: any) {
       toast.error(error.response?.data?.message || error.message || 'Failed to update profile');
@@ -107,16 +154,16 @@ export function ManageProfileModal({ isOpen, onClose }: ManageProfileModalProps)
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden relative">
-        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden relative max-h-[90vh] flex flex-col">
+        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 flex-shrink-0">
           <h2 className="text-lg font-semibold text-gray-800">Manage Profile</h2>
           <button onClick={onClose} className="p-2 -mr-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
-          <div className="flex flex-col items-center justify-center space-y-4">
+        <div className="p-6 overflow-y-auto flex-1">
+          <div className="flex flex-col items-center justify-center space-y-4 mb-8">
             <div className="relative group cursor-pointer" onClick={handleUploadClick}>
               <div className="w-24 h-24 rounded-full border-4 border-white shadow-md overflow-hidden bg-gray-100 flex items-center justify-center">
                 {user.profilePhotoUrl ? (
@@ -154,7 +201,19 @@ export function ManageProfileModal({ isOpen, onClose }: ManageProfileModalProps)
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Full Name
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter full name"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Display Name
@@ -166,14 +225,64 @@ export function ManageProfileModal({ isOpen, onClose }: ManageProfileModalProps)
                 placeholder="Enter display name"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
               />
-              <p className="mt-1 text-xs text-gray-500">
-                This name will be visible to other users. Original Name: {user.name}
-              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Roll Number
+              </label>
+              <input
+                type="text"
+                value={rollNumber}
+                onChange={(e) => setRollNumber(e.target.value)}
+                placeholder="Enter roll number"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter email address"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mobile Number
+              </label>
+              <input
+                type="tel"
+                value={mobileNo}
+                onChange={(e) => setMobileNo(e.target.value)}
+                placeholder="Enter mobile number"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Branch
+              </label>
+              <select
+                value={branchId}
+                onChange={(e) => setBranchId(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none bg-white"
+              >
+                <option value="" disabled>Select Branch</option>
+                {branches.map(b => (
+                  <option key={b.id} value={b.id}>
+                    {b.name} ({b.code})
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 flex-shrink-0">
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
@@ -183,7 +292,7 @@ export function ManageProfileModal({ isOpen, onClose }: ManageProfileModalProps)
           </button>
           <button
             onClick={handleSave}
-            disabled={isSaving || isUploading || !displayName.trim()}
+            disabled={isSaving || isUploading || !name.trim() || !email.trim() || !rollNumber.trim() || !branchId}
             className="px-4 py-2 text-sm font-medium text-white bg-[#1b4376] hover:bg-[#15335b] rounded-lg transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? (

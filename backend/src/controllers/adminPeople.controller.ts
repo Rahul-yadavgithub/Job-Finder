@@ -89,7 +89,7 @@ export const getCoworkers = async (req: AdminRequest, res: Response): Promise<vo
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('id, name, email, role, designation, status, is_super_admin, designated_successor, last_login_at, created_at, approved_at, users!approved_by(name)')
+      .select('id, name, email, role, designation, status, is_super_admin, designated_successor, last_login_at, created_at, approved_at, profile_photo_url, mobile_no, users!approved_by(name)')
       .in('role', ['head', 'caller', 'coordinator']);
 
     if (error) throw error;
@@ -118,7 +118,7 @@ export const getBranchTprs = async (req: AdminRequest, res: Response): Promise<v
 
     let query = supabase
       .from('users')
-      .select('id, name, email, roll_number, status, last_login_at, created_at, branches(name, code), users!approved_by(name), companies(id)')
+      .select('id, name, email, roll_number, status, last_login_at, created_at, profile_photo_url, mobile_no, branch_id, branches(name, code), users!approved_by(name)')
       .eq('role', 'branch_tpr');
 
     if (branchId) query = query.eq('branch_id', branchId);
@@ -128,12 +128,28 @@ export const getBranchTprs = async (req: AdminRequest, res: Response): Promise<v
 
     if (error) throw error;
 
+    // Fetch company counts per branch (only interested and not revoked ones)
+    const branchIds = [...new Set(data.map(u => u.branch_id).filter(Boolean))];
+    const { data: branchComps } = await supabase
+      .from('company_status')
+      .select('branch_id')
+      .in('branch_id', branchIds)
+      .eq('base_status', 'interested')
+      .or('mid_status.neq.revoked,mid_status.is.null');
+
+    const branchCompanyCounts = (branchComps || []).reduce((acc: any, comp: any) => {
+      if (comp.branch_id) {
+        acc[comp.branch_id] = (acc[comp.branch_id] || 0) + 1;
+      }
+      return acc;
+    }, {});
+
     const mapped = data.map((u: any) => ({
       ...u,
       branch_name: u.branches?.name,
       branch_code: u.branches?.code,
       approved_by_name: u.users?.name || null,
-      companies_added: u.companies ? u.companies.length : 0
+      companies_added: u.branch_id ? (branchCompanyCounts[u.branch_id] || 0) : 0
     }));
 
     mapped.sort((a, b) => {
@@ -219,7 +235,7 @@ export const getCommunicationTprs = async (req: AdminRequest, res: Response): Pr
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('id, name, email, roll_number, status, last_login_at, created_at, branches(name, code), users!approved_by(name)')
+      .select('id, name, email, roll_number, status, last_login_at, created_at, profile_photo_url, mobile_no, branches(name, code), users!approved_by(name)')
       .eq('role', 'communication_tpr');
 
     if (error) throw error;
@@ -325,6 +341,53 @@ export const demoteToBranchTpr = async (req: AdminRequest, res: Response): Promi
     res.status(200).json({ success: true, message: 'Demoted to Branch TPR successfully' });
   } catch (error) {
     console.error('demoteToBranchTpr Error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const getPersonDetails = async (req: AdminRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.params.id as string;
+    
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, name, email, role, roll_number, status, designation, is_super_admin, designated_successor, last_login_at, created_at, approved_at, profile_photo_url, mobile_no, branches(id, name, code), users!approved_by(name)')
+      .eq('id', userId)
+      .single();
+
+    if (error || !data) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    let branchCompanies: any[] = [];
+    if ((data as any).branches?.id || (data as any).branch_id) {
+      const branchId = (data as any).branches?.id || (data as any).branch_id;
+      const { data: comps } = await supabase
+        .from('company_status')
+        .select('base_status, mid_status, companies!inner(id, company_name, created_at, status)')
+        .eq('branch_id', branchId)
+        .eq('base_status', 'interested')
+        .or('mid_status.neq.revoked,mid_status.is.null');
+        
+      branchCompanies = comps?.map(c => ({
+        ...(c.companies as any),
+        status: c.base_status
+      })) || [];
+    }
+
+    const mapped = {
+      ...data,
+      branch_name: (data as any).branches?.name,
+      branch_code: (data as any).branches?.code,
+      approved_by_name: (data as any).users?.name || null,
+      companies_added: branchCompanies.length,
+      companies_list: branchCompanies
+    };
+
+    res.status(200).json({ success: true, data: mapped });
+  } catch (error) {
+    console.error('getPersonDetails Error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
