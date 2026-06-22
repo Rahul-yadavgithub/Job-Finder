@@ -3,6 +3,7 @@ import { supabase } from '../config/supabase';
 import { AdminRequest } from '../types/admin.types';
 import { sendPlacementEmail } from '../services/email.service';
 import { appendTimeline } from '../services/timeline.service';
+import { createNotification } from '../utils/notifications';
 
 export const getStaffRequests = async (req: AdminRequest, res: Response): Promise<void> => {
   try {
@@ -199,13 +200,49 @@ export const rejectStaffRequest = async (req: AdminRequest, res: Response): Prom
     }).eq('company_id', request.company_id).eq('status', 'approved');
 
     if (statusData?.original_marked_by) {
-      await supabase.from('admin_notifications').insert({
-        recipient_id: statusData.original_marked_by,
-        type: 'request_rejected',
-        title: 'Company Rejected (No Response)',
-        message: `TPO Staff rejected company. Notes: ${notes}`,
-        notification_category: 'request'
-      });
+      // 1. Fetch user and company details for the notification
+      const { data: userData } = await supabase.from('users').select('name, email').eq('id', statusData.original_marked_by).single();
+      const { data: compData } = await supabase.from('companies').select('company_name').eq('id', request.company_id).single();
+      
+      const adminName = req.admin?.name || 'Admin Name';
+      const companyName = compData?.company_name || 'A company';
+      
+      // 2. Feature 3: In-app Notification
+      await createNotification(
+        statusData.original_marked_by,
+        'company_rejected',
+        '❌ Company Update',
+        `${companyName} has not been moved forward in the pipeline.\nReason: '${notes}' — Reviewed by ${adminName}.`,
+        { actionUrl: '/dashboard/companies', category: 'request' }
+      );
+
+      // 3. Feature 3: Email Notification
+      if (userData?.email) {
+        const userFirstName = (userData.name || 'User').split(' ')[0];
+        const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        
+        const emailHtml = `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+            <p>Hi ${userFirstName},</p>
+            <p>We wanted to update you on a company in your pipeline.</p>
+            <p>
+              <strong>Company:</strong> ${companyName}<br>
+              <strong>Status:</strong> Not moving forward<br>
+              <strong>Reviewed by:</strong> ${adminName}<br>
+              <strong>Date:</strong> ${dateStr}
+            </p>
+            ${notes ? `<p><strong>Notes from reviewer:</strong><br>"${notes}"</p>` : ''}
+            <p>If you have questions, please reach out to your manager directly.</p>
+            <p>— JobFinder Team</p>
+          </div>
+        `;
+
+        await sendPlacementEmail({
+          toEmail: userData.email,
+          subject: `Update on ${companyName} — JobFinder`,
+          bodyHtml: emailHtml
+        });
+      }
     }
 
     res.status(200).json({ success: true });

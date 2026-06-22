@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { adminPost } from '@/lib/admin/api';
 import { Loader2, AlertCircle, ShieldCheck, ArrowRight, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import { AxiosError } from 'axios';
 
-export default function AdminResetPasswordPage() {
+function AdminResetPasswordContent() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -230,5 +230,13 @@ export default function AdminResetPasswordPage() {
         </div>
     </div>
     </div>
+  );
+}
+
+export default function AdminResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#eef1f5] flex items-center justify-center">Loading...</div>}>
+      <AdminResetPasswordContent />
+    </Suspense>
   );
 }

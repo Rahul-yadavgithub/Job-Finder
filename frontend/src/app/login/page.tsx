@@ -92,7 +92,7 @@ export default function LoginPage() {
     try {
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
-        { email, password },
+        { email, password, portal: 'base' },
         { withCredentials: true }
       );
       

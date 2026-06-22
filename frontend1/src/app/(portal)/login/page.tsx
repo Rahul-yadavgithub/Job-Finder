@@ -70,7 +70,7 @@ export default function AdminLogin() {
     }
 
     try {
-      const response = await adminPost<{ success: boolean; data: any }>('/auth/login', { email, password });
+      const response = await adminPost<{ success: boolean; data: any }>('/auth/login', { email, password, portal: 'admin' });
       if (response.success) {
         await refreshUser(); // Fetch the newly logged in user context
         if (response.data.isSuperAdmin) {
