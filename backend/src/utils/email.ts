@@ -41,6 +41,7 @@ export const sendResetEmail = async (to: string, resetLink: string) => {
         </div>
       </div>
     `,
+    text: `Password Reset Request\n\nWe received a request to reset the password for your account associated with this email address. Please click the following link to set a new password. This link is valid for 15 minutes.\n\n${resetLink}\n\nIf you did not request a password reset, you can safely ignore this email. Your password will remain unchanged.`
   };
 
   try {
@@ -53,8 +54,11 @@ export const sendResetEmail = async (to: string, resetLink: string) => {
       return;
     }
     
-    await transporter.sendMail(mailOptions);
+    const info = await transporter.sendMail(mailOptions);
     console.log(`Password reset email sent to ${to}`);
+    if (info.messageId && process.env.SMTP_HOST?.includes('ethereal')) {
+      console.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+    }
   } catch (error) {
     console.error('Error sending reset email:', error);
     throw new Error('Failed to send reset email');
