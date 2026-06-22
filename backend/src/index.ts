@@ -13,6 +13,7 @@ import { initSocket } from './config/socket';
 dotenv.config();
 
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy (Render, Heroku, etc.) to securely extract real IP
 const httpServer = http.createServer(app);
 
 // Initialize Socket.io

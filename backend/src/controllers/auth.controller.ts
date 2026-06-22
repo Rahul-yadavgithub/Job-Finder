@@ -80,7 +80,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password } = req.body;
+    const { email, password, portal } = req.body;
 
     const { data: user } = await supabase
       .from('users')
@@ -115,6 +115,27 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     if (!valid) {
       res.status(401).json({ success: false, message: 'Invalid credentials' });
       return;
+    }
+
+    // Role-Based Portal Access Control
+    if (portal === 'base') {
+      if (!['branch_tpr', 'communication_tpr'].includes(user.role)) {
+        res.status(403).json({
+          success: false,
+          status: 'rejected',
+          message: 'Access Denied: You are not authorized to access the Base TPR portal. Please contact the administrator.'
+        });
+        return;
+      }
+    } else if (portal === 'admin') {
+      if (!['head_tpr', 'communication_tpr', 'admin', 'coordinator'].includes(user.role)) {
+        res.status(403).json({
+          success: false,
+          status: 'rejected',
+          message: 'Access Denied: You are not authorized to access the Admin/TPO portal. Please contact the administrator.'
+        });
+        return;
+      }
     }
 
     const token = jwt.sign(

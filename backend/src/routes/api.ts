@@ -770,18 +770,18 @@ router.post('/branches/:branch_id/notifications/:id/dismiss', apiKeyController.d
 router.get('/notifications', verifyToken, async (req: AuthRequest, res) => {
   try {
     const { data, error } = await supabase
-      .from('admin_notifications')
+      .from('notifications')
       .select('*')
-      .eq('recipient_id', req.user!.userId)
+      .eq('user_id', req.user!.userId)
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(20);
     
     if (error) throw error;
     
     const { count: unreadCount, error: countError } = await supabase
-      .from('admin_notifications')
+      .from('notifications')
       .select('*', { count: 'exact', head: true })
-      .eq('recipient_id', req.user!.userId)
+      .eq('user_id', req.user!.userId)
       .eq('is_read', false);
       
     if (countError) throw countError;
@@ -792,11 +792,10 @@ router.get('/notifications', verifyToken, async (req: AuthRequest, res) => {
   }
 });
 
-router.patch('/notifications/read', verifyToken, async (req: AuthRequest, res) => {
+router.patch('/notifications/:id/read', verifyToken, async (req: AuthRequest, res) => {
   try {
-    const { notificationIds } = req.body;
-    if (!Array.isArray(notificationIds) || notificationIds.length === 0) return res.status(400).json({ success: false });
-    await supabase.from('admin_notifications').update({ is_read: true }).in('id', notificationIds).eq('recipient_id', req.user!.userId);
+    const { id } = req.params;
+    await supabase.from('notifications').update({ is_read: true }).eq('id', id).eq('user_id', req.user!.userId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false });
@@ -805,7 +804,7 @@ router.patch('/notifications/read', verifyToken, async (req: AuthRequest, res) =
 
 router.patch('/notifications/read-all', verifyToken, async (req: AuthRequest, res) => {
   try {
-    await supabase.from('admin_notifications').update({ is_read: true }).eq('recipient_id', req.user!.userId).eq('is_read', false);
+    await supabase.from('notifications').update({ is_read: true }).eq('user_id', req.user!.userId).eq('is_read', false);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false });
@@ -815,9 +814,9 @@ router.patch('/notifications/read-all', verifyToken, async (req: AuthRequest, re
 router.get('/notifications/unread-count', verifyToken, async (req: AuthRequest, res) => {
   try {
     const { count, error } = await supabase
-      .from('admin_notifications')
+      .from('notifications')
       .select('*', { count: 'exact', head: true })
-      .eq('recipient_id', req.user!.userId)
+      .eq('user_id', req.user!.userId)
       .eq('is_read', false);
     if (error) throw error;
     res.json({ success: true, count: count || 0 });
