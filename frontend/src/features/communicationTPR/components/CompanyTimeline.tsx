@@ -181,9 +181,7 @@ export function CompanyTimeline({ companyId }: Props) {
         {renderEventList(commEvents)}
       </SectionAccordion>
 
-      <SectionAccordion id="head" title="Head Review Phase">
-        {renderEventList(headEvents)}
-      </SectionAccordion>
+
 
       <SectionAccordion id="custom" title="Custom Activities">
         <div className="mb-6">

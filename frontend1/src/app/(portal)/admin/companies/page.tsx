@@ -107,9 +107,22 @@ export default function AdminCompaniesPage() {
 
   return (
     <div className="w-full max-w-none space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Companies Database</h1>
-        <p className="text-gray-500">Global overview across all branches</p>
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-[#15335b] to-[#1b4376] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
+          <Building2 size={300} className="-mt-10 -mr-10" />
+        </div>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-widest text-blue-100 mb-4 backdrop-blur-sm">
+              <Building2 size={14} /> Official Workspace
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">Companies Database</h1>
+            <p className="text-blue-100 max-w-xl text-sm md:text-base opacity-90 leading-relaxed">
+              Global overview across all branches. Track, manage, and audit all company contacts within the platform.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Stats Row */}
@@ -161,7 +174,7 @@ export default function AdminCompaniesPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto min-h-[400px]">
+        <div className="overflow-x-auto custom-scrollbar min-h-[400px]">
           {loading ? (
             <div className="p-8 space-y-4 animate-pulse">
               {[1,2,3,4,5].map(i => <div key={i} className="h-12 bg-gray-100 rounded-lg"></div>)}

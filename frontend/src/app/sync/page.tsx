@@ -95,40 +95,42 @@ export default function SyncCenterPage() {
 
   return (
     <div className="p-4 md:p-8 w-full max-w-none space-y-8 md:space-y-12">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden">
-        {/* Decorative background element */}
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 rounded-full bg-gradient-to-br from-blue-50 to-blue-50 opacity-50 blur-3xl pointer-events-none"></div>
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-[#15335b] to-[#1b4376] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-2xl"></div>
+        <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-400/10 rounded-full translate-y-1/3 -translate-x-1/4 blur-xl"></div>
+        <div className="absolute right-8 top-1/2 -translate-y-1/2 opacity-10 pointer-events-none md:block hidden">
+          <CloudUpload className="w-48 h-48" />
+        </div>
         
-        <div className="max-w-xl relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-[#1b4376] font-semibold text-xs border border-blue-100 mb-4">
+        <div className="relative z-10 flex-1">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/10 border border-white/20 text-blue-100 text-[10px] font-bold tracking-wide uppercase shadow-sm mb-4">
             <CloudUpload className="w-3.5 h-3.5" />
-            <span>Master Synchronization</span>
+            Official Workspace
           </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">Sync Center</h1>
-          <p className="text-slate-500 mt-3 text-base leading-relaxed">
+          <h1 className="text-3xl font-bold mb-2 tracking-tight">Sync Center</h1>
+          <p className="text-blue-100/80 max-w-2xl text-sm leading-relaxed">
             Manage and push assigned companies seamlessly to your branch's Google Sheet tab. Keep your master records in perfect sync.
           </p>
         </div>
-        
-        <div className="flex flex-col sm:flex-row flex-wrap xl:flex-nowrap items-stretch sm:items-center gap-4 relative z-10 w-full lg:w-auto mt-6 lg:mt-0">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1 sm:flex-none">
-            <button
-              onClick={() => inboundSyncMutation.mutate()}
-              disabled={inboundSyncMutation.isPending}
-              className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-[#1b4376] hover:from-blue-700 hover:to-[#15335b] disabled:from-slate-400 disabled:to-slate-500 text-white font-semibold py-2.5 px-6 rounded-lg transition-all shadow-md hover:shadow-lg flex-1 sm:flex-none whitespace-nowrap"
-            >
-              {inboundSyncMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <DownloadCloud className="w-5 h-5" />}
-              Pull Updates — {user.branchName}
-            </button>
-            <button
-              onClick={() => syncMutation.mutate()}
-              disabled={syncMutation.isPending || pendingCompanies?.length === 0}
-              className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white font-semibold py-2.5 px-6 rounded-lg transition-all shadow-md hover:shadow-lg flex-1 sm:flex-none whitespace-nowrap"
-            >
-              {syncMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <CloudUpload className="w-5 h-5" />}
-              Push Sync {selectedIds.length > 0 ? `(${selectedIds.length})` : 'All'} — {user.branchName}
-            </button>
-          </div>
+
+        <div className="relative z-10 flex flex-col sm:flex-row flex-wrap xl:flex-nowrap items-stretch sm:items-center gap-3 w-full lg:w-auto mt-4 md:mt-0">
+          <button
+            onClick={() => inboundSyncMutation.mutate()}
+            disabled={inboundSyncMutation.isPending}
+            className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white font-semibold py-2.5 px-6 rounded-lg transition-colors border border-white/20 shadow-sm backdrop-blur-sm whitespace-nowrap"
+          >
+            {inboundSyncMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <DownloadCloud className="w-5 h-5" />}
+            Pull Updates — {user.branchName}
+          </button>
+          <button
+            onClick={() => syncMutation.mutate()}
+            disabled={syncMutation.isPending || pendingCompanies?.length === 0}
+            className="flex items-center justify-center gap-2 bg-white text-[#15335b] hover:bg-blue-50 hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 font-bold py-2.5 px-6 rounded-lg transition-all shadow-[0_4px_12px_rgba(255,255,255,0.2)] whitespace-nowrap"
+          >
+            {syncMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <CloudUpload className="w-5 h-5" />}
+            Push Sync {selectedIds.length > 0 ? `(${selectedIds.length})` : 'All'} — {user.branchName}
+          </button>
         </div>
       </div>
 

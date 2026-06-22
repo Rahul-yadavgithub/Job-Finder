@@ -140,7 +140,7 @@ function RecoveryCompleteContent() {
           {requestData?.isExistingUser ? (
             <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl text-center mb-6">
               <p className="text-indigo-900 font-medium">
-                Your existing co-worker account will be promoted to Head TPO.
+                Your existing staff account will be promoted to Head TPO.
               </p>
             </div>
           ) : (

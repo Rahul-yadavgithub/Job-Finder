@@ -6,7 +6,7 @@ import { CommunicationRequest } from '../types/request';
 import { DashboardLayout } from '../components/Layout';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
-import { CheckCircle, XCircle, Search, Mail, Eye } from 'lucide-react';
+import { CheckCircle, XCircle, Search, Mail, Eye, ShieldCheck } from 'lucide-react';
 import { format } from 'date-fns';
 
 export function ApprovalsPage() {
@@ -70,24 +70,35 @@ export function ApprovalsPage() {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">Approvals</h1>
-            <p className="text-sm text-slate-500 mt-1">Review and approve communication requests before they are sent.</p>
+        {/* Premium Header */}
+        <div className="bg-gradient-to-r from-[#15335b] to-[#1b4376] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden mb-8">
+          <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
+            <ShieldCheck size={300} className="-mt-10 -mr-10" />
           </div>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search companies or TPRs..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1b4376] outline-none"
-            />
+          <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-widest text-blue-100 mb-4 backdrop-blur-sm">
+                <ShieldCheck size={14} /> Official Workspace
+              </div>
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">Approvals</h1>
+              <p className="text-blue-100 max-w-xl text-sm md:text-base opacity-90 leading-relaxed">
+                Review and approve communication requests before they are sent. Ensure quality and consistency in all outreach.
+              </p>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search companies or TPRs..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 pr-4 py-2.5 w-full md:w-64 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-300 outline-none bg-white text-slate-900 shadow-sm"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-x-auto w-full">
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-x-auto custom-scrollbar w-full">
           <table className="w-full text-left text-sm min-w-max">
             <thead className="bg-[#f4f6f8] border-b border-slate-200">
               <tr>
@@ -137,7 +148,7 @@ export function ApprovalsPage() {
 
       {selectedRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-[95vw] md:max-w-2xl overflow-y-auto custom-scrollbar flex flex-col max-h-[90vh]">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-[#f4f6f8]">
               <div>
                 <h3 className="font-semibold text-slate-800">Review Request</h3>

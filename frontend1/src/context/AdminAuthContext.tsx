@@ -15,6 +15,7 @@ export interface AdminUser {
   jumpedIn?: boolean;
   profilePhotoUrl?: string;
   displayName?: string;
+  mobileNo?: string;
 }
 
 import { hasPermission, Permission } from '@/lib/admin/permissions';
@@ -52,6 +53,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
           jumpedIn: response.data.jumpedIn,
           profilePhotoUrl: response.data.profile_photo_url,
           displayName: response.data.display_name,
+          mobileNo: response.data.mobile_no,
         });
         setUnreadCount(response.data.unreadNotifications || 0);
       } else {

@@ -101,62 +101,72 @@ export function CompanyDetailPage() {
 
   return (
     <div className="space-y-6 w-full max-w-none px-4 sm:px-6 lg:px-8 pb-12">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => router.push('/communication-tpr/companies')}
-            className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:tracking-tight flex items-center gap-3">
-              {company.companyName}
-              {isLocked ? (
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 border border-red-200">
-                  <Lock className="w-3 h-3 mr-1" />
-                  Transferred to Head Team (Read Only)
-                </span>
-              ) : company.currentStatus.locked && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
-                  Locked by Mid TPR
-                </span>
-              )}
-            </h1>
-            <p className="mt-1 text-sm text-gray-500 flex items-center gap-2">
-              <span>Branch: <strong className="text-gray-900">{company.branch}</strong></span>
-              <span>&bull;</span>
-              <span>Added by: <strong className="text-gray-900">{company.assignedTPR || 'Unknown'}</strong></span>
-              <span>&bull;</span>
-              <span className="inline-flex items-center text-xs font-medium bg-blue-50 text-[#15335b] px-2 rounded-full border border-indigo-200 capitalize">
-                Pipeline Stage: {(company.currentStatus.midStatus || 'interested').replace(/_/g, ' ')}
-              </span>
-            </p>
-          </div>
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-[#15335b] to-[#1b4376] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden mb-8">
+        <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
+          <Building2 size={300} className="-mt-10 -mr-10" />
         </div>
-        
-        <div className="flex gap-2">
-          {!isLocked && isReadyForHead && (
-            <button
-              onClick={handleTransfer}
-              disabled={isTransferring}
-              className="inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-700 transition-colors disabled:opacity-50"
+        <div className="relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-6">
+          <div className="flex flex-col md:flex-row items-start gap-6">
+            <button 
+              onClick={() => router.push('/communication-tpr/companies')}
+              className="p-3 text-[#1b4376] bg-white rounded-xl hover:bg-blue-50 transition-colors shadow-lg shrink-0 flex items-center justify-center mt-1"
             >
-              <Network className="w-4 h-4 mr-2" />
-              {isTransferring ? 'Transferring...' : 'Transfer to Head Portal'}
+              <ArrowLeft className="w-6 h-6" />
             </button>
-          )}
+            <div>
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-widest text-blue-100 backdrop-blur-sm">
+                  <Building2 size={14} /> Official Workspace
+                </div>
+                {isLocked ? (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-red-500/20 text-red-100 border border-red-500/30 backdrop-blur-sm">
+                    <Lock className="w-3 h-3 mr-1" />
+                    Transferred to Head Team (Read Only)
+                  </span>
+                ) : company.currentStatus.locked && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-100 border border-amber-500/30 backdrop-blur-sm">
+                    Locked by Mid TPR
+                  </span>
+                )}
+              </div>
+              <h1 className="text-3xl md:text-4xl font-bold mb-3">{company.companyName}</h1>
+              <div className="flex flex-wrap items-center gap-3 text-sm text-blue-100 opacity-90">
+                <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-lg border border-white/20 backdrop-blur-sm">
+                  <span>Branch: <b>{company.branch}</b></span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-lg border border-white/20 backdrop-blur-sm">
+                  <span>Added by: <b>{company.assignedTPR || 'Unknown'}</b></span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-lg border border-white/20 backdrop-blur-sm capitalize">
+                  Pipeline Stage: {(company.currentStatus.midStatus || 'interested').replace(/_/g, ' ')}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            {!isLocked && isReadyForHead && (
+              <button
+                onClick={handleTransfer}
+                disabled={isTransferring}
+                className="flex items-center gap-2 px-5 py-2.5 bg-green-500 text-white rounded-xl hover:bg-green-600 font-bold text-sm transition-colors shadow-lg disabled:opacity-50"
+              >
+                <Network className="w-4 h-4" />
+                {isTransferring ? 'Transferring...' : 'Transfer to Head Portal'}
+              </button>
+            )}
 
-
-          {!isLocked && (company.currentStatus.midStatus === 'interested' || company.currentStatus.midStatus === 'under_communication') && (
-            <button
-              onClick={() => router.push(`/communication-tpr/requests/new?company=${company.id}`)}
-              className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
-            >
-              <Send className="w-4 h-4 mr-2" />
-              Start Communication
-            </button>
-          )}
+            {!isLocked && (company.currentStatus.midStatus === 'interested' || company.currentStatus.midStatus === 'under_communication') && (
+              <button
+                onClick={() => router.push(`/communication-tpr/requests/new?company=${company.id}`)}
+                className="flex items-center gap-2 px-5 py-2.5 bg-white text-[#15335b] rounded-xl hover:bg-blue-50 font-bold text-sm transition-colors shadow-lg border border-white/20"
+              >
+                <Send className="w-4 h-4" />
+                Start Communication
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -354,21 +364,7 @@ export function CompanyDetailPage() {
               </div>
             </div>
           </div>
-          {/* Full Activity Timeline */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-             <div className="border-b border-gray-200 px-6 py-4 bg-gray-50 flex justify-between items-center">
-              <h3 className="text-base font-semibold leading-6 text-gray-900 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-blue-500" />
-                Activity Timeline
-              </h3>
-              <span className="inline-flex items-center rounded-md bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-800">
-                {activities.length} entries
-              </span>
-            </div>
-            <div className="p-6">
-              <ActivityTimeline activities={activities} />
-            </div>
-          </div>
+
         </div>
       </div>
 

@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { AdminRequest, AdminJWTPayload } from '../types/admin.types';
 import { sendResetEmail } from '../utils/email';
+import { v2 as cloudinary } from 'cloudinary';
 export const adminLogin = async (req: AdminRequest, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
@@ -173,7 +174,7 @@ export const adminMe = async (req: AdminRequest, res: Response): Promise<void> =
     
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, name, email, role, is_super_admin, designated_successor, status, designation, profile_photo_url, display_name')
+      .select('id, name, email, role, is_super_admin, designated_successor, status, designation, profile_photo_url, display_name, mobile_no')
       .eq('id', userId)
       .single();
       
@@ -308,15 +309,58 @@ export const jumpOut = async (req: AdminRequest, res: Response): Promise<void> =
 export const updateProfile = async (req: AdminRequest, res: Response): Promise<void> => {
   try {
     const userId = req.admin!.userId;
-    const { displayName, profilePhotoUrl } = req.body;
+    const { displayName, profilePhotoUrl, name, email, mobileNo } = req.body;
 
     const updates: any = {};
     if (displayName !== undefined) updates.display_name = displayName;
     if (profilePhotoUrl !== undefined) updates.profile_photo_url = profilePhotoUrl;
+    if (name !== undefined) updates.name = name;
+    if (email !== undefined) updates.email = email;
+    if (mobileNo !== undefined) updates.mobile_no = mobileNo;
 
     if (Object.keys(updates).length === 0) {
       res.status(400).json({ success: false, message: 'No fields to update' });
       return;
+    }
+
+    // Handle Cloudinary Deletion if profile photo is being changed or removed
+    if (profilePhotoUrl !== undefined) {
+      const { data: currentUser } = await supabase
+        .from('users')
+        .select('profile_photo_url')
+        .eq('id', userId)
+        .single();
+        
+      if (currentUser?.profile_photo_url && currentUser.profile_photo_url !== profilePhotoUrl) {
+        try {
+          // Extract public_id from Cloudinary URL including folder
+          const uploadIndex = currentUser.profile_photo_url.indexOf('/upload/');
+          let publicId = '';
+          if (uploadIndex !== -1) {
+            const afterUpload = currentUser.profile_photo_url.substring(uploadIndex + 8);
+            const pathParts = afterUpload.split('/');
+            if (pathParts[0].startsWith('v') && !isNaN(parseInt(pathParts[0].substring(1)))) {
+              pathParts.shift();
+            }
+            const publicIdWithExt = pathParts.join('/');
+            publicId = publicIdWithExt.substring(0, publicIdWithExt.lastIndexOf('.')) || publicIdWithExt;
+          }
+
+          if (publicId && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET && process.env.CLOUDINARY_CLOUD_NAME) {
+            cloudinary.config({
+              cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+              api_key: process.env.CLOUDINARY_API_KEY,
+              api_secret: process.env.CLOUDINARY_API_SECRET
+            });
+            await cloudinary.uploader.destroy(publicId);
+            console.log(`Deleted old profile photo from Cloudinary: ${publicId}`);
+          } else {
+            console.warn('Cloudinary credentials missing. Could not delete old profile photo.');
+          }
+        } catch (delError) {
+          console.error('Failed to delete old profile photo from Cloudinary', delError);
+        }
+      }
     }
 
     const { error } = await supabase

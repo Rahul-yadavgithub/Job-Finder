@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useCommunicationAuth } from '../hooks/useCommunicationAuth';
-import { MessageSquare, Users, Building2, Bell } from 'lucide-react';
+import { MessageSquare, Users, Building2, Bell, ArrowRight, ShieldCheck } from 'lucide-react';
 import { FollowUpWidgets } from '../components/FollowUpWidgets';
 import Link from 'next/link';
 
@@ -10,54 +10,65 @@ export function DashboardPage() {
   const { user } = useCommunicationAuth();
 
   const stats = [
-    { id: 1, name: 'Active Communications', stat: '0', icon: MessageSquare, color: 'text-blue-600', bg: 'bg-blue-100' },
-    { id: 2, name: 'Pending Follow-ups', stat: '0', icon: Bell, color: 'text-amber-600', bg: 'bg-amber-100' },
-    { id: 3, name: 'Companies Contacted', stat: '0', icon: Building2, color: 'text-[#1b4376]', bg: 'bg-blue-100' },
-    { id: 4, name: 'Team Members', stat: '0', icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-100' },
+    { id: 1, name: 'Active Communications', stat: '0', icon: MessageSquare, gradient: 'from-[#1e3c72] to-[#2a5298]', shadow: 'shadow-blue-900/20' },
+    { id: 2, name: 'Pending Follow-ups', stat: '0', icon: Bell, gradient: 'from-[#b45309] to-[#d97706]', shadow: 'shadow-amber-900/20' },
+    { id: 3, name: 'Companies Contacted', stat: '0', icon: Building2, gradient: 'from-[#064e3b] to-[#047857]', shadow: 'shadow-emerald-900/20' },
+    { id: 4, name: 'Team Members', stat: '0', icon: Users, gradient: 'from-[#1e293b] to-[#334155]', shadow: 'shadow-slate-900/20' },
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="md:flex md:items-center md:justify-between">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-            Welcome back, {user?.name?.split(' ')[0] || 'TPR'}
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Here is what is happening with your communications today.
-          </p>
+    <div className="w-full space-y-8 pb-10">
+      
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-[#15335b] to-[#1b4376] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
+          <MessageSquare size={300} className="-mt-10 -mr-10" />
         </div>
-        <div className="mt-4 flex md:ml-4 md:mt-0">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-widest text-blue-100 mb-4 backdrop-blur-sm">
+              <ShieldCheck size={14} /> Official Workspace
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">Welcome back, {user?.name?.split(' ')[0] || 'TPR'}</h1>
+            <p className="text-blue-100 max-w-xl text-sm md:text-base opacity-90 leading-relaxed">
+              Communication TPR Dashboard. Here is what is happening with your communications and follow-ups today.
+            </p>
+          </div>
+          
           <Link
             href="/communication-tpr/requests/new"
-            className="ml-3 inline-flex items-center rounded-md bg-[#1b4376] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#15335b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1b4376] transition-colors"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-white text-[#15335b] rounded-xl hover:bg-gray-50 font-black text-sm uppercase tracking-widest transition-colors shadow-lg"
           >
             New Communication
           </Link>
         </div>
       </div>
 
-      <dl className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
         {stats.map((item) => (
           <div
             key={item.id}
-            className="relative overflow-hidden rounded-xl bg-white px-4 pb-12 pt-5 shadow-sm transition-all hover:scale-[1.02] hover:shadow-md sm:px-6 sm:pt-6 border border-gray-200"
+            className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${item.gradient} p-6 shadow-lg ${item.shadow} hover:shadow-xl transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between h-[180px] border border-white/10`}
           >
-            <dt>
-              <div className={`absolute rounded-md ${item.bg} p-3`}>
-                <item.icon className={`h-6 w-6 ${item.color}`} aria-hidden="true" />
+            <item.icon className="absolute -right-4 -bottom-4 w-32 h-32 text-white opacity-10 group-hover:scale-110 transition-transform duration-500" />
+            <div className="relative z-10">
+              <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3">
+                <item.icon className="w-5 h-5 text-white" />
               </div>
-              <p className="ml-16 truncate text-sm font-medium text-gray-500">{item.name}</p>
-            </dt>
-            <dd className="ml-16 flex items-baseline pb-6 sm:pb-7">
-              <p className="text-2xl font-bold text-gray-900">{item.stat}</p>
-            </dd>
+              <p className="text-sm font-bold text-white/80 uppercase tracking-widest mb-1">{item.name}</p>
+            </div>
+            <div className="relative z-10 flex items-end justify-between">
+              <p className="text-4xl font-black text-white">{item.stat}</p>
+              <ArrowRight className="text-white/50 group-hover:text-white transition-colors" />
+            </div>
           </div>
         ))}
-      </dl>
+      </div>
 
-      <div className="mt-8">
-        <h2 className="text-lg font-bold leading-6 text-gray-900 mb-4">Your Follow-ups</h2>
+      <div className="mt-8 bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
+        <h2 className="text-xl font-bold leading-6 text-gray-900 mb-6 flex items-center gap-2">
+          <Bell className="text-[#1b4376]" size={24} /> Your Follow-ups
+        </h2>
         <FollowUpWidgets />
       </div>
     </div>

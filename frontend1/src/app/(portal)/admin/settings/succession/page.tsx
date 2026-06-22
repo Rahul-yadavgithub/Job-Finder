@@ -108,14 +108,22 @@ export default function SuccessionSettings() {
   const existingWorkerWithEmail = workers.find(w => w.email === transferForm.email);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-12">
-      <div className="flex items-center gap-4 mb-2">
-        <div className="w-12 h-12 bg-gray-900 text-white rounded-xl flex items-center justify-center shadow-sm">
-          <ShieldCheck size={24} />
+    <div className="w-full max-w-none space-y-8 pb-12">
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-[#15335b] to-[#1b4376] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden mb-8">
+        <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
+          <ShieldCheck size={300} className="-mt-10 -mr-10" />
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Leadership & Succession</h1>
-          <p className="text-sm text-gray-500 font-medium">Manage handover settings and designate successors</p>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-widest text-blue-100 mb-4 backdrop-blur-sm">
+              <ShieldCheck size={14} /> Official Workspace
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">Leadership & Succession</h1>
+            <p className="text-blue-100 max-w-xl text-sm md:text-base opacity-90 leading-relaxed">
+              Manage handover settings and designate successors. Ensure continuity of operations.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -144,7 +152,7 @@ export default function SuccessionSettings() {
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-sm text-[#15335b]">{info.successor.email}</span>
                   <span className="text-indigo-300">•</span>
-                  <span className="text-sm font-semibold text-indigo-800 capitalize">{info.successor.designation.replace('_', ' ')}</span>
+                  <span className="text-sm font-semibold text-indigo-800 capitalize">{info.successor.designation === 'coordinator' ? 'staff' : info.successor.designation.replace('_', ' ')}</span>
                 </div>
               </div>
             </div>
@@ -291,7 +299,7 @@ export default function SuccessionSettings() {
                       <p className="text-sm text-gray-500">{w.email}</p>
                     </div>
                     <span className="text-xs font-bold px-2 py-1 bg-gray-100 text-gray-600 rounded capitalize">
-                      {w.designation.replace('_', ' ')}
+                      {w.designation === 'coordinator' ? 'staff' : w.designation.replace('_', ' ')}
                     </span>
                   </button>
                 ))

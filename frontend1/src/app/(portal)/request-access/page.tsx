@@ -123,11 +123,18 @@ export default function RequestAccess() {
         </div>
 
         {/* Success Section */}
-        <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[#f5f7f9] relative z-0">
-          <div className="bg-white rounded-xl shadow-lg border border-slate-200 max-w-md w-full p-8 text-center overflow-hidden">
-            <div className="w-16 h-16 bg-[#e6f0ff] rounded-full flex items-center justify-center mx-auto mb-6 relative">
-              <CheckCircle className="w-8 h-8 text-[#1b4376]" />
-            </div>
+        <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative z-0 overflow-hidden">
+          
+          {/* Animated Background Image */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-bg-zoom z-[-2]"
+            style={{ backgroundImage: "url('/nith.jpg')" }}
+          ></div>
+
+          {/* Dark overlay for better form readability */}
+          <div className="absolute inset-0 bg-[#15335b]/60 z-[-1]"></div>
+          
+          <div className="bg-white/40 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/40 max-w-md w-full p-8 text-center overflow-hidden relative z-10">
             <h2 className="text-[1.35rem] font-bold text-slate-800 mb-2">Request Submitted</h2>
             <p className="text-sm text-slate-500 mb-8 leading-relaxed">
               The Head TPO will review your request. You will receive an email confirmation once your account has been approved.
@@ -185,14 +192,39 @@ export default function RequestAccess() {
         </div>
       </div>
 
+      {/* Full Page Loading Overlay */}
+      {loading && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#15335b]/80 backdrop-blur-md transition-all duration-300">
+          <div className="bg-white/10 p-8 rounded-3xl border border-white/20 shadow-2xl flex flex-col items-center gap-6 backdrop-blur-xl animate-in fade-in zoom-in duration-300">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-full border-4 border-white/20 border-t-white animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <ShieldCheck className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            <div className="text-center">
+              <p className="text-white font-bold text-lg tracking-wide">Processing Request...</p>
+              <p className="text-blue-200 text-sm mt-1">Please wait while we submit your request</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Form Section */}
-      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[#f5f7f9] relative z-0">
-        <div className="w-full max-w-[480px] bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative z-0 overflow-hidden">
+        
+        {/* Animated Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-bg-zoom z-[-2]"
+          style={{ backgroundImage: "url('/nith.jpg')" }}
+        ></div>
+
+        {/* Dark overlay for better form readability */}
+        <div className="absolute inset-0 bg-[#15335b]/60 z-[-1]"></div>
+
+        <div className="w-full max-w-[480px] bg-white/40 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/40 overflow-hidden relative z-10">
           
           <div className="px-8 pt-8 pb-4 text-center">
-            <div className="w-16 h-16 bg-[#e6f0ff] rounded-full flex items-center justify-center mx-auto mb-4 relative">
-              <ShieldCheck className="w-8 h-8 text-[#1b4376]" />
-            </div>
             <h2 className="text-[1.35rem] font-bold text-slate-800">Request Staff Access</h2>
             <p className="text-sm text-slate-500 mt-1">Your request will be reviewed by the Head TPO.</p>
           </div>
@@ -291,7 +323,7 @@ export default function RequestAccess() {
                   className="block w-full px-4 py-3 border-none bg-[#f4f6f8] rounded-[4px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#1b4376] transition-colors text-sm"
                 >
                   <option value="caller">Caller</option>
-                  <option value="coordinator">Coordinator</option>
+                  <option value="coordinator">Staff</option>
                   <option value="assistant_tpo">Assistant TPO</option>
                 </select>
               </div>

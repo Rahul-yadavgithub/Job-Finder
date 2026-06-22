@@ -74,17 +74,28 @@ export default function CompaniesPage() {
 
   return (
     <div className="p-8 w-full max-w-none">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Company Database</h1>
-          <p className="text-muted-foreground mt-1">
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-[#15335b] to-[#1b4376] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-2xl"></div>
+        <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-400/10 rounded-full translate-y-1/3 -translate-x-1/4 blur-xl"></div>
+        <div className="absolute right-8 top-1/2 -translate-y-1/2 opacity-10 pointer-events-none md:block hidden">
+          <Globe className="w-48 h-48" />
+        </div>
+        
+        <div className="relative z-10 flex-1">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/10 border border-white/20 text-blue-100 text-[10px] font-bold tracking-wide uppercase shadow-sm mb-4">
+            <Globe className="w-3.5 h-3.5" />
+            Official Workspace
+          </div>
+          <h1 className="text-3xl font-bold mb-2 tracking-tight">Company Database</h1>
+          <p className="text-blue-100/80 max-w-2xl text-sm">
             Auto-discovered companies pending review and assignment. Sheet-synced companies are managed via the Sync Center.
           </p>
         </div>
-        
-        <div className="flex gap-4 w-full md:w-auto">
+
+        <div className="relative z-10 flex gap-4 w-full md:w-auto mt-4 md:mt-0">
           <select 
-            className="bg-white border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 shadow-sm"
+            className="bg-white/10 border border-white/20 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 shadow-sm backdrop-blur-sm [&>option]:text-slate-900"
             value={statusFilter}
             onChange={(e) => {
               setStatusFilter(e.target.value);
@@ -99,11 +110,11 @@ export default function CompaniesPage() {
 
           <div className="relative flex-1 md:w-64">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <Search className="w-4 h-4 text-slate-400" />
+              <Search className="w-4 h-4 text-white/60" />
             </div>
             <input 
               type="text" 
-              className="bg-white border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 shadow-sm" 
+              className="bg-white/10 border border-white/20 text-white placeholder-white/60 text-sm rounded-lg focus:ring-white focus:border-white block w-full pl-10 p-2.5 shadow-sm backdrop-blur-sm focus:outline-none" 
               placeholder="Search companies..." 
               value={search}
               onChange={(e) => {

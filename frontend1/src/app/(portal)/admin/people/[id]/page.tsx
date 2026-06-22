@@ -84,14 +84,27 @@ export default function PersonDetailsPage({ params }: { params: Promise<{ id: st
   if (!person) return null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/admin/people?tab=branch" className="p-2 text-gray-500 hover:text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Person Details</h1>
-          <p className="text-gray-500">View and manage profile information</p>
+    <div className="w-full max-w-none space-y-6">
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-[#15335b] to-[#1b4376] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden mb-8">
+        <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
+          <User size={300} className="-mt-10 -mr-10" />
+        </div>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+            <Link href="/admin/people?tab=branch" className="p-3 text-[#1b4376] bg-white rounded-xl hover:bg-blue-50 transition-colors shadow-lg shrink-0 flex items-center justify-center">
+              <ArrowLeft className="w-6 h-6" />
+            </Link>
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-widest text-blue-100 mb-3 backdrop-blur-sm">
+                <User size={14} /> Official Workspace
+              </div>
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">Person Details</h1>
+              <p className="text-blue-100 max-w-xl text-sm md:text-base opacity-90 leading-relaxed">
+                View and manage profile information. Monitor activity and roles.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -133,30 +146,6 @@ export default function PersonDetailsPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
-          {person.companies_list && person.companies_list.length > 0 && (
-            <div className="mt-6 w-full pt-6 border-t border-gray-100 text-left">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">Added Companies</h3>
-              <div className="space-y-3">
-                {person.companies_list.map((comp: any) => (
-                  <div key={comp.id} className="p-3 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-gray-900 text-sm">{comp.company_name}</div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {new Date(comp.created_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                      comp.status === 'approved' ? 'bg-green-100 text-green-700' :
-                      comp.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                      'bg-amber-100 text-amber-700'
-                    }`}>
-                      {comp.status ? comp.status.charAt(0).toUpperCase() + comp.status.slice(1) : 'Unknown'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Details & Actions Card */}
@@ -210,6 +199,33 @@ export default function PersonDetailsPage({ params }: { params: Promise<{ id: st
               </div>
             </div>
           </div>
+
+          {person.companies_list && person.companies_list.length > 0 && (
+            <div className="p-6 border-b border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Added Companies</h3>
+              <div className="bg-gray-50/50 rounded-xl border border-gray-200 overflow-hidden">
+                <div className="max-h-52 overflow-y-auto custom-scrollbar divide-y divide-gray-100">
+                  {person.companies_list.map((comp: any) => (
+                      <div key={comp.id} className="p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between">
+                        <div>
+                          <div className="font-semibold text-gray-900 text-base">{comp.company_name}</div>
+                          <div className="text-sm text-gray-500 mt-1">
+                            {new Date(comp.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+                          comp.status === 'approved' ? 'bg-green-100 text-green-700' :
+                          comp.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                          'bg-amber-100 text-amber-700'
+                        }`}>
+                          {comp.status ? comp.status.charAt(0).toUpperCase() + comp.status.slice(1) : 'Unknown'}
+                        </span>
+                      </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Admin Actions */}
           {user?.isSuperAdmin && (

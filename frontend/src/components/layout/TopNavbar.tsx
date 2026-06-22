@@ -16,7 +16,7 @@ export function TopNavbar({ onOpenSidebar }: TopNavbarProps) {
 
   return (
     <>
-      <div className="sticky top-0 z-30 flex flex-col w-full bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm h-16">
+      <div className="sticky top-0 z-30 flex flex-col w-full bg-white/90 backdrop-blur-md border-b border-slate-200 rounded-b-[2rem] shadow-[0_8px_24px_rgba(0,0,0,0.04)] h-16">
         <header className="flex h-full w-full items-center justify-between px-4 md:px-6">
           <div className="flex items-center gap-4">
             <button 

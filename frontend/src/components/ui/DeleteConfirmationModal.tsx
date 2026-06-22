@@ -31,7 +31,7 @@ export function DeleteConfirmationModal({
       />
       
       {/* Modal Content */}
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-[95vw] md:max-w-md overflow-y-auto custom-scrollbar flex flex-col max-h-[90vh] transform transition-all">
         {/* Header Strip */}
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-red-500" />
         

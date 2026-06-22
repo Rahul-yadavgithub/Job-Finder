@@ -76,7 +76,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const getRoleBadge = () => {
     switch (user.role) {
       case 'head': return { text: 'Head TPO', color: 'bg-blue-100 text-indigo-800 border-indigo-200' };
-      case 'coordinator': return { text: 'Coordinator', color: 'bg-purple-100 text-purple-800 border-purple-200' };
+      case 'coordinator': return { text: 'Staff', color: 'bg-purple-100 text-purple-800 border-purple-200' };
       case 'caller': return { text: 'Caller', color: 'bg-blue-100 text-blue-800 border-blue-200' };
       default: return { text: 'Staff', color: 'bg-gray-100 text-gray-800 border-gray-200' };
     }
@@ -95,7 +95,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       )}
 
       {/* Sidebar */}
-      <aside className={`group fixed left-0 top-0 h-screen w-64 md:w-20 md:hover:w-64 bg-white border-r border-gray-200 flex flex-col z-50 transition-all duration-300 ease-in-out md:translate-x-0 overflow-x-hidden ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
+      <aside className={`group fixed md:sticky left-0 top-0 h-screen w-64 md:w-20 md:hover:w-64 bg-white border-r border-gray-200 rounded-r-[2rem] shadow-[4px_0_24px_rgba(0,0,0,0.04)] flex-shrink-0 flex flex-col z-50 transition-all duration-300 ease-in-out md:translate-x-0 overflow-x-hidden ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
         
         {/* Mobile Close Button */}
         {onClose && (
@@ -150,7 +150,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
             <NavItem 
               href="/admin/people" 
               icon={<Users size={20} />} 
-              label="Staff Directory" 
+              label="People Directory" 
               active={pathname.startsWith('/admin/people')} 
             />
             <NavItem 
@@ -205,7 +205,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
             <NavItem 
               href="/admin/people" 
               icon={<Users size={20} />} 
-              label="Staff Directory" 
+              label="People Directory" 
               active={pathname.startsWith('/admin/people')} 
             />
             <NavItem 
@@ -297,7 +297,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                       >
                         <div>
                           <p className="font-bold text-gray-900">{cw.name}</p>
-                          <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mt-0.5">{cw.role}</p>
+                          <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mt-0.5">{cw.role === 'coordinator' ? 'staff' : cw.role}</p>
                         </div>
                         <span className="text-[#1b4376] text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity">
                           Select →

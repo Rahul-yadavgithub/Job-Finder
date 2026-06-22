@@ -145,9 +145,22 @@ export default function AdminPeoplePage() {
 
   return (
     <div className="w-full max-w-none space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Staff Directory</h1>
-        <p className="text-gray-500">TPO Staff and Department Representatives overview</p>
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-[#15335b] to-[#1b4376] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden mb-8">
+        <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
+          <Users size={300} className="-mt-10 -mr-10" />
+        </div>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-widest text-blue-100 mb-4 backdrop-blur-sm">
+              <Users size={14} /> Official Workspace
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">People Directory</h1>
+            <p className="text-blue-100 max-w-xl text-sm md:text-base opacity-90 leading-relaxed">
+              Overview of TPO Staff and Department Representatives. Manage team roles, evaluate performance, and delegate responsibilities.
+            </p>
+          </div>
+        </div>
       </div>
 
       {loading && !stats ? (
@@ -177,7 +190,7 @@ export default function AdminPeoplePage() {
                   <p className="text-2xl font-bold text-blue-700">{stats.coworkers.caller_count}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Coords</p>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Staff</p>
                   <p className="text-2xl font-bold text-gray-700">{stats.coworkers.coordinator_count}</p>
                 </div>
               </div>
@@ -224,7 +237,7 @@ export default function AdminPeoplePage() {
               )})}
             </div>
 
-            <div className="overflow-x-auto min-h-[400px]">
+            <div className="overflow-x-auto custom-scrollbar min-h-[400px]">
               
               {/* TAB 1: CO-WORKERS */}
               {tab === 'coworkers' && (
@@ -233,10 +246,11 @@ export default function AdminPeoplePage() {
                     <tr>
                       <th className="px-6 py-4">Name</th>
                       <th className="px-6 py-4">Email</th>
+                      <th className="px-6 py-4">Mobile No</th>
                       <th className="px-6 py-4">Role</th>
                       <th className="px-6 py-4">Status</th>
                       <th className="px-6 py-4">Last Login</th>
-                      <th className="px-6 py-4 text-right">Actions</th>
+                      {user?.isSuperAdmin && <th className="px-6 py-4 text-right">Actions</th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -251,15 +265,16 @@ export default function AdminPeoplePage() {
                                 {cw.is_super_admin && <span title="Super Admin"><Crown size={14} className="text-amber-500" /></span>}
                                 {cw.designated_successor && <span title="Designated Successor"><Star size={14} className="fill-amber-500 text-amber-500" /></span>}
                               </div>
-                              <div className="text-xs text-gray-500 capitalize">{cw.designation.replace('_', ' ')}</div>
+                              <div className="text-xs text-gray-500 capitalize">{cw.designation === 'coordinator' ? 'staff' : cw.designation.replace('_', ' ')}</div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-gray-600">{cw.email}</td>
+                        <td className="px-6 py-4 text-gray-600">{cw.mobile_no || 'N/A'}</td>
                         <td className="px-6 py-4">
                           {cw.role === 'head' && <span className="px-2 py-1 rounded text-xs font-bold bg-blue-100 text-indigo-800">Head TPO</span>}
                           {cw.role === 'caller' && <span className="px-2 py-1 rounded text-xs font-bold bg-blue-100 text-blue-800">Caller</span>}
-                          {cw.role === 'coordinator' && <span className="px-2 py-1 rounded text-xs font-bold bg-gray-100 text-gray-800">Coordinator</span>}
+                          {cw.role === 'coordinator' && <span className="px-2 py-1 rounded text-xs font-bold bg-gray-100 text-gray-800">Staff</span>}
                         </td>
                         <td className="px-6 py-4">
                           {cw.status === 'approved' ? (
@@ -271,26 +286,26 @@ export default function AdminPeoplePage() {
                         <td className="px-6 py-4 text-gray-500">
                           {cw.last_login_at ? formatDistanceToNow(new Date(cw.last_login_at), { addSuffix: true }) : 'Never'}
                         </td>
-                        <td className="px-6 py-4 text-right">
-                          {cw.id === user.userId ? (
-                            <span className="text-xs text-gray-400 font-medium">(You)</span>
-                          ) : user.isSuperAdmin ? (
-                            <div className="flex justify-end gap-2">
-                              {cw.status === 'approved' ? (
-                                <>
-                                  <button onClick={() => setRevokeModal({ isOpen: true, target: cw, type: 'worker' })} className="px-3 py-1.5 text-xs font-bold text-red-600 border border-red-200 rounded hover:bg-red-50 transition-colors">Revoke Access</button>
-                                  {!cw.designated_successor && !cw.is_super_admin && (
-                                    <button onClick={() => setSuccessorModal({ isOpen: true, worker: cw })} className="px-3 py-1.5 text-xs font-bold text-amber-700 bg-amber-50 rounded hover:bg-amber-100 transition-colors">Set Successor</button>
-                                  )}
-                                </>
-                              ) : (
-                                <button onClick={() => handleReinstate(cw.id, 'worker')} className="px-3 py-1.5 text-xs font-bold text-green-700 border border-green-200 rounded hover:bg-green-50 transition-colors">Reinstate</button>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-xs text-gray-300">-</span>
-                          )}
-                        </td>
+                        {user?.isSuperAdmin && (
+                          <td className="px-6 py-4 text-right">
+                            {cw.id === user.userId ? (
+                              <span className="text-xs text-gray-400 font-medium">(You)</span>
+                            ) : (
+                              <div className="flex justify-end gap-2">
+                                {cw.status === 'approved' ? (
+                                  <>
+                                    <button onClick={() => setRevokeModal({ isOpen: true, target: cw, type: 'worker' })} className="px-3 py-1.5 text-xs font-bold text-red-600 border border-red-200 rounded hover:bg-red-50 transition-colors">Revoke Access</button>
+                                    {!cw.designated_successor && !cw.is_super_admin && (
+                                      <button onClick={() => setSuccessorModal({ isOpen: true, worker: cw })} className="px-3 py-1.5 text-xs font-bold text-amber-700 bg-amber-50 rounded hover:bg-amber-100 transition-colors">Set Successor</button>
+                                    )}
+                                  </>
+                                ) : (
+                                  <button onClick={() => handleReinstate(cw.id, 'worker')} className="px-3 py-1.5 text-xs font-bold text-green-700 border border-green-200 rounded hover:bg-green-50 transition-colors">Reinstate</button>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -343,9 +358,10 @@ export default function AdminPeoplePage() {
                       <th className="px-6 py-4">Name & Roll</th>
                       <th className="px-6 py-4">Branch</th>
                       <th className="px-6 py-4">Email</th>
+                      <th className="px-6 py-4">Mobile No</th>
                       <th className="px-6 py-4">Status</th>
                       <th className="px-6 py-4">Last Login</th>
-                      <th className="px-6 py-4 text-right">Actions</th>
+                      {user?.isSuperAdmin && <th className="px-6 py-4 text-right">Actions</th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -370,6 +386,7 @@ export default function AdminPeoplePage() {
                           </td>
                           <td className="px-6 py-4 font-bold text-[#15335b]">{tpr.branch_code}</td>
                           <td className="px-6 py-4 text-gray-600">{tpr.email}</td>
+                          <td className="px-6 py-4 text-gray-600">{tpr.mobile_no || 'N/A'}</td>
                           <td className="px-6 py-4">
                             {tpr.status === 'approved' ? <span className="text-green-600 font-bold">Active</span> :
                              <span className="text-red-600 font-bold">Suspended</span>}
@@ -377,11 +394,11 @@ export default function AdminPeoplePage() {
                           <td className="px-6 py-4 text-gray-500">
                             {tpr.last_login_at ? formatDistanceToNow(new Date(tpr.last_login_at), { addSuffix: true }) : 'Never'}
                           </td>
-                          <td className="px-6 py-4 text-right">
-                            {user.isSuperAdmin && (
+                          {user?.isSuperAdmin && (
+                            <td className="px-6 py-4 text-right">
                               <button onClick={() => handleDemoteCommTpr(tpr.id)} className="px-3 py-1.5 text-xs font-bold text-red-600 border border-red-200 rounded hover:bg-red-50 transition-colors">Revoke Comm TPR</button>
-                            )}
-                          </td>
+                            </td>
+                          )}
                         </tr>
                       ))
                     )}
@@ -445,7 +462,7 @@ export default function AdminPeoplePage() {
       {/* Revoke Modal */}
       {revokeModal.isOpen && revokeModal.target && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
+          <div className="bg-white rounded-xl shadow-2xl max-w-[95vw] md:max-w-md w-full max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col">
             <div className="p-6 border-b border-gray-100">
               <h3 className="text-xl font-bold text-red-600 flex items-center gap-2">
                 <ShieldAlert /> Revoke Access
@@ -488,7 +505,7 @@ export default function AdminPeoplePage() {
       {/* Successor Modal */}
       {successorModal.isOpen && successorModal.worker && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
+          <div className="bg-white rounded-xl shadow-2xl max-w-[95vw] md:max-w-md w-full max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col">
             <div className="p-6 border-b border-amber-100 bg-amber-50">
               <h3 className="text-xl font-bold text-amber-900 flex items-center gap-2">
                 <Star className="fill-amber-500 text-amber-500" /> Designate Successor

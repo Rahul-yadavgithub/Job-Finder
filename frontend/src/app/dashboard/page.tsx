@@ -220,135 +220,141 @@ export default function DashboardPage() {
 
   return (
     <div className="p-8 w-full max-w-none space-y-8">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-          <p className="text-slate-500 mt-2">Manage daily outreach and track communications with assigned companies.</p>
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-[#15335b] to-[#1b4376] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
+          <PhoneCall size={300} className="-mt-10 -mr-10" />
         </div>
-
-      </div>
-
-      <div className="flex items-center">
-        <span className="inline-flex items-center gap-2 bg-slate-100 text-slate-600 text-sm font-medium px-4 py-1.5 rounded-full border border-slate-200">
-          Viewing: <strong className="text-slate-900">{user.branchName}</strong> branch
-        </span>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-widest text-blue-100 mb-4 backdrop-blur-sm">
+              <PhoneCall size={14} /> Official Workspace
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">Base TPR Dashboard</h1>
+            <p className="text-blue-100 max-w-xl text-sm md:text-base opacity-90 leading-relaxed">
+              Manage daily outreach, validate HR contacts, and track communications with your assigned companies.
+            </p>
+          </div>
+          
+          <div className="flex flex-col items-end gap-2">
+            <span className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur-md text-sm font-bold text-white border border-white/20 shadow-sm">
+              Viewing Branch: <strong className="text-blue-200 ml-1 uppercase tracking-widest">{user.branchName}</strong>
+            </span>
+          </div>
+        </div>
       </div>
 
       {activeView === 'dashboard' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-            <div className="p-6 flex-1">
-              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-4">
-                <PhoneCall className="w-6 h-6 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-1">Contact Today</h3>
-              <p className="text-slate-500 text-sm">Companies scheduled for outreach today or overdue.</p>
-              
-              <div className="mt-6 flex items-baseline gap-2">
-                {dashboardLoading ? (
-                  <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
-                ) : (
-                  <>
-                    <span className="text-4xl font-extrabold text-slate-900">{dashboard?.followup_due || 0}</span>
-                    <span className="text-slate-500 font-medium">pending</span>
-                  </>
-                )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          
+          {/* Contact Today Card */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1e3c72] to-[#2a5298] p-6 shadow-lg shadow-blue-900/20 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between h-[180px] border border-white/10">
+            <PhoneCall className="absolute -right-4 -bottom-4 w-32 h-32 text-white opacity-10 group-hover:scale-110 transition-transform duration-500" />
+            <div className="relative z-10 flex justify-between items-start">
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3">
+                  <PhoneCall className="w-5 h-5 text-white" />
+                </div>
+                <p className="text-sm font-bold text-white/80 uppercase tracking-widest mb-1">Contact Today</p>
               </div>
             </div>
-            <div className="border-t border-slate-100 bg-slate-50 p-4">
+            <div className="relative z-10 flex items-end justify-between">
+              {dashboardLoading ? (
+                <Loader2 className="w-8 h-8 animate-spin text-white/50" />
+              ) : (
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-black text-white">{dashboard?.followup_due || 0}</span>
+                  <span className="text-white/60 font-medium text-sm">pending</span>
+                </div>
+              )}
               <button 
                 onClick={() => setActiveView('contact')}
                 disabled={!(dashboard?.followup_due)}
-                className="w-full flex items-center justify-center gap-2 text-blue-600 font-medium hover:text-blue-800 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors"
+                className="text-white/50 group-hover:text-white transition-colors disabled:opacity-0"
               >
-                View Details <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-6 h-6" />
               </button>
             </div>
           </div>
 
           {/* Reverted Back Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-            <div className="p-6 flex-1">
-              <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center mb-4">
-                <AlertCircle className="w-6 h-6 text-amber-600" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-1">Reverted Back</h3>
-              <p className="text-slate-500 text-sm">Companies reverted by Mid TPR</p>
-              
-              <div className="mt-6 flex items-baseline gap-2">
-                {dashboardLoading ? (
-                  <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
-                ) : (
-                  <>
-                    <span className="text-4xl font-extrabold text-slate-900">{dashboard?.reverted_count || 0}</span>
-                    <span className="text-sm font-medium text-amber-600">reverted</span>
-                  </>
-                )}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#7e22ce] to-[#6b21a8] p-6 shadow-lg shadow-purple-900/20 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between h-[180px] border border-white/10">
+            <AlertCircle className="absolute -right-4 -bottom-4 w-32 h-32 text-white opacity-10 group-hover:scale-110 transition-transform duration-500" />
+            <div className="relative z-10 flex justify-between items-start">
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3">
+                  <AlertCircle className="w-5 h-5 text-white" />
+                </div>
+                <p className="text-sm font-bold text-white/80 uppercase tracking-widest mb-1">Reverted Back</p>
               </div>
             </div>
-            <div className="border-t border-slate-100 bg-slate-50 p-4">
+            <div className="relative z-10 flex items-end justify-between">
+              {dashboardLoading ? (
+                <Loader2 className="w-8 h-8 animate-spin text-white/50" />
+              ) : (
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-black text-white">{dashboard?.reverted_count || 0}</span>
+                  <span className="text-white/60 font-medium text-sm">companies</span>
+                </div>
+              )}
               <button 
                 onClick={() => setActiveView('reverted')}
                 disabled={!(dashboard?.reverted_count)}
-                className="w-full flex items-center justify-center gap-2 text-amber-600 font-medium hover:text-amber-800 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors"
+                className="text-white/50 group-hover:text-white transition-colors disabled:opacity-0"
               >
-                View Details <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-6 h-6" />
               </button>
             </div>
           </div>
 
           {/* Not Confirmed Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-            <div className="p-6 flex-1">
-              <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center mb-4">
-                <AlertCircle className="w-6 h-6 text-amber-600" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-1">Not Confirmed</h3>
-              <p className="text-slate-500 text-sm">Companies that have not committed yet.</p>
-              
-              <div className="mt-6 flex items-baseline gap-2">
-                {dashboardLoading ? (
-                  <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
-                ) : (
-                  <>
-                    <span className="text-4xl font-extrabold text-slate-900">{dashboard?.not_confirmed_count || 0}</span>
-                    <span className="text-slate-500 font-medium">pending</span>
-                  </>
-                )}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#b45309] to-[#d97706] p-6 shadow-lg shadow-amber-900/20 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between h-[180px] border border-white/10">
+            <Clock className="absolute -right-4 -bottom-4 w-32 h-32 text-white opacity-10 group-hover:scale-110 transition-transform duration-500" />
+            <div className="relative z-10 flex justify-between items-start">
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3">
+                  <Clock className="w-5 h-5 text-white" />
+                </div>
+                <p className="text-sm font-bold text-white/80 uppercase tracking-widest mb-1">Not Confirmed</p>
               </div>
             </div>
-            <div className="border-t border-slate-100 bg-slate-50 p-4">
+            <div className="relative z-10 flex items-end justify-between">
+              {dashboardLoading ? (
+                <Loader2 className="w-8 h-8 animate-spin text-white/50" />
+              ) : (
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-black text-white">{dashboard?.not_confirmed_count || 0}</span>
+                  <span className="text-white/60 font-medium text-sm">pending</span>
+                </div>
+              )}
               <button 
                 onClick={() => setActiveView('not_confirmed')}
                 disabled={!(dashboard?.not_confirmed_count)}
-                className="w-full flex items-center justify-center gap-2 text-amber-600 font-medium hover:text-amber-800 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors"
+                className="text-white/50 group-hover:text-white transition-colors disabled:opacity-0"
               >
-                View Details <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-6 h-6" />
               </button>
             </div>
           </div>
 
           {/* Add New Company Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col md:col-span-2 lg:col-span-1">
-            <div className="p-6 flex-1">
-              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-4">
-                <CloudUpload className="w-6 h-6 text-[#1b4376]" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-1">Add Companies</h3>
-              <p className="text-slate-500 text-sm">Add manually or bulk upload via CSV/Excel.</p>
-              
-              <div className="mt-6 flex items-baseline gap-2">
-                <span className="text-xl font-extrabold text-slate-900">Manual & Bulk</span>
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#064e3b] to-[#047857] p-6 shadow-lg shadow-emerald-900/20 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between h-[180px] border border-white/10 md:col-span-2 lg:col-span-1">
+            <CloudUpload className="absolute -right-4 -bottom-4 w-32 h-32 text-white opacity-10 group-hover:scale-110 transition-transform duration-500" />
+            <div className="relative z-10 flex justify-between items-start">
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3">
+                  <CloudUpload className="w-5 h-5 text-white" />
+                </div>
+                <p className="text-sm font-bold text-white/80 uppercase tracking-widest mb-1">Add Companies</p>
               </div>
             </div>
-            <div className="border-t border-slate-100 bg-slate-50 p-4">
+            <div className="relative z-10 flex items-end justify-between">
+              <span className="text-xl font-bold text-white">Manual / Bulk</span>
               <button 
-                onClick={() => {
-                  setShowManualModal(true);
-                }}
-                className="w-full flex items-center justify-center gap-2 text-[#1b4376] font-medium hover:text-indigo-800 transition-colors"
+                onClick={() => setShowManualModal(true)}
+                className="text-white hover:text-emerald-200 transition-colors bg-white/10 p-2 rounded-lg backdrop-blur-sm"
               >
-                Open Form & Upload <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -526,7 +532,7 @@ export default function DashboardPage() {
 
                   {previewData && (
                     <div className="space-y-6">
-                      <div className="grid grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
                           <p className="text-xs font-bold text-slate-500 uppercase">Total Rows</p>
                           <p className="text-2xl font-black text-slate-800">{previewData.total}</p>
@@ -919,17 +925,18 @@ export default function DashboardPage() {
       {/* Reverted List View */}
       {activeView === 'reverted' && (
         <div className="mt-8 animate-in fade-in duration-300">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4 mb-6">
+            <button 
+              onClick={() => setActiveView('dashboard')}
+              className="p-2.5 text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors shadow-sm shrink-0 flex items-center justify-center"
+              title="Back to Dashboard"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
             <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
               <AlertCircle className="w-6 h-6 text-amber-600" />
               Reverted Back Companies
             </h2>
-            <button 
-              onClick={() => setActiveView('dashboard')}
-              className="text-sm font-medium text-slate-500 hover:text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-sm transition-all"
-            >
-              <ArrowLeft className="w-4 h-4" /> Back
-            </button>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -979,20 +986,21 @@ export default function DashboardPage() {
       {/* Not Confirmed View */}
       {activeView === 'not_confirmed' && (
         <div className="mt-8 space-y-8 animate-in fade-in duration-300">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-              <AlertCircle className="w-6 h-6 text-amber-600" />
-              Not Confirmed Placements
-            </h2>
+          <div className="flex items-center gap-4">
             <button 
               onClick={() => {
                 setActiveView('dashboard');
                 setActiveCategory(null);
               }}
-              className="text-sm font-medium text-slate-500 hover:text-slate-700 bg-white border border-slate-200 px-4 py-2 rounded-lg transition-all"
+              className="p-2.5 text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors shadow-sm shrink-0 flex items-center justify-center"
+              title="Back to Dashboard"
             >
-              Back to Dashboard
+              <ArrowLeft className="w-5 h-5" />
             </button>
+            <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+              <AlertCircle className="w-6 h-6 text-amber-600" />
+              Not Confirmed Placements
+            </h2>
           </div>
 
           {/* Premium Folder/Nested Category View */}

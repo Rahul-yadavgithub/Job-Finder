@@ -44,7 +44,7 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
       )}
 
       {/* Sidebar */}
-      <aside className={`group fixed left-0 top-0 h-screen w-64 md:w-20 md:hover:w-64 bg-white border-r border-gray-200 flex flex-col z-50 transition-all duration-300 ease-in-out md:translate-x-0 overflow-x-hidden ${isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
+      <aside className={`group fixed md:sticky left-0 top-0 h-screen w-64 md:w-20 md:hover:w-64 bg-white border-r border-gray-200 rounded-r-[2rem] shadow-[4px_0_24px_rgba(0,0,0,0.04)] flex-shrink-0 flex flex-col z-50 transition-all duration-300 ease-in-out md:translate-x-0 overflow-x-hidden ${isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
         
         {/* Mobile Close Button */}
         <button onClick={() => setIsMobileOpen(false)} className="md:hidden absolute top-4 right-4 p-2 text-gray-500 hover:bg-gray-100 rounded-lg">

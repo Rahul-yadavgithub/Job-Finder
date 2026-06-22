@@ -62,7 +62,7 @@ export function CompanyDetailsModal({ isOpen, onClose, company, onUpdate }: Comp
       />
       
       {/* Modal Content */}
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden transform transition-all">
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-[95vw] md:max-w-3xl max-h-[90vh] flex flex-col overflow-hidden transform transition-all">
         {/* Header */}
         <div className="p-6 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
           <div className="flex items-start gap-4">
