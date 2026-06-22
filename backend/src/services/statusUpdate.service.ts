@@ -1,5 +1,7 @@
 import { supabase } from '../config/supabase';
 import { notifyRole } from './notification.service';
+import { createNotification } from '../utils/notifications';
+import { sendPlacementEmail } from './email.service';
 
 export interface StatusUpdateParams {
   companyId: string;
@@ -68,7 +70,42 @@ export async function applyStatusUpdate({
         payload.original_marked_by = userId;
       }
       
-      // Trigger Notification to Mid TPR
+      // Feature 2: In-app Notification and Email to ALL communication_tpr users
+      const { data: commTprs } = await supabase.from('users').select('id, email').eq('role', 'communication_tpr');
+      const { data: userData } = await supabase.from('users').select('name').eq('id', userId).single();
+      const userName = userData?.name || 'A Base TPR';
+      const { data: compData } = await supabase.from('companies').select('company_name').eq('id', companyId).single();
+      const compName = compData?.company_name || 'A company';
+
+      if (commTprs && commTprs.length > 0) {
+        for (const tpr of commTprs) {
+          const messageText = `${compName} has shown interest and has been added to your pipeline.` +
+            (notes ? `\nNotes from team: '${notes}'` : '') +
+            `\nAdded by: ${userName} · Just now`;
+
+          await createNotification(
+            tpr.id,
+            'new_interested',
+            '🎯 New Interested Company',
+            messageText,
+            { actionUrl: '/communication-tpr/companies', category: 'company' }
+          );
+
+          if (tpr.email) {
+            const emailHtml = `<p>${compName} has shown interest and has been added to your pipeline.</p>` +
+              (notes ? `<p><strong>Notes from team:</strong> '${notes}'</p>` : '') +
+              `<p>Added by: ${userName}</p>`;
+            
+            await sendPlacementEmail({
+              toEmail: tpr.email,
+              subject: `🎯 New Interested Company — ${compName}`,
+              bodyHtml: emailHtml
+            });
+          }
+        }
+      }
+
+      // Trigger Notification to Mid TPR (existing MongoDB notification)
       await notifyRole(
         'communication_tpr',
         'New Company Arrival',
@@ -130,6 +167,30 @@ export async function applyStatusUpdate({
 
   if (logError) {
     console.error('Failed to insert contact log:', logError);
+  }
+
+  // Feature 1: Confirmation Email if they called a company due today
+  if (layer === 'base') {
+    // using en-CA gives YYYY-MM-DD
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    
+    // If next_followup_date was today or earlier, it means it was a due call.
+    if (current.next_followup_date && current.next_followup_date <= today) {
+       const { data: uData } = await supabase.from('users').select('email').eq('id', userId).single();
+       const { data: cData } = await supabase.from('companies').select('company_name').eq('id', companyId).single();
+       if (uData?.email && cData?.company_name) {
+         const humanStatus = newStatus.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+         const bodyHtml = `<p>You have successfully logged a call for <strong>${cData.company_name}</strong> which was due today.</p>
+         <p>Status updated to: ${humanStatus}</p>
+         ${notes ? `<p>Notes: ${notes}</p>` : ''}`;
+         
+         await sendPlacementEmail({
+           toEmail: uData.email,
+           subject: `✅ Call Logged: ${cData.company_name}`,
+           bodyHtml
+         });
+       }
+    }
   }
 
   return { success: true, updated };

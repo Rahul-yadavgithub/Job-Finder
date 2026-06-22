@@ -665,27 +665,27 @@ export const confirmCSV = async (req: AuthRequest, res: Response): Promise<void>
 // Notifications for Base TPR
 export const getNotifications = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const branchId = req.user!.branchId!;
-    const notifications = await BranchNotification.find({ branchId })
-      .sort({ createdAt: -1 })
-      .limit(50)
-      .lean();
+    const userId = req.user!.userId!;
+    
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(50);
 
-    // Map to frontend Notification format
-    const mapped = notifications.map(n => ({
-      id: n._id.toString(),
-      type: n.type,
-      title: n.type.toUpperCase(),
-      message: n.message,
-      is_read: n.isDismissed,
-      created_at: n.createdAt,
-      action_url: n.metadata?.actionUrl || null,
-      notification_category: n.metadata?.category || 'system'
-    }));
+    if (error) throw error;
 
-    const unreadCount = await BranchNotification.countDocuments({ branchId, isDismissed: false });
+    const { count: unreadCount, error: countError } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('is_read', false);
 
-    res.status(200).json({ success: true, data: { notifications: mapped, unreadCount } });
+    if (countError) throw countError;
+
+    // The data is already matching what the frontend expects (id, type, title, message, is_read, created_at)
+    res.status(200).json({ success: true, data: { notifications: data || [], unreadCount: unreadCount || 0 } });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message || 'Internal server error' });
   }
@@ -693,9 +693,15 @@ export const getNotifications = async (req: AuthRequest, res: Response): Promise
 
 export const getUnreadCount = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const branchId = req.user!.branchId!;
-    const count = await BranchNotification.countDocuments({ branchId, isDismissed: false });
-    res.status(200).json({ success: true, count });
+    const userId = req.user!.userId!;
+    const { count, error } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('is_read', false);
+
+    if (error) throw error;
+    res.status(200).json({ success: true, count: count || 0 });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message || 'Internal server error' });
   }
@@ -703,14 +709,15 @@ export const getUnreadCount = async (req: AuthRequest, res: Response): Promise<v
 
 export const markNotificationsRead = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const branchId = req.user!.branchId!;
+    const userId = req.user!.userId!;
     const { notificationIds } = req.body;
     
     if (notificationIds && Array.isArray(notificationIds)) {
-      await BranchNotification.updateMany(
-        { branchId, _id: { $in: notificationIds } },
-        { $set: { isDismissed: true } }
-      );
+      await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .in('id', notificationIds)
+        .eq('user_id', userId);
     }
     
     res.status(200).json({ success: true });
@@ -721,11 +728,13 @@ export const markNotificationsRead = async (req: AuthRequest, res: Response): Pr
 
 export const markAllNotificationsRead = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const branchId = req.user!.branchId!;
-    await BranchNotification.updateMany(
-      { branchId, isDismissed: false },
-      { $set: { isDismissed: true } }
-    );
+    const userId = req.user!.userId!;
+    await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('user_id', userId)
+      .eq('is_read', false);
+      
     res.status(200).json({ success: true });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message || 'Internal server error' });

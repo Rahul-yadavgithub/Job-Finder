@@ -5,18 +5,25 @@ import { AdminRequest } from '../types/admin.types';
 export const getNotifications = async (req: AdminRequest, res: Response): Promise<void> => {
   try {
     const { data, error } = await supabase
-      .from('admin_notifications')
+      .from('notifications')
       .select('*')
-      .eq('recipient_id', req.admin!.userId)
+      .eq('user_id', req.admin!.userId)
       .order('created_at', { ascending: false })
       .limit(50);
 
     if (error) throw error;
 
+    // Map new notifications format to what the frontend expects
+    const formattedData = data?.map(n => ({
+      ...n,
+      action_url: n.meta?.actionUrl || null,
+      notification_category: n.meta?.category || 'system'
+    }));
+
     const { count: unreadCount, error: countError } = await supabase
-      .from('admin_notifications')
+      .from('notifications')
       .select('*', { count: 'exact', head: true })
-      .eq('recipient_id', req.admin!.userId)
+      .eq('user_id', req.admin!.userId)
       .eq('is_read', false);
 
     if (countError) throw countError;
@@ -24,7 +31,7 @@ export const getNotifications = async (req: AdminRequest, res: Response): Promis
     res.status(200).json({ 
       success: true, 
       data: {
-        notifications: data,
+        notifications: formattedData,
         unreadCount: unreadCount || 0
       }
     });
@@ -44,10 +51,10 @@ export const markAsRead = async (req: AdminRequest, res: Response): Promise<void
     }
 
     const { error } = await supabase
-      .from('admin_notifications')
+      .from('notifications')
       .update({ is_read: true })
       .in('id', notificationIds)
-      .eq('recipient_id', req.admin!.userId);
+      .eq('user_id', req.admin!.userId);
 
     if (error) throw error;
 
@@ -61,9 +68,9 @@ export const markAsRead = async (req: AdminRequest, res: Response): Promise<void
 export const markAllAsRead = async (req: AdminRequest, res: Response): Promise<void> => {
   try {
     const { error } = await supabase
-      .from('admin_notifications')
+      .from('notifications')
       .update({ is_read: true })
-      .eq('recipient_id', req.admin!.userId)
+      .eq('user_id', req.admin!.userId)
       .eq('is_read', false);
 
     if (error) throw error;
@@ -78,9 +85,9 @@ export const markAllAsRead = async (req: AdminRequest, res: Response): Promise<v
 export const getUnreadCount = async (req: AdminRequest, res: Response): Promise<void> => {
   try {
     const { count, error } = await supabase
-      .from('admin_notifications')
+      .from('notifications')
       .select('*', { count: 'exact', head: true })
-      .eq('recipient_id', req.admin!.userId)
+      .eq('user_id', req.admin!.userId)
       .eq('is_read', false);
 
     if (error) throw error;

@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { ApiKeyRotatorService } from '../services/api-key-rotator.service';
 import { FollowupCronJob } from './followup.cron';
+import { DailyReminderCronJob } from './daily-reminder.cron';
 
 /**
  * Initializes all background scheduled jobs for the application.
@@ -29,6 +30,24 @@ export function initSchedulers() {
       await FollowupCronJob.processFollowups();
     } catch (error) {
       console.error('[Scheduler] Error in FollowupCronJob cron job:', error);
+    }
+  });
+
+  // Feature 1: Daily Reminder for Base TPR (10:00 AM)
+  cron.schedule('0 10 * * *', async () => {
+    try {
+      await DailyReminderCronJob.runMorningJob();
+    } catch (error) {
+      console.error('[Scheduler] Error in morning DailyReminderCronJob:', error);
+    }
+  });
+
+  // Feature 1: Daily Reminder for Base TPR (12:00 PM)
+  cron.schedule('0 12 * * *', async () => {
+    try {
+      await DailyReminderCronJob.runMiddayJob();
+    } catch (error) {
+      console.error('[Scheduler] Error in midday DailyReminderCronJob:', error);
     }
   });
 
