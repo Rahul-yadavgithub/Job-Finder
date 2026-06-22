@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bell, Building2, User, ClipboardList, Settings, Check } from 'lucide-react';
 import axios from 'axios';
+import { io } from 'socket.io-client';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Notification {
@@ -27,8 +28,18 @@ export function NotificationBell() {
   useEffect(() => {
     fetchUnreadCount();
     
-    const interval = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(interval);
+    // Convert NEXT_PUBLIC_API_URL (e.g., http://localhost:5000/api) to base URL (e.g., http://localhost:5000)
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
+    const socket = io(baseUrl, { withCredentials: true });
+
+    socket.on('new_notification', (newNotif: Notification) => {
+      setUnreadCount(prev => prev + 1);
+      setNotifications(prev => [newNotif, ...prev]);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   useEffect(() => {
@@ -51,7 +62,7 @@ export function NotificationBell() {
 
   const fetchUnreadCount = async () => {
     try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/notifications/unread-count`, { withCredentials: true });
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/tpr/notifications/unread-count`, { withCredentials: true });
       if (res.data.success) setUnreadCount(res.data.count);
     } catch (error) {
       // Silently handle polling errors
@@ -60,7 +71,7 @@ export function NotificationBell() {
 
   const fetchNotifications = async () => {
     try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/notifications`, { withCredentials: true });
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/tpr/notifications`, { withCredentials: true });
       if (res.data.success) {
         setNotifications(res.data.data.notifications || []);
         setUnreadCount(res.data.data.unreadCount || 0);
@@ -72,7 +83,7 @@ export function NotificationBell() {
 
   const handleMarkAllRead = async () => {
     try {
-      await axios.patch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/read-all`, {}, { withCredentials: true });
+      await axios.patch(`${process.env.NEXT_PUBLIC_API_URL}/tpr/notifications/read-all`, {}, { withCredentials: true });
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
       setUnreadCount(0);
     } catch (error) {
@@ -83,7 +94,7 @@ export function NotificationBell() {
   const handleNotificationClick = async (notif: Notification) => {
     if (!notif.is_read) {
       try {
-        await axios.patch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/read`, { notificationIds: [notif.id] }, { withCredentials: true });
+        await axios.patch(`${process.env.NEXT_PUBLIC_API_URL}/tpr/notifications/read`, { notificationIds: [notif.id] }, { withCredentials: true });
         setUnreadCount(prev => Math.max(0, prev - 1));
         setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n));
       } catch (error) {

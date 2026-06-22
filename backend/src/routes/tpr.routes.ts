@@ -16,7 +16,11 @@ import {
   removePendingCompany,
   getCompanyHistory,
   previewCSV,
-  confirmCSV
+  confirmCSV,
+  getNotifications,
+  getUnreadCount,
+  markNotificationsRead,
+  markAllNotificationsRead
 } from '../controllers/tpr.controller';
 import { verifyToken, requireRole, requireBranch } from '../middleware/auth.middleware';
 
@@ -41,5 +45,11 @@ router.get('/sync-history', getSyncHistory);
 router.get('/check-name', checkCompanyName);
 router.post('/import/preview', upload.single('file'), previewCSV);
 router.post('/import/confirm', confirmCSV);
+
+// Notification endpoints
+router.get('/notifications', getNotifications);
+router.get('/notifications/unread-count', getUnreadCount);
+router.patch('/notifications/read', markNotificationsRead);
+router.patch('/notifications/read-all', markAllNotificationsRead);
 
 export default router;
