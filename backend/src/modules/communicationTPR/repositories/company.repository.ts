@@ -14,7 +14,8 @@ export class CompanyRepository {
         users!created_by(name),
         status_history(new_status, changed_at)
       `, { count: 'exact' })
-      .eq('company_status.base_status', 'interested');
+      .eq('company_status.base_status', 'interested')
+      .eq('brochure_completed', false);
 
     if (branchId) {
       query = query.eq('branch_id', branchId);

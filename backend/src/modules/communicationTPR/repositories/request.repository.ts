@@ -27,7 +27,7 @@ export class RequestRepository {
     const { data, error } = await supabase
       .from('communication_requests')
       .select('*, users!requested_by(name), companies(company_name)')
-      .eq('status', 'pending_approval')
+      .eq('status', 'pending_review')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -110,7 +110,7 @@ export class RequestRepository {
   async submitForApproval(requestId: string) {
     const { data, error } = await supabase
       .from('communication_requests')
-      .update({ status: 'pending_approval' })
+      .update({ status: 'pending_review' })
       .eq('id', requestId)
       .eq('status', 'draft')
       .select('*, users!requested_by(name)')
@@ -144,6 +144,75 @@ export class RequestRepository {
       .single();
 
     if (error) throw error;
+    return data;
+  }
+
+  async getQueueCounts() {
+    const statuses = ['draft', 'pending_review', 'approved', 'rejected', 'reverted', 'completed'];
+    const counts: Record<string, number> = {};
+
+    const queries = statuses.map(status => 
+      supabase.from('communication_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', status)
+    );
+
+    const results = await Promise.all(queries);
+
+    statuses.forEach((status, index) => {
+      counts[status] = results[index].count || 0;
+    });
+
+    return counts;
+  }
+
+  async getRequestsByQueueStatus(status: string) {
+    const { data, error } = await supabase
+      .from('communication_requests')
+      .select(`
+        *,
+        companies (
+          company_name,
+          hr_name,
+          phone_number,
+          email,
+          company_status (
+            interested_by_name,
+            original_marked_by
+          )
+        ),
+        users!requested_by (name),
+        rejected_by_user:users!rejected_by (name),
+        reverted_to_user:users!reverted_to_user_id (name)
+      `)
+      .eq('status', status)
+      .order('updated_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  }
+
+  async revertRequest(requestId: string, notes: string, revertedToUserId: string) {
+    const { data, error } = await supabase
+      .from('communication_requests')
+      .update({
+        status: 'reverted',
+        revert_notes: notes,
+        reverted_to_user_id: revertedToUserId,
+        reverted_at: new Date().toISOString()
+      })
+      .eq('id', requestId)
+      .select('*, companies(company_name)')
+      .single();
+
+    if (error) throw error;
+    
+    if (data?.company_id) {
+       await supabase.from('company_status')
+         .update({ mid_status: 'revoked' })
+         .eq('company_id', data.company_id);
+    }
+
     return data;
   }
 }
