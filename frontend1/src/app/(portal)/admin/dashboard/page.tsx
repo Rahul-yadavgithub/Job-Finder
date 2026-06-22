@@ -120,10 +120,10 @@ export default function AdminDashboard() {
             
             <div className="flex flex-col items-end gap-2">
               <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold uppercase tracking-wider text-white border border-white/20">
-                {user.role.replace('_', ' ')}
+                {user.role === 'coordinator' ? 'staff' : user.role.replace('_', ' ')}
               </span>
               <span className="text-sm font-medium text-blue-200 capitalize">
-                {user.designation?.replace('_', ' ')}
+                {user.designation === 'coordinator' ? 'staff' : user.designation?.replace('_', ' ')}
               </span>
             </div>
           </div>
@@ -331,8 +331,11 @@ export default function AdminDashboard() {
             <p className="text-sm font-bold text-white/80 uppercase tracking-widest mb-1">Active Staff</p>
           </div>
           <div className="relative z-10 flex items-end justify-between">
-            <p className="text-4xl font-black text-white">{peopleStats.activeCoworkers}</p>
-            <ChevronRight className="text-white/50 group-hover:text-white transition-colors" />
+            <div>
+              <p className="text-4xl font-black text-white">{peopleStats.activeCoworkers}</p>
+              <p className="text-[10px] text-blue-200 mt-1 uppercase tracking-wider font-bold">Includes Head TPO & Staff</p>
+            </div>
+            <ChevronRight className="text-white/50 group-hover:text-white transition-colors mb-2" />
           </div>
         </Link>
 

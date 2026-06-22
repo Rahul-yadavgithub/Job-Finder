@@ -146,30 +146,6 @@ export default function PersonDetailsPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
-          {person.companies_list && person.companies_list.length > 0 && (
-            <div className="mt-6 w-full pt-6 border-t border-gray-100 text-left">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">Added Companies</h3>
-              <div className="space-y-3">
-                {person.companies_list.map((comp: any) => (
-                  <div key={comp.id} className="p-3 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-gray-900 text-sm">{comp.company_name}</div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {new Date(comp.created_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                      comp.status === 'approved' ? 'bg-green-100 text-green-700' :
-                      comp.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                      'bg-amber-100 text-amber-700'
-                    }`}>
-                      {comp.status ? comp.status.charAt(0).toUpperCase() + comp.status.slice(1) : 'Unknown'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Details & Actions Card */}
@@ -223,6 +199,33 @@ export default function PersonDetailsPage({ params }: { params: Promise<{ id: st
               </div>
             </div>
           </div>
+
+          {person.companies_list && person.companies_list.length > 0 && (
+            <div className="p-6 border-b border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Added Companies</h3>
+              <div className="bg-gray-50/50 rounded-xl border border-gray-200 overflow-hidden">
+                <div className="max-h-52 overflow-y-auto custom-scrollbar divide-y divide-gray-100">
+                  {person.companies_list.map((comp: any) => (
+                      <div key={comp.id} className="p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between">
+                        <div>
+                          <div className="font-semibold text-gray-900 text-base">{comp.company_name}</div>
+                          <div className="text-sm text-gray-500 mt-1">
+                            {new Date(comp.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+                          comp.status === 'approved' ? 'bg-green-100 text-green-700' :
+                          comp.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                          'bg-amber-100 text-amber-700'
+                        }`}>
+                          {comp.status ? comp.status.charAt(0).toUpperCase() + comp.status.slice(1) : 'Unknown'}
+                        </span>
+                      </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Admin Actions */}
           {user?.isSuperAdmin && (

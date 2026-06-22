@@ -152,7 +152,7 @@ export default function SuccessionSettings() {
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-sm text-[#15335b]">{info.successor.email}</span>
                   <span className="text-indigo-300">•</span>
-                  <span className="text-sm font-semibold text-indigo-800 capitalize">{info.successor.designation.replace('_', ' ')}</span>
+                  <span className="text-sm font-semibold text-indigo-800 capitalize">{info.successor.designation === 'coordinator' ? 'staff' : info.successor.designation.replace('_', ' ')}</span>
                 </div>
               </div>
             </div>
@@ -299,7 +299,7 @@ export default function SuccessionSettings() {
                       <p className="text-sm text-gray-500">{w.email}</p>
                     </div>
                     <span className="text-xs font-bold px-2 py-1 bg-gray-100 text-gray-600 rounded capitalize">
-                      {w.designation.replace('_', ' ')}
+                      {w.designation === 'coordinator' ? 'staff' : w.designation.replace('_', ' ')}
                     </span>
                   </button>
                 ))
