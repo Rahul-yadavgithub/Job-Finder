@@ -32,8 +32,8 @@ function AdminResetPasswordContent() {
     return () => clearInterval(timeInterval);
   }, []);
 
-  const handleResetPassword = async (e?: React.FormEvent | React.MouseEvent | React.KeyboardEvent) => {
-    if (e && e.preventDefault) e.preventDefault();
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError('');
     
     if (!token || !id) {
@@ -63,7 +63,7 @@ function AdminResetPasswordContent() {
         setSuccess(true);
         // Automatically redirect to login after 2 seconds
         setTimeout(() => {
-          router.push('/login');
+          window.location.href = '/login';
         }, 2000);
       }
     } catch (err: any) {
@@ -160,7 +160,7 @@ function AdminResetPasswordContent() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-5" onKeyDown={(e) => { if (e.key === 'Enter') handleResetPassword(e as any); }}>
+              <form className="space-y-5" onSubmit={handleResetPassword}>
                 
                 {(!token || !id) && (
                    <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3.5 rounded-xl flex items-start gap-3 shadow-sm animate-in fade-in">
@@ -230,8 +230,7 @@ function AdminResetPasswordContent() {
 
                 <div className="pt-2">
                   <button
-                    type="button"
-                    onClick={handleResetPassword as any}
+                    type="submit"
                     disabled={loading}
                     className="relative w-full flex justify-center items-center gap-2 py-3.5 px-4 rounded-xl shadow-md shadow-blue-900/10 text-[15px] font-bold text-white bg-gradient-to-r from-[#1b4376] to-[#2e5e9b] hover:from-[#15345c] hover:to-[#1b4376] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1b4376] disabled:opacity-60 disabled:cursor-not-allowed hover:-translate-y-0.5 transition-all duration-300 overflow-hidden group"
                   >
@@ -252,7 +251,7 @@ function AdminResetPasswordContent() {
                   </button>
                 </div>
                 
-              </div>
+              </form>
             )}
 
           </div>
