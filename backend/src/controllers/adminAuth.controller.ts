@@ -422,7 +422,7 @@ export const adminForgotPassword = async (req: Request, res: Response): Promise<
     }
 
     const secret = process.env.ADMIN_JWT_SECRET + user.password_hash;
-    const token = jwt.sign({ id: user.id, email: user.email }, secret, { expiresIn: '15m' });
+    const token = jwt.sign({ id: user.id, email: user.email }, secret, { expiresIn: '1h' });
 
     const baseUrl = process.env.TPO_ADMIN_BASE_URL || 'http://localhost:3001';
     const frontendUrl = baseUrl.split(',')[0].trim();

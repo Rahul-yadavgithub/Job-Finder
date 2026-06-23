@@ -29,6 +29,10 @@ export default function AdminRequestsPage() {
   const [rejectWorkerModal, setRejectWorkerModal] = useState<{ isOpen: boolean, request: any }>({ isOpen: false, request: null });
   const [rejectReason, setRejectReason] = useState('');
   
+  const [approveTprModal, setApproveTprModal] = useState<{ isOpen: boolean, tprId: string | null }>({ isOpen: false, tprId: null });
+  const [rejectTprModal, setRejectTprModal] = useState<{ isOpen: boolean, tprId: string | null }>({ isOpen: false, tprId: null });
+  const [rejectTprReason, setRejectTprReason] = useState('');
+  
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
@@ -109,29 +113,34 @@ export default function AdminRequestsPage() {
   // ----------------------------------------
   // Handlers for TPR Requests
   // ----------------------------------------
-  const handleApproveTpr = async (tprId: string) => {
-    if (!confirm('Approve this TPR account?')) return;
+  const handleApproveTpr = async () => {
+    if (!approveTprModal.tprId) return;
+    setActionLoading(true);
     try {
-      await adminPost(`/user-requests/tprs/${tprId}/approve`);
+      await adminPost(`/user-requests/tprs/${approveTprModal.tprId}/approve`);
       toast.success('TPR approved successfully');
+      setApproveTprModal({ isOpen: false, tprId: null });
       fetchData();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to approve TPR');
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  const handleRejectTpr = async (tprId: string) => {
-    const reason = prompt('Please provide a reason for rejecting this TPR request (min 10 chars):');
-    if (!reason || reason.length < 10) {
-      if (reason !== null) toast.error('Reason must be at least 10 characters long.');
-      return;
-    }
+  const handleRejectTpr = async () => {
+    if (!rejectTprModal.tprId || rejectTprReason.length < 10) return;
+    setActionLoading(true);
     try {
-      await adminPost(`/user-requests/tprs/${tprId}/reject`, { reason });
+      await adminPost(`/user-requests/tprs/${rejectTprModal.tprId}/reject`, { reason: rejectTprReason });
       toast.success('TPR request rejected');
+      setRejectTprModal({ isOpen: false, tprId: null });
+      setRejectTprReason('');
       fetchData();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to reject TPR');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -303,13 +312,13 @@ export default function AdminRequestsPage() {
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
                           <button 
-                            onClick={() => req.request_type === 'worker' ? setApproveWorkerModal({ isOpen: true, request: req }) : handleApproveTpr(req.id)}
+                            onClick={() => req.request_type === 'worker' ? setApproveWorkerModal({ isOpen: true, request: req }) : setApproveTprModal({ isOpen: true, tprId: req.id })}
                             className="px-3 py-1.5 text-xs font-bold text-green-700 bg-green-50 border border-green-200 rounded hover:bg-green-100 transition-colors flex items-center gap-1"
                           >
                             <Check size={14} /> Approve
                           </button>
                           <button 
-                            onClick={() => req.request_type === 'worker' ? setRejectWorkerModal({ isOpen: true, request: req }) : handleRejectTpr(req.id)}
+                            onClick={() => req.request_type === 'worker' ? setRejectWorkerModal({ isOpen: true, request: req }) : setRejectTprModal({ isOpen: true, tprId: req.id })}
                             className="px-3 py-1.5 text-xs font-bold text-red-700 bg-red-50 border border-red-200 rounded hover:bg-red-100 transition-colors flex items-center gap-1"
                           >
                             <X size={14} /> Reject
@@ -413,6 +422,61 @@ export default function AdminRequestsPage() {
               >
                 {actionLoading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>}
                 Confirm Rejection
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Approve TPR Modal */}
+      {approveTprModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-[95vw] md:max-w-md w-full p-6 animate-in fade-in zoom-in-95">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Approve TPR Account?</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to approve this TPR request? They will be granted Branch TPR access.</p>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setApproveTprModal({ isOpen: false, tprId: null })} disabled={actionLoading} className="px-4 py-2 text-sm font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg">Cancel</button>
+              <button onClick={handleApproveTpr} disabled={actionLoading} className="px-4 py-2 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-lg flex items-center gap-2 disabled:opacity-50">
+                {actionLoading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>} Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject TPR Modal */}
+      {rejectTprModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-[95vw] md:max-w-md w-full flex flex-col animate-in fade-in zoom-in-95">
+            <div className="p-6 border-b border-gray-100 bg-gray-50/50 rounded-t-xl">
+              <h3 className="text-xl font-bold text-red-600 flex items-center gap-2"><ShieldAlert /> Reject TPR Request</h3>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-gray-700 font-medium">Please provide a reason for rejecting this TPR request.</p>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Reason (Required) <span className="text-red-500">*</span></label>
+                <textarea 
+                  value={rejectTprReason}
+                  onChange={(e) => setRejectTprReason(e.target.value)}
+                  placeholder="Provide a reason for rejection (min 10 chars)"
+                  className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 resize-none h-24 outline-none"
+                />
+              </div>
+            </div>
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-2 rounded-b-xl">
+              <button 
+                onClick={() => { setRejectTprModal({ isOpen: false, tprId: null }); setRejectTprReason(''); }}
+                disabled={actionLoading}
+                className="px-4 py-2 text-sm font-bold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleRejectTpr}
+                disabled={actionLoading || rejectTprReason.length < 10}
+                className="px-4 py-2 text-sm font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {actionLoading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>} Confirm Rejection
               </button>
             </div>
           </div>

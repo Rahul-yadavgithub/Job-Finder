@@ -167,17 +167,15 @@ export const rejectBranchTpr = async (req: AdminRequest, res: Response): Promise
       return;
     }
 
-    const { error: updateError } = await supabase
+    // Delete the user row — DB only allows 'pending','approved','suspended' statuses.
+    // Removing the row lets the person re-register if they wish.
+    const { error: deleteError } = await supabase
       .from('users')
-      .update({
-        status: 'rejected',
-        rejection_reason: reason,
-        rejected_at: new Date().toISOString(),
-        rejected_by: req.admin!.userId
-      })
-      .eq('id', userId);
+      .delete()
+      .eq('id', userId)
+      .eq('status', 'pending');
 
-    if (updateError) throw updateError;
+    if (deleteError) throw deleteError;
 
     await logAdminAction({
       performedBy: req.admin!.userId,
@@ -187,7 +185,7 @@ export const rejectBranchTpr = async (req: AdminRequest, res: Response): Promise
       ipAddress: req.ip
     });
 
-    res.status(200).json({ success: true, message: 'TPR request rejected' });
+    res.status(200).json({ success: true, message: 'TPR request rejected and removed' });
   } catch (error) {
     console.error('rejectBranchTpr Error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });

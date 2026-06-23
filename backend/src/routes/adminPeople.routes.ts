@@ -4,6 +4,7 @@ import {
   getCoworkers, 
   getBranchTprs, 
   revokeApproval,
+  restoreAccess,
   getCommunicationTprs,
   promoteToCommunicationTpr,
   demoteToBranchTpr,
@@ -22,6 +23,7 @@ router.get('/people/branch-tprs', requireAdminRole('head', 'caller', 'coordinato
 router.get('/people/communication-tprs', requireAdminRole('head', 'caller', 'coordinator'), getCommunicationTprs);
 router.get('/people/:id', requireAdminRole('head', 'caller', 'coordinator'), getPersonDetails);
 router.post('/people/:userId/revoke', requireSuperAdmin, revokeApproval);
+router.post('/people/:userId/restore', requireSuperAdmin, restoreAccess);
 router.post('/people/:userId/promote-comm-tpr', requireSuperAdmin, promoteToCommunicationTpr);
 router.post('/people/:userId/demote-comm-tpr', requireSuperAdmin, demoteToBranchTpr);
 

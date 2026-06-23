@@ -5,6 +5,7 @@ import { adminGet, adminPatch, adminDelete, adminPost } from '@/lib/admin/api';
 import { CheckSquare, CheckCircle2, Clock, UploadCloud, MessageSquareText, Loader2, ArrowRight, Trash2, Eye, Paperclip, FileText, User, Check, ClipboardList } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useAdminAuth } from '@/context/AdminAuthContext';
+import { toast } from 'sonner';
 
 interface Task {
   id: string;
@@ -54,6 +55,7 @@ export default function MyTasksPage() {
   const [responseModal, setResponseModal] = useState<{ id: string, outcome: 'accepted' | 'rejected' } | null>(null);
   const [responseNotes, setResponseNotes] = useState('');
   const [errorState, setErrorState] = useState<Record<string, string>>({});
+  const [deleteModal, setDeleteModal] = useState<{ id: string | null }>({ id: null });
 
   const { user } = useAdminAuth();
 
@@ -87,14 +89,14 @@ export default function MyTasksPage() {
   }, [user]);
 
   const handleDeleteTask = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this task?')) return;
+    setDeleteModal({ id: null });
     setExecutingTask(id);
     try {
       await adminDelete(`/tasks/${id}`);
       await fetchTasks();
     } catch (error) {
       console.error('Failed to delete task', error);
-      alert('Failed to delete task');
+      toast.error('Failed to delete task');
     } finally {
       setExecutingTask(null);
     }
@@ -110,7 +112,7 @@ export default function MyTasksPage() {
       await fetchTasks();
     } catch (error) {
       console.error('Failed to execute task', error);
-      alert('Failed to update task status');
+      toast.error('Failed to update task status');
     } finally {
       setExecutingTask(null);
       setExecutingAction(null);
@@ -254,7 +256,7 @@ export default function MyTasksPage() {
               <div className="p-6 border-b md:border-b-0 md:border-r border-gray-100 flex-1">
                 {user?.role === 'head' && (
                   <button
-                    onClick={() => handleDeleteTask(task.id)}
+                    onClick={() => setDeleteModal({ id: task.id })}
                     disabled={executingTask === task.id}
                     className="absolute top-4 right-4 text-gray-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors"
                     title="Delete Task"
@@ -861,6 +863,31 @@ export default function MyTasksPage() {
               >
                 {executingTask === completeModal.id ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
                 Confirm Completion
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Task Confirmation Modal */}
+      {deleteModal.id && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-[95vw] md:max-w-md w-full p-6 animate-in fade-in zoom-in-95">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-red-100 rounded-xl">
+                <Trash2 size={22} className="text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Delete Task?</h3>
+                <p className="text-sm text-gray-500">This action cannot be undone.</p>
+              </div>
+            </div>
+            <p className="text-gray-600 mb-6">Are you sure you want to permanently delete this task? All associated data will be removed.</p>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setDeleteModal({ id: null })} disabled={executingTask === deleteModal.id} className="px-4 py-2 text-sm font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg">Cancel</button>
+              <button onClick={() => handleDeleteTask(deleteModal.id!)} disabled={executingTask === deleteModal.id} className="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg flex items-center gap-2 disabled:opacity-50">
+                {executingTask === deleteModal.id && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>}
+                <Trash2 size={16} /> Delete Task
               </button>
             </div>
           </div>

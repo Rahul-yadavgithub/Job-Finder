@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 import { adminGet, adminPost } from '@/lib/admin/api';
-import { ArrowLeft, Mail, Phone, Building2, User, Clock, ShieldAlert, UserMinus, Ban, CheckCircle, RefreshCcw } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Building2, User, Clock, ShieldAlert, UserMinus, Ban, CheckCircle, RefreshCcw, ShieldCheck } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -17,6 +17,12 @@ export default function PersonDetailsPage({ params }: { params: Promise<{ id: st
   
   const [person, setPerson] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [promoteModal, setPromoteModal] = useState(false);
+  const [demoteModal, setDemoteModal] = useState(false);
+  const [revokeModal, setRevokeModal] = useState(false);
+  const [revokeReason, setRevokeReason] = useState('');
+  const [restoreModal, setRestoreModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const fetchDetails = async () => {
     try {
@@ -36,40 +42,63 @@ export default function PersonDetailsPage({ params }: { params: Promise<{ id: st
   }, [id]);
 
   const handlePromote = async () => {
-    if (!window.confirm(`Are you sure you want to promote ${person.name} to Communication TPR?`)) return;
     try {
+      setActionLoading(true);
       await adminPost(`/people/${id}/promote-comm-tpr`, {});
       toast.success('User promoted to Communication TPR');
+      setPromoteModal(false);
       fetchDetails();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to promote user');
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleDemote = async () => {
-    if (!window.confirm(`Are you sure you want to demote ${person.name} back to Branch TPR?`)) return;
     try {
+      setActionLoading(true);
       await adminPost(`/people/${id}/demote-comm-tpr`, {});
       toast.success('User demoted to Branch TPR');
+      setDemoteModal(false);
       fetchDetails();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to demote user');
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleRevoke = async () => {
-    const reason = window.prompt('Please enter a reason for revoking access:');
-    if (reason === null) return;
-    if (!reason.trim()) {
-      toast.error('Reason is required');
+    if (revokeReason.trim().length < 5) {
+      toast.error('Please provide a valid reason (min 5 chars)');
       return;
     }
     try {
-      await adminPost(`/people/${id}/revoke`, { reason: reason.trim() });
+      setActionLoading(true);
+      await adminPost(`/people/${id}/revoke`, { reason: revokeReason.trim() });
       toast.success('Access revoked successfully');
+      setRevokeModal(false);
+      setRevokeReason('');
       fetchDetails();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to revoke access');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    try {
+      setActionLoading(true);
+      await adminPost(`/people/${id}/restore`, {});
+      toast.success('Access restored successfully');
+      setRestoreModal(false);
+      fetchDetails();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to restore access');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -243,31 +272,37 @@ export default function PersonDetailsPage({ params }: { params: Promise<{ id: st
               ) : (
                 <div className="flex flex-wrap gap-3">
                   {person.status === 'approved' && person.role === 'branch_tpr' && (
-                    <button onClick={handlePromote} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-2">
+                    <button onClick={() => setPromoteModal(true)} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-2">
                       <ShieldAlert className="w-4 h-4" />
                       Make Communication TPR
                     </button>
                   )}
 
                   {person.status === 'approved' && person.role === 'communication_tpr' && (
-                    <button onClick={handleDemote} className="px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors flex items-center gap-2">
+                    <button onClick={() => setDemoteModal(true)} className="px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors flex items-center gap-2">
                       <RefreshCcw className="w-4 h-4" />
                       Demote to Branch TPR
                     </button>
                   )}
 
                   {person.status === 'approved' ? (
-                    <button onClick={handleRevoke} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center gap-2">
+                    <button onClick={() => setRevokeModal(true)} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center gap-2">
                       <UserMinus className="w-4 h-4" />
                       Revoke Access
                     </button>
                   ) : person.status === 'suspended' ? (
-                    <div className="p-4 bg-red-50 rounded-lg border border-red-100 flex-1 flex items-start gap-3 w-full">
-                      <Ban className="w-5 h-5 text-red-600 mt-0.5" />
-                      <div>
-                        <h4 className="text-sm font-semibold text-red-900">Account Suspended</h4>
-                        <p className="text-sm text-red-700 mt-1">This user's access has been revoked. They cannot access the portal.</p>
+                    <div className="flex flex-col gap-3 w-full">
+                      <div className="p-4 bg-red-50 rounded-lg border border-red-100 flex-1 flex items-start gap-3">
+                        <Ban className="w-5 h-5 text-red-600 mt-0.5" />
+                        <div>
+                          <h4 className="text-sm font-semibold text-red-900">Account Suspended</h4>
+                          <p className="text-sm text-red-700 mt-1">This user's access has been revoked. They cannot access the portal.</p>
+                        </div>
                       </div>
+                      <button onClick={() => setRestoreModal(true)} className="self-start px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4" />
+                        Restore Access
+                      </button>
                     </div>
                   ) : null}
                 </div>
@@ -276,6 +311,88 @@ export default function PersonDetailsPage({ params }: { params: Promise<{ id: st
           )}
         </div>
       </div>
+
+      {/* Promote Modal */}
+      {promoteModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-[95vw] md:max-w-md w-full p-6 animate-in fade-in zoom-in-95">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Promote to Communication TPR?</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to promote <strong>{person.name}</strong> to Communication TPR?</p>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setPromoteModal(false)} disabled={actionLoading} className="px-4 py-2 text-sm font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg">Cancel</button>
+              <button onClick={handlePromote} disabled={actionLoading} className="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center gap-2 disabled:opacity-50">
+                {actionLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>} Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Demote Modal */}
+      {demoteModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-[95vw] md:max-w-md w-full p-6 animate-in fade-in zoom-in-95">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Demote to Branch TPR?</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to demote <strong>{person.name}</strong> back to Branch TPR?</p>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setDemoteModal(false)} disabled={actionLoading} className="px-4 py-2 text-sm font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg">Cancel</button>
+              <button onClick={handleDemote} disabled={actionLoading} className="px-4 py-2 text-sm font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-lg flex items-center gap-2 disabled:opacity-50">
+                {actionLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>} Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Restore Access Modal */}
+      {restoreModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-[95vw] md:max-w-md w-full p-6 animate-in fade-in zoom-in-95">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-green-100 rounded-xl">
+                <ShieldCheck className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Restore Access?</h3>
+            </div>
+            <p className="text-gray-600 mb-2">You are about to restore portal access for:</p>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-6">
+              <p className="font-bold text-gray-900">{person.name}</p>
+              <p className="text-sm text-gray-500">{person.email}</p>
+            </div>
+            <p className="text-sm text-gray-500 mb-6">This will set their account status back to <strong>Active</strong> and they will be able to log in again immediately.</p>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setRestoreModal(false)} disabled={actionLoading} className="px-4 py-2 text-sm font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg">Cancel</button>
+              <button onClick={handleRestore} disabled={actionLoading} className="px-4 py-2 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-lg flex items-center gap-2 disabled:opacity-50">
+                {actionLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                <ShieldCheck className="w-4 h-4" /> Restore Access
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Revoke Modal */}
+      {revokeModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-[95vw] md:max-w-md w-full p-6 animate-in fade-in zoom-in-95">
+            <h3 className="text-xl font-bold text-red-600 mb-2 flex items-center gap-2"><ShieldAlert /> Revoke Access</h3>
+            <p className="text-gray-600 mb-4">Please provide a reason for revoking access for <strong>{person.name}</strong>.</p>
+            <textarea 
+              value={revokeReason} 
+              onChange={(e) => setRevokeReason(e.target.value)} 
+              placeholder="Reason for revoking (min 5 chars)..." 
+              className="w-full p-3 border border-gray-300 rounded-lg mb-6 focus:ring-2 focus:ring-red-500 focus:border-red-500 min-h-[100px] resize-y outline-none"
+            />
+            <div className="flex justify-end gap-3">
+              <button onClick={() => { setRevokeModal(false); setRevokeReason(''); }} disabled={actionLoading} className="px-4 py-2 text-sm font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg">Cancel</button>
+              <button onClick={handleRevoke} disabled={actionLoading || revokeReason.trim().length < 5} className="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                {actionLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>} Revoke Access
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -41,12 +41,17 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     const { data: existingUser } = await supabase
       .from('users')
-      .select('email, roll_number')
+      .select('email, roll_number, status')
       .or(`email.eq.${email},roll_number.eq.${rollNumber}`);
 
     if (existingUser && existingUser.length > 0) {
       if (existingUser.some(u => u.email === email)) {
-        res.status(409).json({ success: false, message: 'Email already registered' });
+        const match = existingUser.find(u => u.email === email);
+        if (match?.status === 'suspended') {
+          res.status(409).json({ success: false, message: 'This email belongs to a suspended account. Please contact the administrator.' });
+        } else {
+          res.status(409).json({ success: false, message: 'Email already registered' });
+        }
         return;
       }
       if (existingUser.some(u => u.roll_number === rollNumber)) {
@@ -67,7 +72,20 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       status: 'pending'
     });
 
-    if (error) throw error;
+    if (error) {
+      // Handle DB-level unique constraint violations gracefully
+      if (error.code === '23505') {
+        if (error.message?.includes('email')) {
+          res.status(409).json({ success: false, message: 'Email already registered' });
+        } else if (error.message?.includes('roll_number')) {
+          res.status(409).json({ success: false, message: 'Roll number already registered' });
+        } else {
+          res.status(409).json({ success: false, message: 'A conflict occurred. Please check your details and try again.' });
+        }
+        return;
+      }
+      throw error;
+    }
 
     res.status(201).json({
       success: true,
@@ -334,7 +352,7 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
     }
 
     const secret = process.env.JWT_SECRET + user.password_hash;
-    const token = jwt.sign({ id: user.id, email: user.email }, secret, { expiresIn: '15m' });
+    const token = jwt.sign({ id: user.id, email: user.email }, secret, { expiresIn: '1h' });
 
     const baseUrl = process.env.ADMIN_BASE_URL || 'http://localhost:3000';
     const frontendUrl = baseUrl.split(',')[0].trim();
@@ -381,6 +399,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     try {
       jwt.verify(token, secret);
     } catch (err) {
+      console.error('JWT Verification failed:', err);
       res.status(400).json({ success: false, message: 'Invalid or expired token' });
       return;
     }

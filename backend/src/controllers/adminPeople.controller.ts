@@ -231,6 +231,65 @@ export const revokeApproval = async (req: AdminRequest, res: Response): Promise<
   }
 };
 
+export const restoreAccess = async (req: AdminRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.params.userId as string;
+
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('status, is_super_admin')
+      .eq('id', userId)
+      .single();
+
+    if (userError || !user) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    if (user.status !== 'suspended') {
+      res.status(400).json({ success: false, message: 'User is not suspended' });
+      return;
+    }
+
+    if (user.is_super_admin) {
+      res.status(403).json({ success: false, message: 'Cannot modify a super admin' });
+      return;
+    }
+
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
+        status: 'approved',
+        suspended_at: null,
+        suspended_by: null
+      })
+      .eq('id', userId);
+
+    if (updateError) throw updateError;
+
+    await supabase.from('admin_notifications').insert({
+      recipient_id: userId,
+      type: 'account_approved',
+      title: 'Access Restored',
+      message: 'Your account access has been restored by an administrator. You may now log in.',
+      notification_category: 'request'
+    });
+
+    await logAdminAction({
+      performedBy: req.admin!.userId,
+      actionType: 'user_approved',
+      targetUserId: userId,
+      reason: 'Access restored by Super Admin',
+      ipAddress: req.ip
+    });
+
+    res.status(200).json({ success: true, message: 'Access restored successfully' });
+  } catch (error) {
+    console.error('restoreAccess Error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
 export const getCommunicationTprs = async (req: AdminRequest, res: Response): Promise<void> => {
   try {
     const { data, error } = await supabase

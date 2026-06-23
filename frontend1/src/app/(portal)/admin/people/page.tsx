@@ -31,6 +31,9 @@ export default function AdminPeoplePage() {
   const [revokeReason, setRevokeReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [successorModal, setSuccessorModal] = useState<{ isOpen: boolean, worker: any }>({ isOpen: false, worker: null });
+  const [promoteModal, setPromoteModal] = useState<{ isOpen: boolean, userId: string | null }>({ isOpen: false, userId: null });
+  const [demoteModal, setDemoteModal] = useState<{ isOpen: boolean, userId: string | null }>({ isOpen: false, userId: null });
+  const [reinstateModal, setReinstateModal] = useState<{ isOpen: boolean, target: any, type: 'worker' | 'tpr' }>({ isOpen: false, target: null, type: 'worker' });
 
   // Branch accordion state
   const [expandedBranch, setExpandedBranch] = useState<string | null>(null);
@@ -87,12 +90,13 @@ export default function AdminPeoplePage() {
     }
   };
 
-  const handlePromoteToCommTpr = async (userId: string) => {
-    if (!confirm('Are you sure you want to promote this Branch TPR to a Communication TPR?')) return;
+  const handlePromoteToCommTpr = async () => {
+    if (!promoteModal.userId) return;
     setActionLoading(true);
     try {
-      await adminPost(`/people/${userId}/promote-comm-tpr`);
+      await adminPost(`/people/${promoteModal.userId}/promote-comm-tpr`);
       toast.success('Promoted to Communication TPR successfully');
+      setPromoteModal({ isOpen: false, userId: null });
       fetchData();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to promote TPR');
@@ -101,12 +105,13 @@ export default function AdminPeoplePage() {
     }
   };
 
-  const handleDemoteCommTpr = async (userId: string) => {
-    if (!confirm('Are you sure you want to revoke Communication TPR status? They will be demoted to a regular Branch TPR.')) return;
+  const handleDemoteCommTpr = async () => {
+    if (!demoteModal.userId) return;
     setActionLoading(true);
     try {
-      await adminPost(`/people/${userId}/demote-comm-tpr`);
+      await adminPost(`/people/${demoteModal.userId}/demote-comm-tpr`);
       toast.success('Demoted to Branch TPR successfully');
+      setDemoteModal({ isOpen: false, userId: null });
       fetchData();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to demote TPR');
@@ -115,14 +120,18 @@ export default function AdminPeoplePage() {
     }
   };
 
-  const handleReinstate = async (targetId: string, type: 'worker'|'tpr') => {
-    if (!confirm('Are you sure you want to reinstate this user?')) return;
+  const handleReinstate = async () => {
+    if (!reinstateModal.target) return;
+    setActionLoading(true);
     try {
-      await adminPost(`/workers/${targetId}/reinstate`); // Assuming we still use this
-      toast.success('User reinstated');
+      await adminPost(`/people/${reinstateModal.target.id}/restore`, {});
+      toast.success('User access restored successfully');
+      setReinstateModal({ isOpen: false, target: null, type: 'worker' });
       fetchData();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to reinstate user');
+      toast.error(error.response?.data?.message || 'Failed to restore user access');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -300,7 +309,7 @@ export default function AdminPeoplePage() {
                                     )}
                                   </>
                                 ) : (
-                                  <button onClick={() => handleReinstate(cw.id, 'worker')} className="px-3 py-1.5 text-xs font-bold text-green-700 border border-green-200 rounded hover:bg-green-50 transition-colors">Reinstate</button>
+                                  <button onClick={() => setReinstateModal({ isOpen: true, target: cw, type: 'worker' })} className="px-3 py-1.5 text-xs font-bold text-green-700 border border-green-200 rounded hover:bg-green-50 transition-colors">Reinstate</button>
                                 )}
                               </div>
                             )}
@@ -403,7 +412,7 @@ export default function AdminPeoplePage() {
                           </td>
                           {user?.isSuperAdmin && (
                             <td className="px-6 py-4 text-right">
-                              <button onClick={() => handleDemoteCommTpr(tpr.id)} className="px-3 py-1.5 text-xs font-bold text-red-600 border border-red-200 rounded hover:bg-red-50 transition-colors">Revoke Comm TPR</button>
+                               <button onClick={() => setDemoteModal({ isOpen: true, userId: tpr.id })} className="px-3 py-1.5 text-xs font-bold text-red-600 border border-red-200 rounded hover:bg-red-50 transition-colors">Revoke Comm TPR</button>
                             </td>
                           )}
                         </tr>
@@ -543,8 +552,73 @@ export default function AdminPeoplePage() {
             </div>
           </div>
         </div>
+      )}      {/* Promote to Comm TPR Modal */}
+      {promoteModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-[95vw] md:max-w-md w-full p-6 animate-in fade-in zoom-in-95">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-blue-100 rounded-xl"><ShieldCheck size={22} className="text-blue-600" /></div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Promote to Comm TPR?</h3>
+                <p className="text-sm text-gray-500">This will grant elevated Communication TPR access.</p>
+              </div>
+            </div>
+            <p className="text-gray-600 mb-6">Are you sure you want to promote this Branch TPR to a <strong>Communication TPR</strong>? They will gain access to send emails on behalf of the TPO office.</p>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setPromoteModal({ isOpen: false, userId: null })} disabled={actionLoading} className="px-4 py-2 text-sm font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg">Cancel</button>
+              <button onClick={handlePromoteToCommTpr} disabled={actionLoading} className="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center gap-2 disabled:opacity-50">
+                {actionLoading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>} Confirm Promote
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
+      {/* Demote Comm TPR Modal */}
+      {demoteModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-[95vw] md:max-w-md w-full p-6 animate-in fade-in zoom-in-95">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-amber-100 rounded-xl"><ShieldAlert size={22} className="text-amber-600" /></div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Revoke Comm TPR Status?</h3>
+                <p className="text-sm text-gray-500">They will be demoted to a regular Branch TPR.</p>
+              </div>
+            </div>
+            <p className="text-gray-600 mb-6">Are you sure? This user will lose <strong>Communication TPR</strong> privileges and revert to a standard Branch TPR role.</p>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setDemoteModal({ isOpen: false, userId: null })} disabled={actionLoading} className="px-4 py-2 text-sm font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg">Cancel</button>
+              <button onClick={handleDemoteCommTpr} disabled={actionLoading} className="px-4 py-2 text-sm font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-lg flex items-center gap-2 disabled:opacity-50">
+                {actionLoading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>} Confirm Demote
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reinstate Modal */}
+      {reinstateModal.isOpen && reinstateModal.target && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-[95vw] md:max-w-md w-full p-6 animate-in fade-in zoom-in-95">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-green-100 rounded-xl"><ShieldCheck size={22} className="text-green-600" /></div>
+              <h3 className="text-xl font-bold text-gray-900">Restore Access?</h3>
+            </div>
+            <p className="text-gray-600 mb-2">You are about to restore portal access for:</p>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-6">
+              <p className="font-bold text-gray-900">{reinstateModal.target.name}</p>
+              <p className="text-sm text-gray-500">{reinstateModal.target.email}</p>
+            </div>
+            <p className="text-sm text-gray-500 mb-6">Their account status will be set back to <strong>Active</strong> and they will be able to log in immediately.</p>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setReinstateModal({ isOpen: false, target: null, type: 'worker' })} disabled={actionLoading} className="px-4 py-2 text-sm font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg">Cancel</button>
+              <button onClick={handleReinstate} disabled={actionLoading} className="px-4 py-2 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-lg flex items-center gap-2 disabled:opacity-50">
+                {actionLoading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>} Restore Access
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
