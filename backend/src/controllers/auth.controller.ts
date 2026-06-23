@@ -316,15 +316,20 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
       return;
     }
 
+    // Only allow TPR portal roles — admin users (head, caller, coordinator) cannot
+    // reset passwords through the TPR portal. Each portal is isolated for security.
     const { data: user } = await supabase
       .from('users')
       .select('id, email, password_hash')
       .eq('email', email)
+      .in('role', ['branch_tpr', 'communication_tpr'])
       .single();
 
     if (!user) {
-      // Changed from silent success to explicit error to help with debugging!
-      res.status(404).json({ success: false, message: 'This email is not registered in the TPR Portal.' });
+      res.status(404).json({
+        success: false,
+        message: 'This email is not registered in the TPR Portal. If you are an admin user, please use the Admin Portal to reset your password.'
+      });
       return;
     }
 
@@ -358,10 +363,12 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
+    // Only allow TPR portal roles — blocks admin users from resetting via TPR portal
     const { data: user } = await supabase
       .from('users')
       .select('id, password_hash')
       .eq('id', id)
+      .in('role', ['branch_tpr', 'communication_tpr'])
       .single();
 
     if (!user) {
@@ -369,6 +376,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
+    // Token was signed with JWT_SECRET (TPR secret), not ADMIN_JWT_SECRET
     const secret = process.env.JWT_SECRET + user.password_hash;
     try {
       jwt.verify(token, secret);
