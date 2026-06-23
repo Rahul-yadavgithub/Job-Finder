@@ -13,7 +13,13 @@ api.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/recovery')) {
+      if (
+        typeof window !== 'undefined' && 
+        !window.location.pathname.startsWith('/login') && 
+        !window.location.pathname.startsWith('/recovery') &&
+        !window.location.pathname.startsWith('/reset-password') &&
+        !window.location.pathname.startsWith('/forgot-password')
+      ) {
         window.location.href = '/login';
       }
     } else if (error.response?.status === 403) {
