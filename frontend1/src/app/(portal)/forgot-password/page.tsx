@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { adminPost } from '@/lib/admin/api';
-import { Loader2, AlertCircle, ShieldCheck, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Loader2, AlertCircle, ShieldCheck, ArrowLeft, CheckCircle2, Mail, KeyRound, ShieldAlert } from 'lucide-react';
 import { AxiosError } from 'axios';
 
 export default function AdminForgotPasswordPage() {
@@ -12,16 +13,12 @@ export default function AdminForgotPasswordPage() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-
-  // Date/Time State
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
   useEffect(() => {
     setCurrentTime(new Date());
-    const timeInterval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timeInterval);
+    const t = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(t);
   }, []);
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -52,160 +49,152 @@ export default function AdminForgotPasswordPage() {
     }
   };
 
-  const formattedDate = currentTime ? currentTime.toLocaleDateString('en-US', {
-    weekday: 'short',
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  }) : '';
+  const fmt = (d: Date) => d.toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+  const fmtTime = (d: Date) => d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
 
-  const formattedTime = currentTime ? currentTime.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  }) : '';
-
-  return (
-    <div className="min-h-screen bg-[#eef1f5] flex flex-col font-sans">
-      
-      {/* Top Date/Time Bar */}
-      <div className="w-full bg-[#1b4376] text-white py-1.5 px-4 sm:px-8 flex justify-end items-center text-xs sm:text-sm font-medium tracking-wide">
-        {currentTime ? (
-          <div className="flex items-center gap-3">
-            <span>{formattedDate}</span>
-            <span className="opacity-50">|</span>
-            <span className="font-mono">{formattedTime}</span>
-          </div>
-        ) : (
-          <div className="h-5"></div>
-        )}
+  const Header = () => (
+    <>
+      <div className="w-full bg-[#1a3a6e] text-white py-1 px-6 flex justify-between items-center text-[11px] tracking-wide border-b border-[#2a4a7e]">
+        <span className="opacity-70 hidden sm:block">Ministry of Education, Government of India</span>
+        {currentTime ? <span className="font-mono opacity-90">{fmt(currentTime)}&nbsp;&nbsp;|&nbsp;&nbsp;{fmtTime(currentTime)}</span> : <span className="h-4 w-48" />}
       </div>
-
-      {/* Main Header */}
-      <div className="w-full bg-white py-4 px-4 sm:px-8 relative z-10 border-b-2 border-[#1b4376]">
-        <div className="w-full max-w-[95%] xl:max-w-[85%] mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
-          
-          <div className="flex-1 hidden sm:flex flex-col items-end mr-4 sm:mr-[clamp(1rem,2vw,2rem)]">
-             <h1 className="font-bold text-slate-800 text-[clamp(1.15rem,1.5vw,2rem)] leading-tight tracking-tight">राष्ट्रीय प्रौद्योगिकी संस्थान हमीरपुर</h1>
-             <p className="font-semibold text-slate-600 text-[clamp(0.7rem,0.8vw,1rem)] mt-0.5">हमीरपुर, हिमाचल प्रदेश (भारत) - 177 005</p>
+      <div className="w-full bg-white border-b-[3px] border-[#1a3a6e] shadow-sm">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+          <div className="flex-1 text-right hidden sm:block pr-4">
+            <div className="text-[1.1rem] font-bold text-[#1a1a1a] leading-tight">राष्ट्रीय प्रौद्योगिकी संस्थान हमीरपुर</div>
+            <div className="text-[0.72rem] text-[#555] mt-0.5">हमीरपुर, हिमाचल प्रदेश (भारत) – 177 005</div>
           </div>
-
-          <div className="relative z-20 flex-shrink-0 bg-white rounded-full p-[clamp(0.25rem,0.5vw,0.75rem)] shadow-md" style={{ transform: 'translateY(15px)' }}>
-            <img 
-              src="https://res.cloudinary.com/dzbliymin/image/upload/v1781725894/logonith_gb3opv.webp" 
-              alt="NITH Logo" 
-              className="object-contain w-[clamp(4.5rem,6vw,7rem)] h-[clamp(4.5rem,6vw,7rem)] transition-all duration-300"
-            />
+          <div className="flex-shrink-0">
+            <img src="https://res.cloudinary.com/dzbliymin/image/upload/v1781725894/logonith_gb3opv.webp" alt="NITH Logo" className="w-20 h-20 object-contain" />
           </div>
-
-          <div className="flex-1 flex flex-col items-center sm:items-start sm:ml-[clamp(1rem,2vw,2rem)]">
-             <h1 className="font-bold text-[#1b4376] text-[clamp(1.15rem,1.5vw,2rem)] leading-tight tracking-tight">National Institute of Technology Hamirpur</h1>
-             <p className="font-semibold text-slate-600 text-[clamp(0.7rem,0.8vw,1rem)] mt-0.5">Hamirpur, Himachal Pradesh (India) - 177 005</p>
+          <div className="flex-1 pl-4">
+            <div className="text-[1.1rem] font-bold text-[#1a3a6e] leading-tight">National Institute of Technology Hamirpur</div>
+            <div className="text-[0.72rem] text-[#555] mt-0.5">Hamirpur, Himachal Pradesh (India) – 177 005</div>
           </div>
-          
+        </div>
+        <div className="bg-[#1a3a6e] text-center py-1.5">
+          <span className="text-white text-[11px] font-semibold tracking-[0.15em] uppercase">Training &amp; Placement Office (TPO) — Admin Portal</span>
         </div>
       </div>
+    </>
+  );
 
-      {/* Full Page Loading Overlay */}
+  return (
+    <div className="min-h-screen flex flex-col font-sans bg-[#f0f2f5]" style={{ fontFamily: "'Segoe UI', Arial, sans-serif" }}>
+      <Header />
+
       {loading && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#15335b]/80 backdrop-blur-md transition-all duration-300">
-          <div className="bg-white/10 p-8 rounded-3xl border border-white/20 shadow-2xl flex flex-col items-center gap-6 backdrop-blur-xl animate-in fade-in zoom-in duration-300">
-            <div className="relative">
-              <div className="w-16 h-16 rounded-full border-4 border-white/20 border-t-white animate-spin"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <ShieldCheck className="w-6 h-6 text-white" />
-              </div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0d1f3c]/75 backdrop-blur-sm">
+          <div className="bg-white rounded-xl p-8 flex flex-col items-center gap-4 shadow-2xl border border-slate-200">
+            <div className="relative w-14 h-14">
+              <div className="w-14 h-14 rounded-full border-4 border-slate-200 border-t-[#1a3a6e] animate-spin" />
+              <ShieldCheck className="absolute inset-0 m-auto w-6 h-6 text-[#1a3a6e]" />
             </div>
-            <div className="text-center">
-              <p className="text-white font-bold text-lg tracking-wide">Processing Request...</p>
-              <p className="text-blue-200 text-sm mt-1">Please wait while we process</p>
-            </div>
+            <p className="font-bold text-[#1a3a6e] text-base">Processing Request...</p>
           </div>
         </div>
       )}
 
-      {/* Forgot Password Section */}
-      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative z-0 overflow-hidden">
-        
-        {/* Animated Background Image */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-bg-zoom z-[-2]"
-          style={{ backgroundImage: "url('/nith.jpg')" }}
-        ></div>
+      <div className="flex-1 flex items-center justify-center py-10 px-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-bg-zoom z-0" style={{ backgroundImage: "url('/nith.jpg')" }} />
+        <div className="absolute inset-0 bg-[#0d1f3c]/65 z-0" />
 
-        {/* Dark overlay for better form readability */}
-        <div className="absolute inset-0 bg-[#15335b]/60 z-[-1]"></div>
+        <div className="relative z-10 w-full max-w-[440px]">
+          <div className="bg-white/95 backdrop-blur-xl shadow-2xl border border-white/40 overflow-hidden">
 
-        <div className="w-full max-w-[420px] bg-white/40 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/40 overflow-hidden relative z-10">
-          
-          <div className="px-8 pt-8 pb-4 text-center">
-            <h2 className="text-[1.35rem] font-bold text-slate-800">Forgot Password</h2>
-            <p className="text-sm text-slate-500 mt-1">Enter your registered email to receive a password reset link.</p>
+            <div className="bg-[#1a3a6e] px-6 py-4 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center flex-shrink-0">
+                <KeyRound className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h2 className="text-white font-bold text-[15px] leading-tight">Admin Password Recovery</h2>
+                <p className="text-blue-200 text-[11px] mt-0.5">TPO Portal — Account Recovery</p>
+              </div>
+            </div>
+            <div className="h-[3px] bg-gradient-to-r from-[#c9a84c] via-[#f0d060] to-[#c9a84c]" />
+
+            <div className="px-7 py-6">
+              {success ? (
+                <div className="space-y-5">
+                  <div className="flex flex-col items-center text-center py-4 gap-3">
+                    <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
+                      <CheckCircle2 className="w-7 h-7 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-800 text-base">Request Submitted</h3>
+                      <p className="text-slate-500 text-[13px] mt-1 leading-relaxed">
+                        If an account is associated with <strong className="text-slate-700">{email}</strong>, 
+                        a password reset link has been sent. Please check your inbox and spam folder.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-amber-50 border border-amber-200 p-3 text-[12px] text-amber-800 rounded">
+                    <p className="font-semibold mb-1">Important Notes:</p>
+                    <ul className="list-disc pl-4 space-y-0.5 text-amber-700">
+                      <li>The reset link is valid for <strong>15 minutes</strong> only</li>
+                      <li>Check your spam/junk folder if not received</li>
+                      <li>You can only reset passwords for TPO admin portal accounts</li>
+                    </ul>
+                  </div>
+
+                  <button onClick={() => router.push('/login')}
+                    className="w-full py-2.5 bg-[#1a3a6e] hover:bg-[#122d58] text-white font-bold text-[14px] tracking-wide transition-colors flex items-center justify-center gap-2">
+                    <ArrowLeft className="w-4 h-4" /> Return to Login
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div className="text-[13px] text-slate-600 leading-relaxed pb-1">
+                    Enter your registered official email address. If an account exists in the TPO Admin Portal, 
+                    a password reset link will be sent to you.
+                  </div>
+
+                  {error && (
+                    <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 flex items-start gap-2.5 text-[13px]">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                      <span>{error}</span>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
+                      Registered Official Email *
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input type="email" required
+                        className="w-full pl-9 pr-4 py-2.5 border border-slate-300 bg-slate-50 text-slate-800 text-[13px] focus:outline-none focus:border-[#1a3a6e] focus:ring-1 focus:ring-[#1a3a6e] placeholder-slate-400"
+                        placeholder="Enter your official email"
+                        value={email} onChange={e => setEmail(e.target.value)} disabled={loading} />
+                    </div>
+                  </div>
+
+                  <button type="submit" disabled={loading || !email}
+                    className="w-full py-2.5 bg-[#1a3a6e] hover:bg-[#122d58] text-white font-bold text-[14px] tracking-wide transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1">
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Send Password Reset Link'}
+                  </button>
+
+                  <div className="flex justify-center pt-1 border-t border-slate-200">
+                    <Link href="/login" className="text-[12px] text-[#1a3a6e] hover:underline font-medium flex items-center gap-1">
+                      <ArrowLeft className="w-3 h-3" /> Back to Login
+                    </Link>
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
 
-          <div className="px-8 pb-8">
-            {success ? (
-              <div className="text-center space-y-4">
-                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-4 rounded-lg flex flex-col items-center gap-2">
-                  <CheckCircle2 className="w-8 h-8 text-green-500" />
-                  <p className="text-sm font-medium">If an account matches that email, a reset link has been sent. Please check your inbox.</p>
-                </div>
-                <button
-                  onClick={() => router.push('/login')}
-                  className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-[4px] shadow-sm text-[15px] font-bold text-white bg-[#2e5e9b] hover:bg-[#1b4376] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1b4376] transition-all"
-                >
-                  <ArrowLeft className="w-4 h-4" /> Back to Login
-                </button>
-              </div>
-            ) : (
-              <form className="space-y-5" onSubmit={handleForgotPassword}>
-                
-                {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm font-medium">{error}</p>
-                  </div>
-                )}
-
-                <div>
-                  <div className="relative">
-                    <input
-                      type="email"
-                      required
-                      className="block w-full px-4 py-3 border-none bg-[#f4f6f8] rounded-[4px] text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1b4376] transition-colors text-sm"
-                      placeholder="Enter Registered Email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      disabled={loading}
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-3">
-                  <button
-                    type="submit"
-                    disabled={loading || !email}
-                    className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-[4px] shadow-sm text-[15px] font-bold text-white bg-[#2e5e9b] hover:bg-[#1b4376] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1b4376] disabled:opacity-70 disabled:cursor-not-allowed transition-all"
-                  >
-                    {loading ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <>Send Reset Link</>
-                    )}
-                  </button>
-                </div>
-                
-                <div className="mt-4 pt-1 flex items-center justify-center">
-                  <button type="button" onClick={() => router.push('/login')} className="flex items-center gap-1 text-[13px] font-medium text-[#2e5e9b] hover:text-[#1b4376] transition-colors">
-                    <ArrowLeft className="w-4 h-4" /> Back to Login
-                  </button>
-                </div>
-              </form>
-            )}
-
+          <div className="mt-3 flex items-start gap-2 text-white/75 text-[11px] px-1">
+            <ShieldAlert className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+            <span>Password recovery is only available for accounts registered in the TPO Admin Portal. TPR students must use the TPR Portal.</span>
           </div>
         </div>
-    </div>
+      </div>
+
+      <div className="bg-[#1a3a6e] text-white/60 text-center py-2 text-[10px] tracking-wide">
+        © {new Date().getFullYear()} National Institute of Technology Hamirpur. All rights reserved. &nbsp;|&nbsp; Training &amp; Placement Office
+      </div>
     </div>
   );
 }
