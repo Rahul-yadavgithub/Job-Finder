@@ -1,11 +1,7 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
 import { connection as redisConnection } from '../config/redis';
 
-const ipKeyGenerator = (req: any) => {
-  const ip = req.ip || req.socket?.remoteAddress || 'unknown';
-  return ip.replace(/^::ffff:/, '');
-};
 
 // Global limit: 200 requests per 15 minutes per IP (5000 in dev)
 export const globalLimiter = rateLimit({
@@ -13,7 +9,6 @@ export const globalLimiter = rateLimit({
   limit: process.env.NODE_ENV !== 'production' ? 5000 : 200, 
   standardHeaders: true, 
   legacyHeaders: false, 
-  keyGenerator: ipKeyGenerator,
   store: new RedisStore({
     // @ts-ignore
     sendCommand: (...args: string[]) => redisConnection.call(...args),
@@ -28,7 +23,6 @@ export const loginLimiter = rateLimit({
   limit: process.env.NODE_ENV !== 'production' ? 50 : 5,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKeyGenerator,
   store: new RedisStore({
     // @ts-ignore
     sendCommand: (...args: string[]) => redisConnection.call(...args),
@@ -43,7 +37,6 @@ export const registerLimiter = rateLimit({
   limit: process.env.NODE_ENV !== 'production' ? 50 : 5,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKeyGenerator,
   store: new RedisStore({
     // @ts-ignore
     sendCommand: (...args: string[]) => redisConnection.call(...args),
@@ -58,7 +51,6 @@ export const forgotPasswordLimiter = rateLimit({
   limit: process.env.NODE_ENV !== 'production' ? 50 : 5,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKeyGenerator,
   store: new RedisStore({
     // @ts-ignore
     sendCommand: (...args: string[]) => redisConnection.call(...args),
@@ -73,8 +65,8 @@ export const authenticatedUserLimiter = rateLimit({
   limit: process.env.NODE_ENV !== 'production' ? 5000 : 1000,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req: any) => {
-    return req.user?.userId || req.admin?.userId || ipKeyGenerator(req); 
+  keyGenerator: (req: any, res: any) => {
+    return req.user?.userId || req.admin?.userId || ipKeyGenerator(req, res); 
   },
   store: new RedisStore({
     // @ts-ignore

@@ -1,5 +1,3 @@
-import nodemailer from 'nodemailer';
-
 interface SendRecoveryEmailParams {
   toEmail: string;
   toName: string;
@@ -14,17 +12,6 @@ interface SendPlacementEmailParams {
   attachmentUrl?: string;
   attachmentFilename?: string;
 }
-
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_PORT === '465',
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
 
 export async function sendRecoveryEmail({
   toEmail,
@@ -48,26 +35,37 @@ If you did not expect this email, ignore it.`;
 <p><small>If you did not expect this email, ignore it.</small></p>`;
 
   try {
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.warn('SMTP credentials not configured. Email would have been:', textBody);
+    const apiKey = process.env.BREVO_API_KEY;
+    const senderEmail = process.env.SMTP_USER;
+
+    if (!apiKey || !senderEmail) {
+      console.warn('Brevo credentials not configured. Email would have been:', textBody);
       return;
     }
 
-    await transporter.sendMail({
-      from: `"NITH TPR Portal" <${process.env.SMTP_USER}>`,
-      to: toEmail,
-      subject,
-      text: textBody,
-      html: htmlBody,
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'api-key': apiKey
+      },
+      body: JSON.stringify({
+        sender: { name: "NITH TPR Portal", email: senderEmail },
+        to: [{ email: toEmail }],
+        subject: subject,
+        htmlContent: htmlBody,
+        textContent: textBody
+      })
     });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`Brevo API Error: ${errorData}`);
+    }
   } catch (error: any) {
     console.error('Failed to send recovery email:', error.message);
-    // Don't throw if we're just testing with dummy credentials
-    if (error.code !== 'EAUTH') {
-      throw error;
-    } else {
-      console.warn('Skipping email send due to invalid SMTP credentials (EAUTH)');
-    }
+    throw error;
   }
 }
 
@@ -79,36 +77,47 @@ export async function sendPlacementEmail({
   attachmentFilename
 }: SendPlacementEmailParams): Promise<void> {
   try {
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.warn('SMTP credentials not configured. Email would have been sent to:', toEmail);
+    const apiKey = process.env.BREVO_API_KEY;
+    const senderEmail = process.env.SMTP_USER;
+
+    if (!apiKey || !senderEmail) {
+      console.warn('Brevo credentials not configured. Email would have been sent to:', toEmail);
       return;
     }
 
-    const mailOptions: nodemailer.SendMailOptions = {
-      from: `"NITH Placement Cell" <${process.env.SMTP_USER}>`,
-      to: toEmail,
-      subject,
-      html: bodyHtml.replace(/\n/g, '<br>'),
-      text: bodyHtml
+    const payload: any = {
+      sender: { name: "NITH Placement Cell", email: senderEmail },
+      to: [{ email: toEmail }],
+      subject: subject,
+      htmlContent: bodyHtml.replace(/\n/g, '<br>'),
+      textContent: bodyHtml
     };
 
     if (attachmentUrl && attachmentFilename) {
-      mailOptions.attachments = [
+      payload.attachment = [
         {
-          filename: attachmentFilename,
-          path: attachmentUrl // Nodemailer can fetch attachments from a URL directly
+          name: attachmentFilename,
+          url: attachmentUrl
         }
       ];
     }
 
-    await transporter.sendMail(mailOptions);
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'api-key': apiKey
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`Brevo API Error: ${errorData}`);
+    }
   } catch (error: any) {
     console.error('Failed to send placement email:', error.message);
-    // Don't throw if we're just testing with dummy credentials
-    if (error.code !== 'EAUTH') {
-      throw error;
-    } else {
-      console.warn('Skipping email send due to invalid SMTP credentials (EAUTH)');
-    }
+    throw error;
   }
 }
